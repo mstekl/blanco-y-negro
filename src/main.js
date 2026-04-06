@@ -3,7 +3,13 @@
 // and which scenes (levels) to load.
 
 import Phaser from 'phaser';
-import GameScene from './scenes/GameScene.js';
+import BootScene from './scenes/BootScene.js';
+import PreloadScene from './scenes/PreloadScene.js';
+import TitleScene from './scenes/TitleScene.js';
+import LevelIntroScene from './scenes/LevelIntroScene.js';
+import LevelScene from './scenes/LevelScene.js';
+import GameOverScene from './scenes/GameOverScene.js';
+import WinScene from './scenes/WinScene.js';
 
 // Game configuration — think of this as the "settings" for our game
 const config = {
@@ -17,8 +23,8 @@ const config = {
   // Where to put the game on the webpage
   parent: 'game-container',
 
-  // Background color (sky blue!)
-  backgroundColor: '#87CEEB',
+  // Background color (dark — sets the mood!)
+  backgroundColor: '#111111',
 
   // Physics engine — this makes things fall with gravity!
   physics: {
@@ -31,9 +37,10 @@ const config = {
     }
   },
 
-  // The scenes (levels) in our game
-  scene: [GameScene]
+  // All the scenes in our game — Boot starts first!
+  // Boot → PreloadScene → TitleScene → LevelIntro → Level → GameOver/Win
+  scene: [BootScene, PreloadScene, TitleScene, LevelIntroScene, LevelScene, GameOverScene, WinScene]
 };
 
-// Create the game! 🎮
+// Create the game!
 const game = new Phaser.Game(config);

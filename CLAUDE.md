@@ -1,7 +1,7 @@
 # Blanco y Negro
 
 ## Project Description
-Father-and-son 2D platformer game built with Phaser 3 and Vite. Vibe coded entirely with Claude Code.
+Father-and-son 2D platformer game built with Phaser 3 and Vite. A colorful hero fights black-and-white villains to restore color to the world. Vibe coded entirely with Claude Code.
 
 ## Tech Stack
 - **Game engine:** Phaser 3 (Arcade Physics)
@@ -18,24 +18,68 @@ Then open the URL shown in the terminal (usually http://localhost:5173).
 ## Project Structure
 ```
 blanco-y-negro/
-├── public/           # Static files (images, sounds go here later)
+├── public/                    # Static files
 ├── src/
-│   ├── assets/       # Game assets imported by code
-│   ├── scenes/       # Game scenes (levels/screens)
-│   │   └── GameScene.js
-│   └── main.js       # Game config and entry point
-├── index.html        # HTML wrapper
+│   ├── main.js                # Game config and entry point
+│   ├── data/
+│   │   └── levels.js          # Level configurations (4 levels)
+│   ├── scenes/
+│   │   ├── BootScene.js       # Initial boot
+│   │   ├── PreloadScene.js    # Asset loading with progress bar
+│   │   ├── TitleScene.js      # Title screen
+│   │   ├── LevelIntroScene.js # Level splash ("Nivel X")
+│   │   ├── LevelScene.js      # Main gameplay
+│   │   ├── GameOverScene.js   # Game over screen
+│   │   └── WinScene.js        # Victory celebration
+│   ├── sprites/
+│   │   ├── Hero.js            # Player character
+│   │   ├── Enemy.js           # Base enemy class
+│   │   ├── EnemyMR1.js        # Walker enemy
+│   │   ├── EnemyMR2.js        # Shooter enemy
+│   │   └── Projectile.js      # Bullets (hero & enemy)
+│   ├── managers/
+│   │   ├── LevelManager.js    # Builds levels from data
+│   │   ├── PowerupManager.js  # Power-up effects
+│   │   └── HUDManager.js      # Score, lives, UI
+│   └── utils/
+│       └── constants.js       # Game constants
+├── arte/                      # Reference art from Emi
+├── index.html
 ├── package.json
 └── vite.config.js
 ```
 
 ## Current Status
-Just scaffolded — ready for Session 1.
+Complete game with 4 levels, title screen, and victory screen.
+
+## Controls
+- **Arrow keys / WASD** — Move
+- **Up / W / Space** — Jump (press twice for double jump!)
+- **Shift** — Run
+- **Z / X** — Fire Color Gun (after picking up Color Pencil)
+- **Enter** — Start game / Retry
+
+## Game Features
+- 4 levels with increasing difficulty
+- 2 enemy types: MR.1 (walker) and MR.2 (shooter) + boss
+- Power-ups: Color Pencil (gun), Shield, Extra Life
+- Double jump mechanic
+- Grayscale tint system (world gets darker each level)
+- Rainbow particle effects on enemy defeat
+- Parallax scrolling backgrounds with building silhouettes
+- Data-driven level system (add levels by editing levels.js)
+- Full game flow: Title → Levels → Win/Game Over
 
 ## Session Log
 | Session | Date | What We Built |
 |---------|------|---------------|
 | 0 | 2026-03-21 | Project scaffolding — Vite + Phaser 3 setup |
+| 1 | 2026-04-05 | Hero movement, platforms, scrolling level |
+| 2 | 2026-04-05 | MR.1 enemies, stomping, lives, HUD |
+| 3 | 2026-04-05 | Data-driven levels, 2 levels, transitions |
+| 4 | 2026-04-05 | Power-ups, Color Gun, Shield |
+| 5 | 2026-04-05 | MR.2 shooters, levels 3-4, boss, double jump |
+| 6-7 | 2026-04-05 | Tint system, Title/Win screens, full game flow |
 
 ## Code Style Notes
 - Keep code simple and well-commented. A 9-year-old is learning from this.
