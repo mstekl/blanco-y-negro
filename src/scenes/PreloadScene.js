@@ -44,6 +44,8 @@ class PreloadScene extends Phaser.Scene {
       () => this.generateGroundTexture(),
       () => this.generatePlatformTexture(),
       () => this.generateGoalTexture(),
+      () => this.generateCastleTexture(),
+      () => this.generatePipeTexture(),
       () => this.generateProjectileTextures(),
       () => this.generatePowerupTextures(),
       () => this.generateEnemyProjectileTexture(),
@@ -153,6 +155,79 @@ class PreloadScene extends Phaser.Scene {
     gfx.fillStyle(0xffff00);
     gfx.fillCircle(4, 3, 4);
     gfx.generateTexture('goal-flag', 40, 64);
+    gfx.destroy();
+  }
+
+  // A colorful castle for the last level's goal (128x128)
+  generateCastleTexture() {
+    if (this.textures.exists('goal-castle')) return;
+    const gfx = this.add.graphics();
+
+    // Main wall
+    gfx.fillStyle(0xb0b0c0);
+    gfx.fillRect(32, 56, 64, 72);
+    // Two side towers
+    gfx.fillRect(8, 40, 32, 88);
+    gfx.fillRect(88, 40, 32, 88);
+    // Tower tops (crenellations — the little "teeth" of a castle)
+    gfx.fillStyle(0x8888a0);
+    for (let i = 0; i < 3; i++) {
+      gfx.fillRect(8 + i * 12, 30, 8, 10);
+      gfx.fillRect(88 + i * 12, 30, 8, 10);
+    }
+    for (let i = 0; i < 4; i++) {
+      gfx.fillRect(34 + i * 16, 46, 10, 10);
+    }
+    // Colorful roof flags — the colors are coming back!
+    gfx.fillStyle(0xcccccc);
+    gfx.fillRect(23, 6, 3, 24);
+    gfx.fillRect(103, 6, 3, 24);
+    gfx.fillStyle(0xff4444);
+    gfx.fillTriangle(26, 6, 26, 18, 42, 12);
+    gfx.fillStyle(0x44aaff);
+    gfx.fillTriangle(106, 6, 106, 18, 122, 12);
+    // Big door
+    gfx.fillStyle(0xffcc00);
+    gfx.fillRect(52, 88, 24, 40);
+    gfx.fillCircle(64, 88, 12);
+    gfx.fillStyle(0x8b4513);
+    gfx.fillRect(54, 90, 20, 38);
+    gfx.fillCircle(64, 90, 10);
+    // Windows
+    gfx.fillStyle(0x44cc66);
+    gfx.fillRect(16, 60, 10, 16);
+    gfx.fillRect(102, 60, 10, 16);
+    gfx.fillStyle(0xff66cc);
+    gfx.fillRect(58, 66, 12, 12);
+
+    gfx.generateTexture('goal-castle', 128, 128);
+    gfx.destroy();
+  }
+
+  // A green pipe (like a warp pipe!) for the goal of level 5 (64x96)
+  generatePipeTexture() {
+    if (this.textures.exists('goal-pipe')) return;
+    const gfx = this.add.graphics();
+
+    // Pipe body
+    gfx.fillStyle(0x22aa44);
+    gfx.fillRect(6, 28, 52, 68);
+    // Pipe rim at the top (wider than the body)
+    gfx.fillStyle(0x33cc55);
+    gfx.fillRect(0, 0, 64, 28);
+    // Dark opening at the top
+    gfx.fillStyle(0x0a4418);
+    gfx.fillRect(6, 0, 52, 6);
+    // Light shine on the left side
+    gfx.fillStyle(0x88ee99);
+    gfx.fillRect(8, 8, 6, 16);
+    gfx.fillRect(12, 34, 6, 58);
+    // Dark shade on the right side
+    gfx.fillStyle(0x187a30);
+    gfx.fillRect(48, 8, 10, 16);
+    gfx.fillRect(46, 34, 10, 58);
+
+    gfx.generateTexture('goal-pipe', 64, 96);
     gfx.destroy();
   }
 

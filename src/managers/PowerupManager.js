@@ -15,11 +15,67 @@ class PowerupManager {
 
     // Static group holds all power-up sprites
     this.powerups = scene.physics.add.staticGroup();
+
+    // Floating platforms that give an extra life when you stand on them
+    this.hiddenLifePlatforms = scene.physics.add.staticGroup();
+  }
+
+  // Extra lives are NOT floating items. They are pink floating platforms:
+  // jump up through them, land on top, and you get the life!
+  // x = center of the platform, y = top surface of the platform
+  spawnHiddenLifePlatform(config) {
+    const platform = this.hiddenLifePlatforms.create(
+      config.x, config.y + 12, 'platform-tile'
+    );
+    platform.setDisplaySize(128, 24);
+    platform.refreshBody();
+    platform.setTint(0xff6688); // Pink, so it stands out from normal platforms
+    platform.used = false;
+
+    // One-way platform: only solid from above, so the hero can jump up
+    // through it from below (and walk past it from the sides)
+    platform.body.checkCollision.down = false;
+    platform.body.checkCollision.left = false;
+    platform.body.checkCollision.right = false;
+  }
+
+  // Called when the hero lands on a hidden platform
+  heroLandsOnHiddenPlatform(hero, platform) {
+    if (platform.used) return;
+    // Only count it when the hero is really standing on top
+    if (!hero.body.touching.down) return;
+    platform.used = true;
+
+    // Give the extra life (up to maximum)
+    if (hero.lives < HERO.MAX_LIVES) {
+      hero.lives += 1;
+      this.scene.saveState();
+      this.scene.hud.updateLives(hero.lives);
+    }
+    this.showCollectText(platform.x, platform.y - 20, '¡Vida Extra!', '#ff3366');
+    hero.addScore(50);
+    this.scene.saveState();
+    this.scene.hud.updateScore(hero.score);
+    this.spawnCollectParticles(platform.x, platform.y - 10);
+
+    // Back to a normal color — the life has been taken
+    platform.clearTint();
+  }
+
+  // Get the hidden platforms group (for setting up the collider)
+  getHiddenPlatforms() {
+    return this.hiddenLifePlatforms;
   }
 
   // Spawn all power-ups defined in the level data
   spawnPowerups(powerupList) {
     for (const config of powerupList) {
+      // Extra lives are hidden platforms, not regular power-ups
+      if (config.type === 'extra-life') {
+        this.spawnHiddenLifePlatform(config);
+        continue;
+      }
+
       const textureKey = `powerup-${config.type}`;
 
       // Make sure we have a texture for this power-up type

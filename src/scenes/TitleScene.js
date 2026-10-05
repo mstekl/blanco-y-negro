@@ -3,6 +3,7 @@
 // a colorful animation, and waits for the player to press ENTER.
 
 import Phaser from 'phaser';
+import { levels } from '../data/levels.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -105,7 +106,10 @@ class TitleScene extends Phaser.Scene {
 
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('LevelIntroScene', { levelIndex: 0 });
+        // Testing shortcut: add ?nivel=4 to the URL to start at that level
+        const wanted = parseInt(new URLSearchParams(window.location.search).get('nivel'), 10);
+        const startLevel = wanted >= 1 && wanted <= levels.length ? wanted - 1 : 0;
+        this.scene.start('LevelIntroScene', { levelIndex: startLevel });
       });
     });
   }
