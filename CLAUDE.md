@@ -22,7 +22,8 @@ blanco-y-negro/
 ├── src/
 │   ├── main.js                # Game config and entry point
 │   ├── data/
-│   │   └── levels.js          # Level configurations (6 levels)
+│   │   ├── levels.js          # Level configurations (6 levels)
+│   │   └── worldMap.json      # Country shapes for the map (made by tools/build-world-map.mjs)
 │   ├── scenes/
 │   │   ├── BootScene.js       # Initial boot
 │   │   ├── PreloadScene.js    # Asset loading with progress bar
@@ -31,6 +32,7 @@ blanco-y-negro/
 │   │   ├── LevelScene.js      # Main gameplay
 │   │   ├── GameOverScene.js   # Game over screen
 │   │   ├── CelebrationScene.js # City gets its color back (after level 6)
+│   │   ├── WorldMapScene.js   # World map: pick a country to color (after the celebration)
 │   │   └── WinScene.js        # Victory celebration
 │   ├── sprites/
 │   │   ├── Hero.js            # Player character
@@ -46,6 +48,8 @@ blanco-y-negro/
 │   └── utils/
 │       └── constants.js       # Game constants
 ├── arte/                      # Reference art from Emi
+├── tools/
+│   └── build-world-map.mjs    # Builds src/data/worldMap.json (run: node tools/build-world-map.mjs)
 ├── index.html
 ├── package.json
 └── vite.config.js
@@ -70,7 +74,8 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - Rainbow particle effects on enemy defeat
 - Parallax scrolling backgrounds with building silhouettes
 - Data-driven level system (add levels by editing levels.js)
-- Full game flow: Title → Levels → Win/Game Over
+- World map after level 6: pick a country to color; continents unlock in order (Norteamérica → Centroamérica → Sudamérica → África → Europa → Asia → Oceanía). Colored countries are saved in the browser (localStorage). Test shortcut: add ?mapa to the URL (?mapa=reset erases the saved countries)
+- Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log
 | Session | Date | What We Built |

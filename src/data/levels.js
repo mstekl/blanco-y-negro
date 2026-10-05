@@ -43,9 +43,13 @@ export const levels = [
 
     // Enemies — MR.1 stick figures patrolling the ground
     enemies: [
-      { type: 'mr1', x: 400, y: 520, speed: 80, patrolMin: 200, patrolMax: 700, direction: 'left' },
-      { type: 'mr1', x: 1000, y: 520, speed: 90, patrolMin: 800, patrolMax: 1300, direction: 'left' },
-      { type: 'mr1', x: 1900, y: 520, speed: 85, patrolMin: 1600, patrolMax: 2200, direction: 'right' },
+      { type: 'mr1', x: 400, y: 520, speed: 110, patrolMin: 200, patrolMax: 700, direction: 'left' },
+      { type: 'mr1', x: 1000, y: 520, speed: 120, patrolMin: 800, patrolMax: 1300, direction: 'left' },
+      { type: 'mr1', x: 1900, y: 520, speed: 115, patrolMin: 1600, patrolMax: 2200, direction: 'right' },
+      // Extra walkers to make it harder
+      { type: 'mr1', x: 700, y: 520, speed: 100, patrolMin: 600, patrolMax: 1000, direction: 'right' },
+      { type: 'mr1', x: 1450, y: 520, speed: 125, patrolMin: 1300, patrolMax: 1750, direction: 'left' },
+      { type: 'mr1', x: 2250, y: 520, speed: 110, patrolMin: 2100, patrolMax: 2330, direction: 'left' },
     ],
 
     // Power-ups — collect them for special abilities!
@@ -106,11 +110,15 @@ export const levels = [
     ],
 
     enemies: [
-      { type: 'mr1', x: 300, y: 520, speed: 90, patrolMin: 100, patrolMax: 550, direction: 'left' },
-      { type: 'mr1', x: 950, y: 520, speed: 100, patrolMin: 800, patrolMax: 1200, direction: 'left' },
-      { type: 'mr1', x: 1050, y: 272, speed: 70, patrolMin: 1000, patrolMax: 1180, direction: 'right' },
-      { type: 'mr1', x: 1800, y: 520, speed: 95, patrolMin: 1600, patrolMax: 2050, direction: 'right' },
-      { type: 'mr1', x: 2600, y: 520, speed: 110, patrolMin: 2400, patrolMax: 2900, direction: 'left' },
+      { type: 'mr1', x: 300, y: 520, speed: 120, patrolMin: 100, patrolMax: 550, direction: 'left' },
+      { type: 'mr1', x: 950, y: 520, speed: 130, patrolMin: 800, patrolMax: 1200, direction: 'left' },
+      { type: 'mr1', x: 1050, y: 272, speed: 90, patrolMin: 1000, patrolMax: 1180, direction: 'right' },
+      { type: 'mr1', x: 1800, y: 520, speed: 125, patrolMin: 1600, patrolMax: 2050, direction: 'right' },
+      { type: 'mr1', x: 2600, y: 520, speed: 140, patrolMin: 2400, patrolMax: 2900, direction: 'left' },
+      // Extra walkers, and the first shooter shows up early!
+      { type: 'mr1', x: 1250, y: 520, speed: 120, patrolMin: 800, patrolMax: 1350, direction: 'right' },
+      { type: 'mr1', x: 2000, y: 520, speed: 130, patrolMin: 1700, patrolMax: 2200, direction: 'left' },
+      { type: 'mr2', x: 2850, y: 520, speed: 60, patrolMin: 2500, patrolMax: 3150, direction: 'left', fireRate: 2200 },
     ],
 
     // Power-ups — the Color Gun appears here!
@@ -177,13 +185,17 @@ export const levels = [
 
     enemies: [
       // MR.1 walkers
-      { type: 'mr1', x: 300, y: 520, speed: 100, patrolMin: 100, patrolMax: 550, direction: 'left' },
-      { type: 'mr1', x: 1000, y: 520, speed: 100, patrolMin: 800, patrolMax: 1300, direction: 'right' },
-      { type: 'mr1', x: 1700, y: 520, speed: 110, patrolMin: 1600, patrolMax: 1950, direction: 'left' },
-      { type: 'mr1', x: 2500, y: 520, speed: 105, patrolMin: 2300, patrolMax: 2700, direction: 'right' },
-      // MR.2 shooters! (new in this level)
-      { type: 'mr2', x: 1300, y: 250, speed: 50, patrolMin: 1300, patrolMax: 1480, direction: 'left' },
-      { type: 'mr2', x: 3400, y: 520, speed: 60, patrolMin: 3100, patrolMax: 3700, direction: 'left' },
+      { type: 'mr1', x: 300, y: 520, speed: 130, patrolMin: 100, patrolMax: 550, direction: 'left' },
+      { type: 'mr1', x: 1000, y: 520, speed: 130, patrolMin: 800, patrolMax: 1300, direction: 'right' },
+      { type: 'mr1', x: 1700, y: 520, speed: 140, patrolMin: 1600, patrolMax: 1950, direction: 'left' },
+      { type: 'mr1', x: 2500, y: 520, speed: 135, patrolMin: 2300, patrolMax: 2700, direction: 'right' },
+      { type: 'mr1', x: 3300, y: 520, speed: 140, patrolMin: 3100, patrolMax: 3500, direction: 'right' },
+      // MR.2 shooters! (new in this level) — more of them, and they shoot faster
+      { type: 'mr2', x: 1300, y: 250, speed: 60, patrolMin: 1300, patrolMax: 1480, direction: 'left', fireRate: 1600 },
+      { type: 'mr2', x: 3400, y: 520, speed: 70, patrolMin: 3100, patrolMax: 3700, direction: 'left', fireRate: 1600 },
+      { type: 'mr2', x: 900, y: 520, speed: 60, patrolMin: 800, patrolMax: 1400, direction: 'right', fireRate: 1800 },
+      { type: 'mr2', x: 2600, y: 520, speed: 60, patrolMin: 2300, patrolMax: 2850, direction: 'left', fireRate: 1800 },
+      { type: 'mr2', x: 3800, y: 520, speed: 60, patrolMin: 3700, patrolMax: 3980, direction: 'left', fireRate: 1600 },
     ],
 
     powerups: [
@@ -255,13 +267,18 @@ export const levels = [
 
     enemies: [
       // MR.2 shooters guarding the path
-      { type: 'mr2', x: 900, y: 520, speed: 55, patrolMin: 768, patrolMax: 1100, direction: 'left' },
-      { type: 'mr2', x: 1600, y: 520, speed: 60, patrolMin: 1472, patrolMax: 1800, direction: 'right' },
-      { type: 'mr1', x: 1150, y: 250, speed: 60, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
-      { type: 'mr2', x: 2300, y: 520, speed: 65, patrolMin: 2112, patrolMax: 2500, direction: 'left' },
-      // THE BOSS! Big MR.2 at the end of the level
-      { type: 'mr2', x: 2950, y: 490, speed: 20, patrolMin: 2800, patrolMax: 3050,
-        direction: 'left', isBoss: true, health: 5, fireRate: 1500, scale: 1.8 },
+      { type: 'mr2', x: 900, y: 520, speed: 70, patrolMin: 768, patrolMax: 1100, direction: 'left', fireRate: 1500 },
+      { type: 'mr2', x: 1600, y: 520, speed: 75, patrolMin: 1472, patrolMax: 1800, direction: 'right', fireRate: 1500 },
+      { type: 'mr1', x: 1150, y: 250, speed: 90, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
+      { type: 'mr2', x: 2300, y: 520, speed: 80, patrolMin: 2112, patrolMax: 2500, direction: 'left', fireRate: 1500 },
+      // Extra enemies on the ground between the gaps
+      { type: 'mr1', x: 300, y: 520, speed: 130, patrolMin: 100, patrolMax: 550, direction: 'right' },
+      { type: 'mr1', x: 1000, y: 520, speed: 140, patrolMin: 768, patrolMax: 1250, direction: 'left' },
+      { type: 'mr2', x: 500, y: 520, speed: 70, patrolMin: 200, patrolMax: 570, direction: 'right', fireRate: 1800 },
+      { type: 'mr1', x: 2200, y: 520, speed: 140, patrolMin: 2112, patrolMax: 2600, direction: 'right' },
+      // THE BOSS! Big MR.2 at the end of the level — tougher and shoots faster
+      { type: 'mr2', x: 2950, y: 490, speed: 35, patrolMin: 2800, patrolMax: 3050,
+        direction: 'left', isBoss: true, health: 7, fireRate: 1100, scale: 1.8 },
     ],
 
     powerups: [
@@ -300,6 +317,7 @@ export const levels = [
     worldHeight: 600,
     backgroundColor: '#333333',
     saturation: 0,
+    backgroundStyle: 'bricks', // inside a castle: brick wall instead of a city sky
 
     heroStart: { x: 50, y: 450 },
     // A pipe instead of a flag! (pipe is 96px tall, so y=520 puts its bottom on the ground)
@@ -400,13 +418,18 @@ export const levels = [
     ],
 
     enemies: [
-      { type: 'mr1', x: 350, y: 520, speed: 70, patrolMin: 150, patrolMax: 580, direction: 'right' },
-      { type: 'mr2', x: 900, y: 520, speed: 60, patrolMin: 780, patrolMax: 1450, direction: 'left' },
-      { type: 'mr1', x: 1150, y: 260, speed: 60, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
-      { type: 'mr2', x: 1800, y: 520, speed: 65, patrolMin: 1660, patrolMax: 2280, direction: 'right' },
+      { type: 'mr1', x: 350, y: 520, speed: 120, patrolMin: 150, patrolMax: 580, direction: 'right' },
+      { type: 'mr2', x: 900, y: 520, speed: 75, patrolMin: 780, patrolMax: 1450, direction: 'left', fireRate: 1400 },
+      { type: 'mr1', x: 1150, y: 260, speed: 90, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
+      { type: 'mr2', x: 1800, y: 520, speed: 80, patrolMin: 1660, patrolMax: 2280, direction: 'right', fireRate: 1400 },
+      // Extra enemies
+      { type: 'mr1', x: 1000, y: 520, speed: 140, patrolMin: 780, patrolMax: 1450, direction: 'right' },
+      { type: 'mr1', x: 2000, y: 520, speed: 140, patrolMin: 1660, patrolMax: 2280, direction: 'left' },
+      { type: 'mr2', x: 400, y: 520, speed: 70, patrolMin: 200, patrolMax: 580, direction: 'left', fireRate: 1600 },
+      { type: 'mr2', x: 1300, y: 520, speed: 75, patrolMin: 1100, patrolMax: 1470, direction: 'right', fireRate: 1500 },
       // THE FINAL BOSS! The biggest and toughest of the whole game
-      { type: 'mr2', x: 2950, y: 490, speed: 25, patrolMin: 2700, patrolMax: 3150,
-        direction: 'left', isBoss: true, health: 8, fireRate: 1200, scale: 2.0 },
+      { type: 'mr2', x: 2950, y: 490, speed: 45, patrolMin: 2700, patrolMax: 3150,
+        direction: 'left', isBoss: true, health: 12, fireRate: 800, scale: 2.0 },
     ],
 
     powerups: [

@@ -133,10 +133,12 @@ class LevelScene extends Phaser.Scene {
     if (this.levelData.stormCloud) {
       const cfg = this.levelData.stormCloud;
       this.stormCloud = new StormCloud(this, cfg.x, cfg.y, this.hero, cfg);
-      // A pencil hits the hero — works like an enemy bullet
+      // A pencil hits the hero — works like an enemy bullet.
+      // Careful: when a single sprite (the hero) meets a group, Phaser gives
+      // us the SPRITE first and the group member second — so (hero, pencil)!
       this.physics.add.overlap(
-        this.stormCloud.pencils, this.hero,
-        (pencil, hero) => this.pencilHitsHero(pencil, hero), null, this
+        this.hero, this.stormCloud.pencils,
+        (hero, pencil) => this.pencilHitsHero(pencil, hero), null, this
       );
     }
 
@@ -201,16 +203,15 @@ class LevelScene extends Phaser.Scene {
     if (!pencil.active || this.levelComplete) return;
     pencil.destroy();
 
-    // Same rules as enemy bullets: the shield absorbs it, otherwise restart the level
-    const livesBefore = hero.lives;
+    // The shield absorbs it; otherwise we lose a life but KEEP playing.
+    // We don't restart the level here: the cloud keeps chasing us, so going
+    // back to the start every time would be too harsh.
     hero.takeDamage();
     this.saveState();
     this.hud.updateLives(hero.lives);
 
     if (hero.lives <= 0) {
       this.gameOver();
-    } else if (hero.lives < livesBefore) {
-      this.restartLevel();
     }
   }
 
@@ -294,6 +295,9 @@ class LevelScene extends Phaser.Scene {
     this.saveState();
     this.hud.updateScore(this.hero.score);
 
+    // The black-and-white villains that are still around get their colors back
+    this.colorizeEnemies();
+
     // A castle goal gets a special animation: the hero walks inside!
     if (this.levelData.goal.type === 'castle') {
       this.enterCastle();
@@ -335,6 +339,32 @@ class LevelScene extends Phaser.Scene {
           this.scene.start('CelebrationScene');
         });
       }
+    });
+  }
+
+  // Every enemy still standing turns a bright color (blue, orange, red,
+  // violet, yellow...) with a little hop and a burst of color.
+  colorizeEnemies() {
+    const colors = [0x0088ff, 0xff8800, 0xff0000, 0x8800ff, 0xffdd00, 0x00cc44, 0xff44aa];
+
+    this.enemies.getChildren().forEach((enemy, i) => {
+      if (!enemy.active || enemy.isDefeated) return;
+
+      // Freeze the enemy so it doesn't keep walking (or shooting) while it celebrates
+      enemy.isDefeated = true;
+      enemy.setVelocity(0, 0);
+
+      // Each enemy changes a little after the previous one, so it feels like a wave.
+      // The color is a solid "fill" because the enemies are almost black: a normal
+      // tint would multiply with black and stay dark.
+      this.time.delayedCall(300 + i * 150, () => {
+        if (!enemy.active) return;
+        enemy.setTintFill(colors[i % colors.length]);
+        enemy.spawnColorParticles();
+        // A happy little hop
+        enemy.body.setAllowGravity(true);
+        enemy.setVelocityY(-180);
+      });
     });
   }
 
@@ -410,7 +440,7 @@ class LevelScene extends Phaser.Scene {
     // Turn off physics so the tweens below have full control of the hero
     hero.body.enable = false;
     hero.setDepth(2); // draw the hero in front of the castle
-    if (hero.shieldIndicator) hero.shieldIndicator.setVisible(false);
+    hero.hideShields();
 
     // Door position (the door is drawn in the bottom-middle of the castle texture)
     const doorX = goal.x;
@@ -472,7 +502,7 @@ class LevelScene extends Phaser.Scene {
 
     // Turn off physics so the tweens below have full control of the hero
     hero.body.enable = false;
-    if (hero.shieldIndicator) hero.shieldIndicator.setVisible(false);
+    hero.hideShields();
 
     // The pipe is 96px tall and its bottom sits on the ground, so its top is here
     const pipeTop = goal.y - 48;

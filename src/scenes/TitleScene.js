@@ -11,6 +11,12 @@ class TitleScene extends Phaser.Scene {
   }
 
   create() {
+    // Testing shortcut: add ?mapa to the URL to jump straight to the world map
+    if (new URLSearchParams(window.location.search).has('mapa')) {
+      this.scene.start('WorldMapScene');
+      return;
+    }
+
     this.cameras.main.setBackgroundColor('#1a1a1a');
     this.cameras.main.fadeIn(600);
 

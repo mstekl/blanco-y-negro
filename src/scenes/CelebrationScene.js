@@ -54,7 +54,7 @@ class CelebrationScene extends Phaser.Scene {
     this.leaving = true;
     this.cameras.main.fadeOut(800, 255, 255, 255);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start('WinScene');
+      this.scene.start('WorldMapScene');
     });
   }
 

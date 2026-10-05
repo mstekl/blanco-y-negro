@@ -10,6 +10,7 @@ import LevelIntroScene from './scenes/LevelIntroScene.js';
 import LevelScene from './scenes/LevelScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 import CelebrationScene from './scenes/CelebrationScene.js';
+import WorldMapScene from './scenes/WorldMapScene.js';
 import WinScene from './scenes/WinScene.js';
 
 // Game configuration — think of this as the "settings" for our game
@@ -39,8 +40,8 @@ const config = {
   },
 
   // All the scenes in our game — Boot starts first!
-  // Boot → PreloadScene → TitleScene → LevelIntro → Level → GameOver/Celebration → Win
-  scene: [BootScene, PreloadScene, TitleScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WinScene]
+  // Boot → PreloadScene → TitleScene → LevelIntro → Level → GameOver/Celebration → WorldMap → Win
+  scene: [BootScene, PreloadScene, TitleScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene]
 };
 
 // Create the game!

@@ -28,8 +28,9 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.facingRight = true;   // Which direction are we looking?
     this.isInvincible = false; // Can't be hurt when true
     this.hasColorGun = false;  // Can we shoot? (unlocked later with power-up)
-    this.hasShield = false;    // Do we have a shield?
-    this.shieldIndicator = null; // The pencil-case shield image (when active)
+    this.shieldCount = 0;      // How many shields we have (0, 1 or 2)
+    this.maxShields = 2;       // Picking up a shield while holding one gives us 2!
+    this.shieldImages = [];    // The pencil-case shield images (one per shield)
     this.lastShotTime = 0;     // Track cooldown between shots
     this.jumpCount = 0;        // How many jumps since leaving the ground (0, 1, or 2)
     this.maxJumps = 2;         // Allow double jump (press jump twice!)
@@ -108,16 +109,41 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.updateShield();
   }
 
-  // Keep the shield in front of the hero, covering half of the body
-  updateShield() {
-    const shield = this.shieldIndicator;
-    if (!shield || !shield.visible) return;
+  // True when we have at least one shield
+  get hasShield() {
+    return this.shieldCount > 0;
+  }
 
+  // Pick up a shield (we can hold up to maxShields at the same time)
+  addShield() {
+    if (this.shieldCount >= this.maxShields) return;
+    this.shieldCount += 1;
+
+    // Make the picture for this shield the first time we need it
+    const index = this.shieldCount - 1;
+    if (!this.shieldImages[index]) {
+      this.shieldImages[index] = this.scene.add.image(this.x, this.y, 'pencil-shield');
+    }
+    this.shieldImages[index].setVisible(true);
+    this.updateShield();
+  }
+
+  // Hide all shield pictures (used when the hero walks into a door or pipe)
+  hideShields() {
+    this.shieldImages.forEach((img) => img.setVisible(false));
+  }
+
+  // Keep the shields in front of the hero, covering half of the body
+  updateShield() {
     // In front = the side the hero is looking at
     const side = this.facingRight ? 1 : -1;
-    shield.setPosition(this.x + side * 11, this.y + 4);
-    shield.setFlipX(!this.facingRight);
-    shield.setDepth(this.depth + 1);
+    this.shieldImages.forEach((shield, i) => {
+      if (!shield.visible) return;
+      // The second shield sits a bit further in front, so both can be seen
+      shield.setPosition(this.x + side * (11 + i * 8), this.y + 4);
+      shield.setFlipX(!this.facingRight);
+      shield.setDepth(this.depth + 1 + i);
+    });
   }
 
   // Fire a rainbow projectile from the Color Gun!
@@ -150,12 +176,14 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
 
     // If we have a shield, use it instead of losing a life
     if (this.hasShield) {
-      this.hasShield = false;
+      // Only the last shield we picked up breaks; the other one stays
+      this.shieldCount -= 1;
+      const shieldImage = this.shieldImages[this.shieldCount];
       // The shield breaks: a copy flies away spinning while the real one hides
-      if (this.shieldIndicator) {
+      if (shieldImage) {
         const broken = this.scene.add.image(
-          this.shieldIndicator.x, this.shieldIndicator.y, 'pencil-shield'
-        ).setFlipX(this.shieldIndicator.flipX).setDepth(this.depth + 2);
+          shieldImage.x, shieldImage.y, 'pencil-shield'
+        ).setFlipX(shieldImage.flipX).setDepth(this.depth + 3);
         this.scene.tweens.add({
           targets: broken,
           x: broken.x + (this.facingRight ? 50 : -50),
@@ -166,7 +194,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
           ease: 'Quad.easeOut',
           onComplete: () => broken.destroy(),
         });
-        this.shieldIndicator.setVisible(false);
+        shieldImage.setVisible(false);
       }
       // Brief invincibility so the same enemy doesn't hit us again immediately
       this.isInvincible = true;
