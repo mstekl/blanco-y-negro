@@ -138,15 +138,13 @@ class PowerupManager {
         // Shield — absorbs one hit
         hero.hasShield = true;
         this.showCollectText(powerup.x, powerup.y, '¡Escudo!', '#ffdd00');
-        // Yellow glowing border around the hero
+        // The hero holds a pencil-case shield in front of the body
+        // (Hero.update keeps it in the right place and facing the right way)
         if (!hero.shieldIndicator) {
-          hero.shieldIndicator = scene.add.graphics();
-          hero.shieldIndicator.setDepth(hero.depth + 1);
+          hero.shieldIndicator = scene.add.image(hero.x, hero.y, 'pencil-shield');
         }
-        hero.shieldIndicator.clear();
-        hero.shieldIndicator.lineStyle(3, 0xffdd00, 0.9);
-        hero.shieldIndicator.strokeRect(-18, -26, 36, 52);
         hero.shieldIndicator.setVisible(true);
+        hero.updateShield();
         break;
     }
 

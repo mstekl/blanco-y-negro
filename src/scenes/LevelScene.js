@@ -10,6 +10,7 @@ import Projectile from '../sprites/Projectile.js';
 import HUDManager from '../managers/HUDManager.js';
 import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
+import StormCloud from '../sprites/StormCloud.js';
 import { levels } from '../data/levels.js';
 import { WORLD, HERO } from '../utils/constants.js';
 
@@ -42,9 +43,10 @@ class LevelScene extends Phaser.Scene {
     this.registry.set('currentLevel', this.levelIndex);
 
     // --- Build the level from data ---
-    const { platforms, enemies, goalFlag } = LevelManager.buildLevel(
+    const { bg, platforms, enemies, goalFlag } = LevelManager.buildLevel(
       this, this.levelData
     );
+    this.grayBackground = bg;
     this.platforms = platforms;
     this.enemies = enemies;
     this.goalFlag = goalFlag;
@@ -126,6 +128,18 @@ class LevelScene extends Phaser.Scene {
       this.enemyProjectiles, this.hero, this.enemyProjectileHitsHero, null, this
     );
 
+    // --- Storm cloud (only in levels that have one) ---
+    // It chases the hero and throws black and white pencils
+    if (this.levelData.stormCloud) {
+      const cfg = this.levelData.stormCloud;
+      this.stormCloud = new StormCloud(this, cfg.x, cfg.y, this.hero, cfg);
+      // A pencil hits the hero — works like an enemy bullet
+      this.physics.add.overlap(
+        this.stormCloud.pencils, this.hero,
+        (pencil, hero) => this.pencilHitsHero(pencil, hero), null, this
+      );
+    }
+
     // --- Camera ---
     this.cameras.main.startFollow(this.hero, true, 0.1, 0.1);
     this.cameras.main.setBounds(0, 0, this.levelData.worldWidth, WORLD.HEIGHT);
@@ -178,6 +192,24 @@ class LevelScene extends Phaser.Scene {
       this.gameOver();
     } else if (hero.lives < livesBefore) {
       // A life was lost (the shield did NOT absorb it) — start the level again
+      this.restartLevel();
+    }
+  }
+
+  // A pencil from the storm cloud hits the hero
+  pencilHitsHero(pencil, hero) {
+    if (!pencil.active || this.levelComplete) return;
+    pencil.destroy();
+
+    // Same rules as enemy bullets: the shield absorbs it, otherwise restart the level
+    const livesBefore = hero.lives;
+    hero.takeDamage();
+    this.saveState();
+    this.hud.updateLives(hero.lives);
+
+    if (hero.lives <= 0) {
+      this.gameOver();
+    } else if (hero.lives < livesBefore) {
       this.restartLevel();
     }
   }
@@ -284,11 +316,11 @@ class LevelScene extends Phaser.Scene {
 
     this.showFloatingText(this.hero.x, this.hero.y - 30, '+500');
 
-    // Flash the camera white (color restored!)
-    this.cameras.main.flash(500, 255, 255, 255);
+    // The camera flies back over the level while the color returns to the world
+    this.playColorReturn();
 
     // Go to next level or win!
-    this.time.delayedCall(2000, () => {
+    this.time.delayedCall(4200, () => {
       const nextLevel = this.levelIndex + 1;
       if (nextLevel < levels.length) {
         // Next level!
@@ -303,6 +335,69 @@ class LevelScene extends Phaser.Scene {
           this.scene.start('CelebrationScene');
         });
       }
+    });
+  }
+
+  // Level complete! The camera slides BACK over the whole level (so you see
+  // what you just crossed) while the color spreads through the world.
+  playColorReturn() {
+    const cam = this.cameras.main;
+    const duration = 3600;
+
+    // Stop following the hero so the camera can travel on its own
+    cam.stopFollow();
+    this.tweens.add({
+      targets: cam,
+      scrollX: 0,
+      duration,
+      delay: 400,
+      ease: 'Sine.easeInOut',
+    });
+
+    // 1) The gray background fades away, showing the colorful one behind it
+    this.tweens.add({
+      targets: this.grayBackground,
+      alpha: 0,
+      duration: duration - 600,
+      delay: 600,
+    });
+
+    // 2) The platforms change from gray to their real colors
+    const gray = Math.floor(128 + (127 * (this.levelData.saturation || 0)));
+    const from = new Phaser.Display.Color(gray, gray, gray);
+    const white = new Phaser.Display.Color(255, 255, 255);
+    this.tweens.addCounter({
+      from: 0,
+      to: 100,
+      duration: duration - 600,
+      delay: 600,
+      onUpdate: (tween) => {
+        const c = Phaser.Display.Color.Interpolate.ColorWithColor(from, white, 100, tween.getValue());
+        const tint = Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+        this.platforms.getChildren().forEach(p => p.setTint(tint));
+      },
+    });
+
+    // 3) A wave of rainbow color sweeps across the screen
+    const rainbow = [0xff0000, 0xff8800, 0xffff00, 0x00cc00, 0x0088ff, 0x8800ff];
+    const bandWidth = 800 / rainbow.length;
+    rainbow.forEach((color, i) => {
+      const band = this.add.rectangle(-bandWidth, 300, bandWidth + 10, 600, color, 0.3)
+        .setScrollFactor(0).setDepth(90);
+      this.tweens.add({
+        targets: band,
+        x: (i * bandWidth) + bandWidth / 2,
+        duration: 900,
+        delay: 500 + i * 250,
+        ease: 'Power2',
+      });
+      // ...and then each band fades out, leaving the world colorful
+      this.tweens.add({
+        targets: band,
+        alpha: 0,
+        duration: 900,
+        delay: 2300 + i * 150,
+      });
     });
   }
 
@@ -398,6 +493,20 @@ class LevelScene extends Phaser.Scene {
     pipe.setDepth(2);
     hero.setDepth(1);
 
+    // The storm cloud flies over the pipe and gets cured by colored pencils
+    // (the colors are coming back!). It happens while the hero is entering.
+    if (this.stormCloud) {
+      this.stormCloud.pencils.clear(true, true); // no more dangerous pencils
+      this.tweens.add({
+        targets: this.stormCloud,
+        x: goal.x - 20,
+        y: pipeTop - 190,
+        duration: 900,
+        ease: 'Sine.easeInOut',
+        onComplete: () => this.stormCloud.turnHappy(),
+      });
+    }
+
     // Step 1: hop up onto the pipe (a little arc: x moves steadily, y goes up)
     const distance = Math.abs(goal.x - hero.x);
     hero.setFlipX(goal.x < hero.x);
@@ -419,7 +528,8 @@ class LevelScene extends Phaser.Scene {
           targets: hero,
           y: pipeTop + 60,
           duration: 800,
-          delay: 250,
+          // If there is a storm cloud, wait on top of the pipe until it is cured
+          delay: this.stormCloud ? 3600 : 250,
           ease: 'Sine.easeIn',
           onComplete: () => {
             // Step 3: fade to black, then start the next level
@@ -451,11 +561,14 @@ class LevelScene extends Phaser.Scene {
   }
 
   // update() — The game loop! 60 times per second
-  update() {
+  update(time, delta) {
     if (this.levelComplete) return;
 
     // Update hero (input and movement)
     this.hero.update();
+
+    // Update the storm cloud (flies after the hero and throws pencils)
+    if (this.stormCloud) this.stormCloud.update(time, delta);
 
     // Update all enemies (patrol movement)
     this.enemies.getChildren().forEach(enemy => {

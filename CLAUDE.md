@@ -37,6 +37,7 @@ blanco-y-negro/
 │   │   ├── Enemy.js           # Base enemy class
 │   │   ├── EnemyMR1.js        # Walker enemy
 │   │   ├── EnemyMR2.js        # Shooter enemy
+│   │   ├── StormCloud.js      # Level 5 cloud that chases you and throws pencils
 │   │   └── Projectile.js      # Bullets (hero & enemy)
 │   ├── managers/
 │   │   ├── LevelManager.js    # Builds levels from data
@@ -51,7 +52,7 @@ blanco-y-negro/
 ```
 
 ## Current Status
-Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it and ends at a pipe, level 6 is outside the castle with the final boss), title screen, and victory screen.
+Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with a chasing storm cloud and ends at a pipe, level 6 is outside the castle with the final boss), title screen, and victory screen.
 
 ## Controls
 - **Arrow keys / WASD** — Move
