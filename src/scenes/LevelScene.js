@@ -11,8 +11,8 @@ import HUDManager from '../managers/HUDManager.js';
 import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
 import StormCloud from '../sprites/StormCloud.js';
-import { levels } from '../data/levels.js';
-import { WORLD, HERO } from '../utils/constants.js';
+import { getLevels } from '../data/countryLevels.js';
+import { WORLD, HERO, isGodMode } from '../utils/constants.js';
 
 class LevelScene extends Phaser.Scene {
   constructor() {
@@ -33,7 +33,8 @@ class LevelScene extends Phaser.Scene {
   // create() — Build the level using LevelManager
   create() {
     // Get the level configuration data
-    this.levelData = levels[this.levelIndex];
+    // (the 6 normal levels, or the 3 levels of the country we are playing in)
+    this.levelData = getLevels(this.registry)[this.levelIndex];
 
     // Initialize game state in the registry (first time only)
     if (this.registry.get('lives') === undefined) {
@@ -130,6 +131,9 @@ class LevelScene extends Phaser.Scene {
 
     // --- Storm cloud (only in levels that have one) ---
     // It chases the hero and throws black and white pencils
+    // (The scene object is reused for every level, so we forget the cloud of the
+    // previous level first — otherwise an old, destroyed cloud keeps updating)
+    this.stormCloud = null;
     if (this.levelData.stormCloud) {
       const cfg = this.levelData.stormCloud;
       this.stormCloud = new StormCloud(this, cfg.x, cfg.y, this.hero, cfg);
@@ -150,6 +154,14 @@ class LevelScene extends Phaser.Scene {
     // --- HUD ---
     this.hud = new HUDManager(this);
     this.hud.setLevelName(this.levelData.id, this.levelData.name);
+
+    // A small reminder so we never forget that nothing can hurt us here
+    if (isGodMode(this.registry)) {
+      this.add.text(400, 80, 'MODO INMORTAL', {
+        fontFamily: 'Arial', fontSize: '14px', color: '#66ee88',
+        stroke: '#000000', strokeThickness: 3,
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    }
     this.hud.updateLives(this.hero.lives);
     this.hud.updateScore(this.hero.score);
 
@@ -326,11 +338,18 @@ class LevelScene extends Phaser.Scene {
     // Go to next level or win!
     this.time.delayedCall(4200, () => {
       const nextLevel = this.levelIndex + 1;
-      if (nextLevel < levels.length) {
+      const country = this.registry.get('country');
+      if (nextLevel < getLevels(this.registry).length) {
         // Next level!
         this.cameras.main.fadeOut(400);
         this.cameras.main.once('camerafadeoutcomplete', () => {
           this.scene.start('LevelIntroScene', { levelIndex: nextLevel });
+        });
+      } else if (country) {
+        // Beat the 3 levels of a country: back to the map, where it gets its color
+        this.cameras.main.fadeOut(800, 255, 255, 255);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('WorldMapScene', { completedCountry: country.id });
         });
       } else {
         // Beat all levels! The city celebrates (then the WinScene comes next)
@@ -618,6 +637,13 @@ class LevelScene extends Phaser.Scene {
 
   // Hero fell off the bottom of the screen — lose a life and restart this level
   heroFell() {
+    // Invincible mode: falling into a pit just puts us back at the start
+    if (isGodMode(this.registry)) {
+      this.hero.setPosition(this.levelData.heroStart.x, this.levelData.heroStart.y);
+      this.hero.setVelocity(0, 0);
+      return;
+    }
+
     // Prevent multiple triggers
     if (this.levelComplete) return;
     this.levelComplete = true;

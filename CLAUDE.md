@@ -23,6 +23,8 @@ blanco-y-negro/
 │   ├── main.js                # Game config and entry point
 │   ├── data/
 │   │   ├── levels.js          # Level configurations (6 levels)
+│   │   ├── countryLevels.js   # The 3 levels played inside a country (built from normal levels)
+│   │   ├── countryThemes.js   # Which landmark each country has in the background
 │   │   └── worldMap.json      # Country shapes for the map (made by tools/build-world-map.mjs)
 │   ├── scenes/
 │   │   ├── BootScene.js       # Initial boot
@@ -43,6 +45,7 @@ blanco-y-negro/
 │   │   └── Projectile.js      # Bullets (hero & enemy)
 │   ├── managers/
 │   │   ├── LevelManager.js    # Builds levels from data
+│   │   ├── LandmarkArt.js     # Draws the landmarks (Chichén Itzá, Statue of Liberty, CN Tower...)
 │   │   ├── PowerupManager.js  # Power-up effects
 │   │   └── HUDManager.js      # Score, lives, UI
 │   └── utils/
@@ -74,7 +77,8 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - Rainbow particle effects on enemy defeat
 - Parallax scrolling backgrounds with building silhouettes
 - Data-driven level system (add levels by editing levels.js)
-- World map after level 6: pick a country to color; continents unlock in order (Norteamérica → Centroamérica → Sudamérica → África → Europa → Asia → Oceanía). Colored countries are saved in the browser (localStorage). Test shortcut: add ?mapa to the URL (?mapa=reset erases the saved countries)
+- World map after level 6: pick a country and play 3 levels INSIDE it, with its landmarks in the background (México: Chichén Itzá, EEUU: Estatua de la Libertad, Canadá: Torre CN; other countries get a generic landscape for now). Beating them colors the country; continents unlock in order (Norteamérica → Centroamérica → Sudamérica → África → Europa → Asia → Oceanía). Colored countries are saved in the browser (localStorage). Test shortcut: add ?mapa to the URL (?mapa=reset erases the saved countries)
+- "Hacks de mapa" on the world map (press SPACE, next to the points): type a code and ENTER. `Emi y papá 2026` = invincible mode (until the page is reloaded); `<continente> pasar` (for example `sudamerica pasar`) = that continent gets all its colors (`pass` works too); `B Y N` = the hero becomes MR.1, type it again for MR.2, and again to go back to the hero
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log

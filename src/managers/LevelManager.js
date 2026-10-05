@@ -6,7 +6,14 @@
 
 import EnemyMR1 from '../sprites/EnemyMR1.js';
 import EnemyMR2 from '../sprites/EnemyMR2.js';
+import { drawLandmarkScene } from './LandmarkArt.js';
 import { WORLD } from '../utils/constants.js';
+
+// The background moves slower than the hero (parallax), so only a part of it is
+// ever seen: the first 800px plus 30% of how far the camera travels
+function visibleBackgroundWidth(levelData) {
+  return Math.min(levelData.worldWidth, 800 + 0.3 * (levelData.worldWidth - 800));
+}
 
 class LevelManager {
   // Build everything for a level and return all the game objects
@@ -109,6 +116,13 @@ class LevelManager {
     colorBg.fillGradientStyle(0x3d9bff, 0x3d9bff, 0xcdeeff, 0xcdeeff);
     colorBg.fillRect(0, 0, levelData.worldWidth, WORLD.HEIGHT);
 
+    // Levels inside a country: the landmark of the country, in full color
+    if (levelData.backgroundStyle === 'landmark') {
+      drawLandmarkScene(colorBg, levelData.theme, visibleBackgroundWidth(levelData), true);
+      colorBg.setScrollFactor(0.3);
+      return colorBg;
+    }
+
     const colors = [0xff6666, 0x66aaff, 0xffcc44, 0x66cc88, 0xcc88ff, 0xff9966, 0x44cccc];
     (levelData.buildings || []).forEach((b, i) => {
       colorBg.fillStyle(colors[i % colors.length]);
@@ -172,6 +186,13 @@ class LevelManager {
 
     bg.fillGradientStyle(topColor, topColor, bottomColor, bottomColor);
     bg.fillRect(0, 0, levelData.worldWidth, WORLD.HEIGHT);
+
+    // Levels inside a country: the landmark of the country, in gray
+    if (levelData.backgroundStyle === 'landmark') {
+      drawLandmarkScene(bg, levelData.theme, visibleBackgroundWidth(levelData), false, sat);
+      bg.setScrollFactor(0.3);
+      return bg;
+    }
 
     // Building silhouettes for depth
     if (levelData.buildings) {

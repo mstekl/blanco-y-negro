@@ -4,7 +4,7 @@
 // and gives them a moment to get ready.
 
 import Phaser from 'phaser';
-import { levels } from '../data/levels.js';
+import { getLevels } from '../data/countryLevels.js';
 
 class LevelIntroScene extends Phaser.Scene {
   constructor() {
@@ -17,7 +17,7 @@ class LevelIntroScene extends Phaser.Scene {
   }
 
   create() {
-    const levelData = levels[this.levelIndex];
+    const levelData = getLevels(this.registry)[this.levelIndex];
 
     // Dark background
     this.cameras.main.setBackgroundColor('#222222');
@@ -25,8 +25,8 @@ class LevelIntroScene extends Phaser.Scene {
     // Fade in
     this.cameras.main.fadeIn(400);
 
-    // Level number (big!)
-    this.add.text(400, 220, `Nivel ${levelData.id}`, {
+    // Level number (big!) — inside a country, the big title is the country's name
+    this.add.text(400, 220, levelData.introTitle || `Nivel ${levelData.id}`, {
       fontFamily: 'Arial',
       fontSize: '64px',
       color: '#ffffff',
@@ -35,7 +35,7 @@ class LevelIntroScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Level name
-    this.add.text(400, 300, levelData.name, {
+    this.add.text(400, 300, levelData.introName || levelData.name, {
       fontFamily: 'Arial',
       fontSize: '36px',
       color: '#ffcc00',

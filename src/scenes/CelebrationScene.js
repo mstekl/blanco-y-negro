@@ -15,6 +15,7 @@ class CelebrationScene extends Phaser.Scene {
   create() {
     this.cameras.main.fadeIn(800, 255, 255, 255);
     this.canContinue = false;
+    this.leaving = false; // the scene object is reused: forget the last visit
 
     this.createPersonTextures();
 

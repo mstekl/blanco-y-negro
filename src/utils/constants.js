@@ -2,6 +2,13 @@
 // Instead of typing "160" everywhere, we give it a name like WALK_SPEED.
 // This way, if we want to make the hero faster, we only change it in ONE place.
 
+// Invincible mode is turned on with a secret code typed in the "Hacks de
+// mapa" box of the world map. The code is remembered in the registry (the memory
+// shared by all scenes) until the page is reloaded.
+export function isGodMode(registry) {
+  return Boolean(registry && registry.get('godMode'));
+}
+
 // The game window size and gravity
 export const WORLD = {
   WIDTH: 800,

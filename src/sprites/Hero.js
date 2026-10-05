@@ -3,12 +3,27 @@
 // how it moves, jumps, and looks on screen.
 
 import Phaser from 'phaser';
-import { HERO, PROJECTILE } from '../utils/constants.js';
+import { HERO, PROJECTILE, isGodMode } from '../utils/constants.js';
+import EnemyMR1 from './EnemyMR1.js';
+import EnemyMR2 from './EnemyMR2.js';
+
+// The secret skins (the "B Y N" code in the map hacks turns the hero into a villain!)
+//   texture: the picture to use    make: who knows how to draw that picture
+//   body:    hitbox [width, height, offsetX, offsetY] so the feet touch the ground
+const SKINS = {
+  mr1: { texture: 'enemy-mr1', make: EnemyMR1, body: [24, 40, 4, 8] },   // picture is 32x48
+  mr2: { texture: 'enemy-mr2', make: EnemyMR2, body: [24, 46, 4, 8] },   // picture is 32x54 (taller)
+};
 
 class Hero extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
+    // Which picture do we wear? The normal hero, or a secret skin chosen on the map
+    // (the registry is the memory shared by all scenes)
+    const skin = SKINS[scene.registry.get('skin')];
+    if (skin && !scene.textures.exists(skin.texture)) skin.make.createTexture(scene);
+
     // Create the hero sprite using our placeholder texture
-    super(scene, x, y, 'hero');
+    super(scene, x, y, skin ? skin.texture : 'hero');
 
     // Add the hero to the scene and enable physics
     scene.add.existing(this);
@@ -19,8 +34,9 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
 
     // Make the hitbox a bit smaller than the texture so it feels fair
-    this.body.setSize(24, 40);
-    this.body.setOffset(4, 8);
+    const [bodyWidth, bodyHeight, offsetX, offsetY] = skin ? skin.body : [24, 40, 4, 8];
+    this.body.setSize(bodyWidth, bodyHeight);
+    this.body.setOffset(offsetX, offsetY);
 
     // Hero state — keeps track of what's happening to our hero
     this.lives = HERO.INITIAL_LIVES;
@@ -171,6 +187,9 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
 
   // Called when the hero gets hurt by an enemy
   takeDamage() {
+    // Invincible mode (the secret code from the map hacks): nothing hurts us
+    if (isGodMode(this.scene.registry)) return;
+
     // If we're invincible, ignore the damage
     if (this.isInvincible) return;
 

@@ -4,6 +4,7 @@
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
+import { SAVE_KEY } from './WorldMapScene.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +12,16 @@ class TitleScene extends Phaser.Scene {
   }
 
   create() {
+    // Testing shortcut: add ?reset to the URL to erase the colored countries
+    // (so the world map starts with every country white)
+    if (new URLSearchParams(window.location.search).has('reset')) {
+      try {
+        window.localStorage.removeItem(SAVE_KEY);
+      } catch (e) {
+        // Storage blocked: nothing was saved anyway
+      }
+    }
+
     // Testing shortcut: add ?mapa to the URL to jump straight to the world map
     if (new URLSearchParams(window.location.search).has('mapa')) {
       this.scene.start('WorldMapScene');
@@ -109,10 +120,11 @@ class TitleScene extends Phaser.Scene {
       this.registry.set('lives', 3);
       this.registry.set('score', 0);
       this.registry.set('currentLevel', 0);
+      this.registry.set('country', null); // we start in the normal levels, not inside a country
 
       this.cameras.main.fadeOut(500);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        // Testing shortcut: add ?nivel=4 to the URL to start at that level
+        // Testing shortcut: add ?nivel=4 to the URL to start at that level (?nivel=6&reset also erases the colored countries)
         const wanted = parseInt(new URLSearchParams(window.location.search).get('nivel'), 10);
         const startLevel = wanted >= 1 && wanted <= levels.length ? wanted - 1 : 0;
         this.scene.start('LevelIntroScene', { levelIndex: startLevel });

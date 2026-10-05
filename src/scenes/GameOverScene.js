@@ -111,7 +111,8 @@ class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Retry instruction (pulsing)
-    const retryText = this.add.text(400, 540, 'Presiona ENTER para reintentar', {
+    const retryText = this.add.text(400, 540,
+      this.registry.get('country') ? 'Presiona ENTER para volver al mapa' : 'Presiona ENTER para reintentar', {
       fontFamily: 'Arial',
       fontSize: '20px',
       color: '#88ff88',
@@ -125,17 +126,25 @@ class GameOverScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    // Listen for ENTER key to restart from level 1
+    // Listen for ENTER key to try again
     this.input.keyboard.once('keydown-ENTER', () => {
       // Reset game state
       this.registry.set('lives', 3);
       this.registry.set('score', 0);
       this.registry.set('currentLevel', 0);
 
-      // Go back to level 1 intro
+      // If we were playing inside a country, we go back to the world map
+      // (the colored countries are saved, so nothing is lost!)
+      const wasInCountry = Boolean(this.registry.get('country'));
+
       this.cameras.main.fadeOut(300);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('LevelIntroScene', { levelIndex: 0 });
+        if (wasInCountry) {
+          this.scene.start('WorldMapScene');
+        } else {
+          // Go back to level 1 intro
+          this.scene.start('LevelIntroScene', { levelIndex: 0 });
+        }
       });
     });
   }

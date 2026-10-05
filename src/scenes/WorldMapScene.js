@@ -1,5 +1,7 @@
 // WorldMapScene.js — The world map! Shown after beating all 6 levels.
-// The player picks a country and gives it its colors back.
+// The player picks a country and plays 3 levels INSIDE it (with its famous
+// landmarks in the background). When the 3 levels are done we come back here
+// and the country gets its colors back.
 // Continents unlock in order: Norteamérica → Centroamérica → Sudamérica →
 // África → Europa → Asia → Oceanía. The painted countries are saved in the
 // browser, so the map remembers them the next time we play.
@@ -10,6 +12,7 @@
 
 import Phaser from 'phaser';
 import worldMap from '../data/worldMap.json';
+import { isGodMode } from '../utils/constants.js';
 
 // The continents, in the order they unlock.
 // "view" is the piece of the world (longitude / latitude) that fills the screen
@@ -28,11 +31,8 @@ const WORLD_VIEW = { lon: [-180, 180], lat: [-58, 84] };
 // Where the map is drawn on the 800x600 screen
 const MAP = { x: 10, y: 92, w: 780, h: 410 };
 
-// How many countries we can color each time we beat the game
-const PICKS_PER_VICTORY = 1;
-
 // The browser remembers the colored countries under this name
-const SAVE_KEY = 'blancoYNegro.paisesColoreados';
+export const SAVE_KEY = 'blancoYNegro.paisesColoreados';
 
 // Colors for the painted countries (every country gets one of these)
 const PALETTE = [
@@ -42,29 +42,44 @@ const PALETTE = [
 
 // Map colors
 const SEA = '#16283f';
-const COLOR_AVAILABLE = 0xf2f2f2;  // can be painted now
+const COLOR_AVAILABLE = 0xf2f2f2;  // can be painted now (it also blinks yellow)
 const COLOR_SELECTED = 0xffee55;   // the one we picked
-const COLOR_LOCKED = 0x59616b;     // belongs to a continent that is still locked
-const COLOR_OTHER = 0x3b424a;      // not a country of the game (Groenlandia, Puerto Rico...)
+const COLOR_LOCKED = 0xf2f2f2;     // continents still locked: white too, all the world starts white
+const COLOR_OTHER = 0xf2f2f2;      // not a country of the game (Groenlandia, Puerto Rico...): white as well
+
+// The ?mapa=reset shortcut must erase the saved countries only ONCE per page load
+// (not every time we come back to the map after playing a country)
+let resetDone = false;
 
 class WorldMapScene extends Phaser.Scene {
   constructor() {
     super('WorldMapScene');
   }
 
+  // When we come back from playing a country, we receive its id to paint it
+  init(data) {
+    this.completedCountryId = (data && data.completedCountry) || null;
+  }
+
   create() {
+    // We are on the map, not inside a country
+    this.registry.set('country', null);
+
     this.cameras.main.setBackgroundColor(SEA);
     this.cameras.main.fadeIn(500);
 
     this.progress = this.loadProgress();   // Set of country ids already painted
-    this.picksLeft = PICKS_PER_VICTORY;
     this.selected = null;                  // the country picked (not painted yet)
     this.hovered = null;
-    this.finished = false;                 // true when we are done picking
+    this.finished = false;                 // true when every country has its color
+    // The scene object is reused every time we come back to the map, so we must
+    // forget that we were leaving last time (or ENTER would do nothing!)
+    this.leaving = false;
     this.showWorld = false;                // false = zoom on the current continent
 
     // Testing shortcut: ?mapa=reset in the URL erases the saved countries
-    if (new URLSearchParams(window.location.search).get('mapa') === 'reset') {
+    if (!resetDone && new URLSearchParams(window.location.search).get('mapa') === 'reset') {
+      resetDone = true;
       this.progress.clear();
       this.saveProgress();
     }
@@ -102,15 +117,23 @@ class WorldMapScene extends Phaser.Scene {
       .setStrokeStyle(2, 0x4a6a94).setFillStyle(0x000000, 0);
 
     this.createTexts();
+    this.createHackBox();
     this.refreshView();
+
+    // We just finished the 3 levels of a country: it gets its color now!
+    if (this.completedCountryId) this.paintCountry(this.completedCountryId);
 
     // --- Mouse ---
     this.input.on('pointermove', (pointer) => this.onPointerMove(pointer));
     this.input.on('pointerdown', (pointer) => this.onPointerDown(pointer));
 
     // --- Keyboard ---
-    this.input.keyboard.on('keydown-ENTER', () => this.onEnter());
-    this.input.keyboard.on('keydown-M', () => this.toggleWorld());
+    // (while the "Hacks de mapa" box is open, the keys are for typing the code)
+    this.input.keyboard.on('keydown-ENTER', () => { if (!this.hackOpen) this.onEnter(); });
+    this.input.keyboard.on('keydown-M', () => { if (!this.hackOpen) this.toggleWorld(); });
+    this.input.keyboard.on('keydown-ESC', () => { if (!this.hackOpen) this.leaveToTitle(); });
+    this.input.keyboard.addCapture('SPACE'); // so SPACE doesn't scroll the web page
+    this.input.keyboard.on('keydown', (event) => this.onKeyDown(event));
   }
 
   // ---------------------------------------------------------------
@@ -171,6 +194,21 @@ class WorldMapScene extends Phaser.Scene {
     this.add.text(400, 22, '¡Elige un país para devolverle el color!', style(28, '#ffee55'))
       .setOrigin(0.5);
 
+    // The points of the game, and the secret "Hacks de mapa" box (open it with SPACE)
+    const score = this.registry.get('score') || 0;
+    this.add.text(14, 6, `Puntos: ${String(score).padStart(5, '0')}`, {
+      fontFamily: 'Arial', fontSize: '15px', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 3,
+    });
+    this.hacksLabel = this.add.text(14, 25, 'Hacks de mapa [ESPACIO]', {
+      fontFamily: 'Arial', fontSize: '13px', color: '#7fd4ff',
+      stroke: '#000000', strokeThickness: 3,
+    });
+    this.godLabel = this.add.text(182, 26, 'MODO INMORTAL', {
+      fontFamily: 'Arial', fontSize: '11px', color: '#66ee88',
+      stroke: '#000000', strokeThickness: 3,
+    }).setVisible(isGodMode(this.registry));
+
     // Row with all the continents and how many countries each one has painted
     this.chips = GROUPS.map((group, i) => (
       this.add.text(70 + i * 110, 62, '', {
@@ -210,11 +248,11 @@ class WorldMapScene extends Phaser.Scene {
       this.infoText.setText('¡Todo el mundo tiene color!').setColor('#66ee88');
       this.hintText.setText('ENTER: continuar');
     } else if (this.selected) {
-      this.infoText.setText(`${this.selected.data.name}  —  ENTER para colorearlo`).setColor('#ffee55');
-      this.hintText.setText('Haz clic en otro país para cambiar  ·  M: mapa del mundo');
+      this.infoText.setText(`${this.selected.data.name}  —  ENTER para jugar ahí`).setColor('#ffee55');
+      this.hintText.setText('Clic en otro país para cambiar  ·  M: mapa del mundo  ·  ESC: salir');
     } else {
       this.infoText.setText(`Ahora toca: ${current.name}`).setColor('#ffffff');
-      this.hintText.setText('Haz clic en un país blanco  ·  M: mapa del mundo');
+      this.hintText.setText('Haz clic en un país blanco  ·  M: mapa del mundo  ·  ESC: salir');
     }
   }
 
@@ -376,7 +414,7 @@ class WorldMapScene extends Phaser.Scene {
   }
 
   onPointerMove(pointer) {
-    if (this.finished) return;
+    if (this.finished || this.hackOpen) return;
     const country = this.countryAt(pointer.x, pointer.y);
     if (country !== this.hovered) {
       this.hovered = country;
@@ -398,7 +436,7 @@ class WorldMapScene extends Phaser.Scene {
   }
 
   onPointerDown(pointer) {
-    if (this.finished) return;
+    if (this.finished || this.hackOpen) return;
     const country = this.countryAt(pointer.x, pointer.y);
     if (!country) return;
 
@@ -442,23 +480,40 @@ class WorldMapScene extends Phaser.Scene {
     if (this.finished) {
       this.leave();
     } else if (this.selected) {
-      this.paintSelected();
+      this.startCountry();
     } else if (!this.currentGroup()) {
       this.leave();
     }
   }
 
   // ---------------------------------------------------------------
-  // Painting a country!
+  // Going into a country to play its 3 levels
   // ---------------------------------------------------------------
-  paintSelected() {
-    const country = this.selected;
-    this.selected = null;
-    this.hovered = null;
-    this.tooltip.setVisible(false);
-    this.progress.add(country.data.id);
+  startCountry() {
+    if (this.leaving) return;
+    this.leaving = true;
+    const { id, name, group } = this.selected.data;
+
+    // The registry is the memory shared by all scenes: LevelScene reads
+    // "country" to know that the levels to play are the ones of this country
+    this.registry.set('country', { id, name, group });
+    this.registry.set('lives', 3);
+    if (this.registry.get('score') === undefined) this.registry.set('score', 0);
+
+    this.cameras.main.fadeOut(500);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('LevelIntroScene', { levelIndex: 0 });
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Painting a country! (when we come back after beating its 3 levels)
+  // ---------------------------------------------------------------
+  paintCountry(countryId) {
+    const country = this.countries.find((c) => c.data.id === countryId);
+    if (!country) return;
+    this.progress.add(countryId);
     this.saveProgress();
-    this.picksLeft -= 1;
 
     const group = GROUPS.find((g) => g.key === country.data.group);
     const groupDone = this.paintedCount(group.key) >= this.groupCountries(group.key).length;
@@ -475,9 +530,9 @@ class WorldMapScene extends Phaser.Scene {
     if (groupDone && next) info = `¡${group.name} ya tiene todos sus colores!  Sigue ${next.name}`;
     if (!next) info = '¡Todo el mundo tiene color!';
 
-    this.finished = this.picksLeft <= 0 || !next;
+    this.finished = !next;
     this.infoText.setText(info).setColor('#66ee88');
-    this.hintText.setText(this.finished ? 'ENTER: continuar' : 'Elige otro país');
+    this.hintText.setText(this.finished ? 'ENTER: continuar' : 'Elige otro país  ·  ESC: salir');
   }
 
   // Rainbow sparkles + a big name over the painted country
@@ -517,7 +572,141 @@ class WorldMapScene extends Phaser.Scene {
     });
   }
 
-  // Leave the map: the victory screen comes next
+  // ---------------------------------------------------------------
+  // "Hacks de mapa": a box where we type a secret code
+  //   Emi y papá 2026   → invincible mode (nothing hurts the hero)
+  //   <continente> pasar → that continent gets all its colors at once
+  //                        (for example: sudamerica pasar; "pass" works too)
+  //   B Y N             → the hero becomes MR.1, then MR.2, then the hero again
+  // ---------------------------------------------------------------
+  createHackBox() {
+    this.hackOpen = false;
+    this.hackText = '';
+
+    const dark = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.65);
+    const panel = this.add.rectangle(400, 300, 520, 220, 0x16283f).setStrokeStyle(3, 0x7fd4ff);
+    const title = this.add.text(400, 224, 'Hacks de mapa', {
+      fontFamily: 'Arial', fontSize: '26px', color: '#7fd4ff',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5);
+    const field = this.add.rectangle(400, 290, 440, 44, 0x0b1626).setStrokeStyle(2, 0x4a6a94);
+    this.hackInput = this.add.text(190, 290, '', {
+      fontFamily: 'Arial', fontSize: '22px', color: '#ffffff',
+    }).setOrigin(0, 0.5);
+    this.hackMessage = this.add.text(400, 336, '', {
+      fontFamily: 'Arial', fontSize: '18px', color: '#ff8888',
+    }).setOrigin(0.5);
+    const hint = this.add.text(400, 372, 'Escribe el código y ENTER  ·  ESC: cerrar', {
+      fontFamily: 'Arial', fontSize: '14px', color: '#9fb4d0',
+    }).setOrigin(0.5);
+
+    this.hackBox = this.add.container(0, 0, [dark, panel, title, field, this.hackInput, this.hackMessage, hint])
+      .setDepth(100).setVisible(false);
+  }
+
+  openHacks() {
+    this.hackOpen = true;
+    this.hackText = '';
+    this.hackMessage.setText('');
+    this.tooltip.setVisible(false);
+    this.updateHackInput();
+    this.hackBox.setVisible(true);
+  }
+
+  closeHacks() {
+    this.hackOpen = false;
+    this.hackBox.setVisible(false);
+  }
+
+  // The text we typed, with a "|" at the end like a cursor
+  updateHackInput() {
+    this.hackInput.setText(`${this.hackText}|`);
+  }
+
+  // Every key press goes through here
+  onKeyDown(event) {
+    if (!this.hackOpen) {
+      if (event.code === 'Space' && !this.leaving) this.openHacks();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.closeHacks();
+    } else if (event.key === 'Enter') {
+      this.submitHack();
+    } else if (event.key === 'Backspace') {
+      this.hackText = this.hackText.slice(0, -1);
+      this.updateHackInput();
+    } else if (event.key.length === 1 && this.hackText.length < 30) {
+      // A normal letter, number or space
+      this.hackText += event.key;
+      this.updateHackInput();
+    }
+  }
+
+  // "Emi y papá 2026" and "emi y papa 2026" are the same code: we ignore
+  // capital letters, accents and extra spaces
+  normalizeCode(text) {
+    return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  submitHack() {
+    const code = this.normalizeCode(this.hackText);
+
+    if (code === 'emi y papa 2026') {
+      this.registry.set('godMode', true);
+      this.godLabel.setVisible(true);
+      this.hackSuccess('¡Modo inmortal activado!');
+      return;
+    }
+
+    // "B Y N": the hero's skin changes! Every time we type it, the next skin comes:
+    // hero → MR.1 → MR.2 → hero again
+    if (code === 'b y n' || code === 'byn') {
+      const next = { none: 'mr1', mr1: 'mr2', mr2: 'none' };
+      const now = next[this.registry.get('skin') || 'none'];
+      this.registry.set('skin', now === 'none' ? null : now);
+      const message = { mr1: '¡Ahora eres MR.1!', mr2: '¡Ahora eres MR.2!', none: 'Volviste a ser el héroe' };
+      this.hackSuccess(message[now]);
+      return;
+    }
+
+    // "<continente> pasar" (or "pass"): every country of that continent gets its color
+    const group = GROUPS.find((g) => {
+      const name = this.normalizeCode(g.name);
+      return code === `${name} pasar` || code === `${name} pass`;
+    });
+    if (group) {
+      this.groupCountries(group.key).forEach((c) => this.progress.add(c.data.id));
+      this.saveProgress();
+      this.finished = false; // (refreshView and ENTER already know what to do if all is painted)
+      this.selected = null;
+      this.refreshView();
+      this.hackSuccess(`¡${group.name} pasado!`);
+      return;
+    }
+
+    this.hackMessage.setColor('#ff8888').setText('Ese código no existe');
+  }
+
+  hackSuccess(message) {
+    this.hackMessage.setColor('#66ee88').setText(message);
+    // Close the box by itself after a moment, so we can see the result
+    this.time.delayedCall(1100, () => this.closeHacks());
+  }
+
+  // Back to the title screen (the colored countries stay saved)
+  leaveToTitle() {
+    if (this.leaving) return;
+    this.leaving = true;
+    this.cameras.main.fadeOut(400);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('TitleScene');
+    });
+  }
+
+  // Leave the map when every country has its color: the victory screen comes next
   leave() {
     if (this.leaving) return;
     this.leaving = true;
