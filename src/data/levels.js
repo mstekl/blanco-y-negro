@@ -50,7 +50,7 @@ export const levels = [
 
     // Power-ups — collect them for special abilities!
     powerups: [
-      { type: 'extra-life', x: 550, y: 320 },   // On a floating platform
+      { type: 'extra-life', x: 614, y: 260 },   // Hidden platform above the platform at x=550
     ],
 
     // Background buildings silhouettes for parallax
@@ -117,7 +117,7 @@ export const levels = [
     powerups: [
       { type: 'color-pencil', x: 1000, y: 280 },  // On a high platform — grants shooting!
       { type: 'shield', x: 2200, y: 290 },         // Shield to protect from enemies ahead
-      { type: 'extra-life', x: 2600, y: 340 },     // Extra life on a platform
+      { type: 'extra-life', x: 2664, y: 280 },     // Hidden platform above the platform at x=2600
     ],
 
     buildings: [
@@ -189,7 +189,7 @@ export const levels = [
     powerups: [
       { type: 'color-pencil', x: 580, y: 300 },   // Get the gun early — you'll need it!
       { type: 'shield', x: 1300, y: 260 },
-      { type: 'extra-life', x: 2800, y: 260 },
+      { type: 'extra-life', x: 2864, y: 200 },    // Hidden platform above the platform at x=2800
       { type: 'shield', x: 3400, y: 340 },
     ],
 
@@ -223,7 +223,9 @@ export const levels = [
     saturation: 0.05,
 
     heroStart: { x: 50, y: 450 },
-    goal: { x: 3100, y: 504 },
+    // This level ends at a castle instead of a flag! Walking in leads to level 5.
+    // (castle is 128px tall, so y=504 puts its bottom right on the ground at y=568)
+    goal: { x: 3100, y: 504, type: 'castle' },
 
     platforms: [
       // Ground with gaps
@@ -264,11 +266,11 @@ export const levels = [
 
     powerups: [
       { type: 'color-pencil', x: 200, y: 380 },   // Gun right at the start — you'll need it!
-      { type: 'extra-life', x: 450, y: 300 },
+      { type: 'extra-life', x: 546, y: 240 },    // Hidden platform above the platform at x=450
       { type: 'shield', x: 1150, y: 260 },
-      { type: 'extra-life', x: 1850, y: 380 },
+      { type: 'extra-life', x: 1914, y: 320 },   // Hidden platform above the platform at x=1850
       { type: 'shield', x: 2550, y: 260 },         // Shield before boss fight!
-      { type: 'extra-life', x: 2700, y: 380 },     // Extra life in boss arena
+      { type: 'extra-life', x: 2764, y: 320 },     // Hidden platform in boss arena
     ],
 
     buildings: [
@@ -282,6 +284,153 @@ export const levels = [
       { x: 2000, y: 290, w: 120, h: 278 },
       { x: 2400, y: 260, w: 150, h: 308 },
       { x: 2700, y: 280, w: 130, h: 288 },
+    ],
+  },
+
+  // ============================================================
+  // LEVEL 5 — Adentro del Castillo (Inside the Castle)
+  // INSIDE the castle from level 4! Tall pillars replace the buildings.
+  // A mini-boss guards the green pipe at the end, which leads outside (level 6).
+  // ============================================================
+  {
+    id: 5,
+    name: 'Adentro del Castillo',
+    subtitle: 'Hay un tubo misterioso al final...',
+    worldWidth: 3000,
+    worldHeight: 600,
+    backgroundColor: '#333333',
+    saturation: 0,
+
+    heroStart: { x: 50, y: 450 },
+    // A pipe instead of a flag! (pipe is 96px tall, so y=520 puts its bottom on the ground)
+    goal: { x: 2950, y: 520, type: 'pipe' },
+
+    platforms: [
+      // Ground with gaps (all small enough to jump over)
+      { x: 0, y: 568, width: 700, type: 'ground' },
+      { x: 860, y: 568, width: 640, type: 'ground' },
+      { x: 1680, y: 568, width: 600, type: 'ground' },
+      // Boss arena
+      { x: 2440, y: 568, width: 560, type: 'ground' },
+
+      // Floating platforms
+      { x: 300, y: 420, width: 128, type: 'platform' },
+      { x: 500, y: 340, width: 192, type: 'platform' },
+      { x: 732, y: 450, width: 128, type: 'platform' },   // over gap 1
+      { x: 1000, y: 400, width: 128, type: 'platform' },
+      { x: 1200, y: 320, width: 192, type: 'platform' },
+      { x: 1520, y: 450, width: 128, type: 'platform' },  // over gap 2
+      { x: 1750, y: 400, width: 128, type: 'platform' },
+      { x: 1950, y: 330, width: 192, type: 'platform' },
+      { x: 2150, y: 420, width: 128, type: 'platform' },
+      { x: 2312, y: 450, width: 128, type: 'platform' },  // over gap 3
+      // Platforms in the boss arena to dodge projectiles
+      { x: 2550, y: 380, width: 128, type: 'platform' },
+      { x: 2750, y: 320, width: 128, type: 'platform' },
+    ],
+
+    enemies: [
+      { type: 'mr1', x: 400, y: 520, speed: 70, patrolMin: 200, patrolMax: 650, direction: 'right' },
+      { type: 'mr2', x: 1000, y: 520, speed: 60, patrolMin: 860, patrolMax: 1450, direction: 'left' },
+      { type: 'mr1', x: 1200, y: 270, speed: 60, patrolMin: 1200, patrolMax: 1380, direction: 'left' },
+      { type: 'mr2', x: 1850, y: 520, speed: 65, patrolMin: 1680, patrolMax: 2250, direction: 'right' },
+      // Castle guard! A boss, but the REAL final boss is waiting outside (level 6)
+      { type: 'mr2', x: 2750, y: 490, speed: 25, patrolMin: 2600, patrolMax: 2880,
+        direction: 'left', isBoss: true, health: 6, fireRate: 1400, scale: 1.8 },
+    ],
+
+    powerups: [
+      { type: 'color-pencil', x: 340, y: 380 },   // Gun right at the start
+      { type: 'extra-life', x: 596, y: 240 },     // Hidden platform above the platform at x=500
+      { type: 'shield', x: 1250, y: 280 },
+      { type: 'shield', x: 2200, y: 380 },        // Shield before the final boss!
+      { type: 'extra-life', x: 2814, y: 220 },    // Hidden platform in boss arena
+    ],
+
+    // Tall castle pillars
+    buildings: [
+      { x: 80, y: 120, w: 60, h: 448 },
+      { x: 400, y: 150, w: 60, h: 418 },
+      { x: 750, y: 120, w: 60, h: 448 },
+      { x: 1100, y: 150, w: 60, h: 418 },
+      { x: 1450, y: 120, w: 60, h: 448 },
+      { x: 1800, y: 150, w: 60, h: 418 },
+      { x: 2150, y: 120, w: 60, h: 448 },
+      { x: 2500, y: 150, w: 60, h: 418 },
+      { x: 2800, y: 120, w: 60, h: 448 },
+    ],
+  },
+
+  // ============================================================
+  // LEVEL 6 — Afuera del Castillo (Outside the Castle)
+  // You came out of the pipe on the other side! The colors are coming back,
+  // but the FINAL boss is waiting. Beat him and reach the flag to win!
+  // ============================================================
+  {
+    id: 6,
+    name: 'Afuera del Castillo',
+    subtitle: '¡El color vuelve! Falta un último jefe...',
+    worldWidth: 3400,
+    worldHeight: 600,
+    backgroundColor: '#999999',
+    saturation: 0.6,
+
+    heroStart: { x: 50, y: 450 },
+    goal: { x: 3330, y: 504 },
+
+    platforms: [
+      // Ground with gaps
+      { x: 0, y: 568, width: 600, type: 'ground' },
+      { x: 780, y: 568, width: 700, type: 'ground' },
+      { x: 1660, y: 568, width: 640, type: 'ground' },
+      // Boss arena
+      { x: 2480, y: 568, width: 920, type: 'ground' },
+
+      // Floating platforms
+      { x: 300, y: 420, width: 128, type: 'platform' },
+      { x: 480, y: 340, width: 192, type: 'platform' },
+      { x: 626, y: 450, width: 128, type: 'platform' },   // over gap 1
+      { x: 950, y: 400, width: 128, type: 'platform' },
+      { x: 1150, y: 310, width: 192, type: 'platform' },
+      { x: 1506, y: 450, width: 128, type: 'platform' },  // over gap 2
+      { x: 1800, y: 400, width: 128, type: 'platform' },
+      { x: 2000, y: 330, width: 192, type: 'platform' },
+      { x: 2326, y: 450, width: 128, type: 'platform' },  // over gap 3
+      // Platforms in the boss arena to dodge projectiles
+      { x: 2600, y: 380, width: 128, type: 'platform' },
+      { x: 2850, y: 320, width: 128, type: 'platform' },
+      { x: 3100, y: 380, width: 128, type: 'platform' },
+    ],
+
+    enemies: [
+      { type: 'mr1', x: 350, y: 520, speed: 70, patrolMin: 150, patrolMax: 580, direction: 'right' },
+      { type: 'mr2', x: 900, y: 520, speed: 60, patrolMin: 780, patrolMax: 1450, direction: 'left' },
+      { type: 'mr1', x: 1150, y: 260, speed: 60, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
+      { type: 'mr2', x: 1800, y: 520, speed: 65, patrolMin: 1660, patrolMax: 2280, direction: 'right' },
+      // THE FINAL BOSS! The biggest and toughest of the whole game
+      { type: 'mr2', x: 2950, y: 490, speed: 25, patrolMin: 2700, patrolMax: 3150,
+        direction: 'left', isBoss: true, health: 8, fireRate: 1200, scale: 2.0 },
+    ],
+
+    powerups: [
+      { type: 'color-pencil', x: 340, y: 380 },   // Gun right at the start
+      { type: 'extra-life', x: 576, y: 240 },     // Hidden platform above the platform at x=480
+      { type: 'shield', x: 1250, y: 270 },
+      { type: 'shield', x: 2080, y: 290 },        // Shield before the final boss!
+      { type: 'extra-life', x: 2914, y: 220 },    // Hidden platform in boss arena
+    ],
+
+    buildings: [
+      { x: 60, y: 300, w: 110, h: 268 },
+      { x: 300, y: 320, w: 90, h: 248 },
+      { x: 600, y: 280, w: 120, h: 288 },
+      { x: 900, y: 310, w: 100, h: 258 },
+      { x: 1250, y: 290, w: 120, h: 278 },
+      { x: 1600, y: 310, w: 100, h: 258 },
+      { x: 1950, y: 280, w: 130, h: 288 },
+      { x: 2300, y: 300, w: 110, h: 268 },
+      { x: 2650, y: 290, w: 120, h: 278 },
+      { x: 3000, y: 310, w: 100, h: 258 },
     ],
   },
 ];

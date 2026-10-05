@@ -22,7 +22,7 @@ blanco-y-negro/
 ├── src/
 │   ├── main.js                # Game config and entry point
 │   ├── data/
-│   │   └── levels.js          # Level configurations (4 levels)
+│   │   └── levels.js          # Level configurations (6 levels)
 │   ├── scenes/
 │   │   ├── BootScene.js       # Initial boot
 │   │   ├── PreloadScene.js    # Asset loading with progress bar
@@ -30,6 +30,7 @@ blanco-y-negro/
 │   │   ├── LevelIntroScene.js # Level splash ("Nivel X")
 │   │   ├── LevelScene.js      # Main gameplay
 │   │   ├── GameOverScene.js   # Game over screen
+│   │   ├── CelebrationScene.js # City gets its color back (after level 6)
 │   │   └── WinScene.js        # Victory celebration
 │   ├── sprites/
 │   │   ├── Hero.js            # Player character
@@ -50,7 +51,7 @@ blanco-y-negro/
 ```
 
 ## Current Status
-Complete game with 4 levels, title screen, and victory screen.
+Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it and ends at a pipe, level 6 is outside the castle with the final boss), title screen, and victory screen.
 
 ## Controls
 - **Arrow keys / WASD** — Move
@@ -60,7 +61,7 @@ Complete game with 4 levels, title screen, and victory screen.
 - **Enter** — Start game / Retry
 
 ## Game Features
-- 4 levels with increasing difficulty
+- 6 levels with increasing difficulty (castle entrance at level 4, pipe at level 5, final boss in level 6)
 - 2 enemy types: MR.1 (walker) and MR.2 (shooter) + boss
 - Power-ups: Color Pencil (gun), Shield, Extra Life
 - Double jump mechanic

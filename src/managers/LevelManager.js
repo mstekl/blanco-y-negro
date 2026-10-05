@@ -20,6 +20,9 @@ class LevelManager {
       levelData.worldWidth,
       levelData.worldHeight || WORLD.HEIGHT
     );
+    // Turn OFF the invisible floor at the bottom of the world. Without this,
+    // the hero lands on it and never "falls" into pits (so no life is lost!)
+    scene.physics.world.setBoundsCollision(true, true, true, false);
 
     // --- Platforms ---
     const platforms = scene.physics.add.staticGroup();
@@ -34,20 +37,25 @@ class LevelManager {
     LevelManager.spawnEnemies(scene, enemies, levelData.enemies);
 
     // --- Goal flag ---
+    // (goal can be a flag (default), a castle or a pipe)
+    const goalTextures = { castle: 'goal-castle', pipe: 'goal-pipe' };
+    const goalType = levelData.goal.type;
     const goalFlag = scene.physics.add.sprite(
-      levelData.goal.x, levelData.goal.y, 'goal-flag'
+      levelData.goal.x, levelData.goal.y, goalTextures[goalType] || 'goal-flag'
     );
     goalFlag.body.setAllowGravity(false);
     goalFlag.body.setImmovable(true);
-    // Bob animation — the flag floats gently
-    scene.tweens.add({
-      targets: goalFlag,
-      y: levelData.goal.y - 6,
-      duration: 1200,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
+    // Bob animation — the flag floats gently (castles and pipes stay put, they're heavy!)
+    if (!goalType) {
+      scene.tweens.add({
+        targets: goalFlag,
+        y: levelData.goal.y - 6,
+        duration: 1200,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
 
     return { bg, platforms, enemies, goalFlag };
   }

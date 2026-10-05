@@ -90,6 +90,12 @@ class LevelScene extends Phaser.Scene {
     // --- Collisions ---
     // Hero stands on platforms
     this.physics.add.collider(this.hero, this.platforms);
+    // Hero can stand on hidden platforms — landing on one gives an extra life
+    this.physics.add.collider(
+      this.hero, this.powerupManager.getHiddenPlatforms(),
+      (hero, platform) => this.powerupManager.heroLandsOnHiddenPlatform(hero, platform),
+      null, this
+    );
     // Enemies walk on platforms
     this.physics.add.collider(this.enemies, this.platforms);
 
@@ -163,12 +169,16 @@ class LevelScene extends Phaser.Scene {
     projectile.deactivate();
 
     // Damage the hero (shield will absorb if active)
+    const livesBefore = hero.lives;
     hero.takeDamage();
     this.saveState();
     this.hud.updateLives(hero.lives);
 
     if (hero.lives <= 0) {
       this.gameOver();
+    } else if (hero.lives < livesBefore) {
+      // A life was lost (the shield did NOT absorb it) — start the level again
+      this.restartLevel();
     }
   }
 
@@ -191,14 +201,31 @@ class LevelScene extends Phaser.Scene {
       this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
     } else {
       // Take damage from the enemy
+      const livesBefore = hero.lives;
       hero.takeDamage();
       this.saveState();
       this.hud.updateLives(hero.lives);
 
       if (hero.lives <= 0) {
         this.gameOver();
+      } else if (hero.lives < livesBefore) {
+        // A life was lost (the shield did NOT absorb it) — start the level again
+        this.restartLevel();
       }
     }
+  }
+
+  // Fade out and restart the same level from the beginning
+  restartLevel() {
+    // Prevent multiple triggers
+    if (this.levelComplete) return;
+    this.levelComplete = true;
+    this.hero.setVelocity(0, 0);
+
+    this.cameras.main.fadeOut(400, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.restart({ levelIndex: this.levelIndex });
+    });
   }
 
   // Show floating text that rises and fades (like "+100")
@@ -235,6 +262,17 @@ class LevelScene extends Phaser.Scene {
     this.saveState();
     this.hud.updateScore(this.hero.score);
 
+    // A castle goal gets a special animation: the hero walks inside!
+    if (this.levelData.goal.type === 'castle') {
+      this.enterCastle();
+      return;
+    }
+    // A pipe goal: the hero hops on top and slides down inside
+    if (this.levelData.goal.type === 'pipe') {
+      this.enterPipe();
+      return;
+    }
+
     // Victory text!
     this.add.text(400, 250, '¡Nivel Completado!', {
       fontFamily: 'Arial',
@@ -259,12 +297,139 @@ class LevelScene extends Phaser.Scene {
           this.scene.start('LevelIntroScene', { levelIndex: nextLevel });
         });
       } else {
-        // Beat all levels! You saved the colors!
+        // Beat all levels! The city celebrates (then the WinScene comes next)
         this.cameras.main.fadeOut(800, 255, 255, 255);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-          this.scene.start('WinScene');
+          this.scene.start('CelebrationScene');
         });
       }
+    });
+  }
+
+  // The hero walks to the castle door, the door lights up, and the hero
+  // shrinks into the doorway — then the next level starts INSIDE the castle.
+  enterCastle() {
+    const hero = this.hero;
+    const goal = this.levelData.goal;
+
+    // Turn off physics so the tweens below have full control of the hero
+    hero.body.enable = false;
+    hero.setDepth(2); // draw the hero in front of the castle
+    if (hero.shieldIndicator) hero.shieldIndicator.setVisible(false);
+
+    // Door position (the door is drawn in the bottom-middle of the castle texture)
+    const doorX = goal.x;
+    const doorY = goal.y + 45;
+    // Where the hero's center sits when standing on the ground (ground top is y=568)
+    const groundY = hero.y + (568 - hero.body.bottom);
+
+    this.showFloatingText(hero.x, hero.y - 40, '+500');
+    this.add.text(doorX, goal.y - 90, '¡Entrando al castillo!', {
+      fontFamily: 'Arial',
+      fontSize: '20px',
+      color: '#ffff00',
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+
+    // Step 1: walk to the door
+    const distance = Math.abs(doorX - hero.x);
+    hero.setFlipX(doorX < hero.x);
+    this.tweens.add({
+      targets: hero,
+      x: doorX,
+      y: groundY,
+      duration: 300 + distance * 4, // farther away = a longer walk
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        // Step 2: the door opens (a warm glowing light behind the hero)
+        const light = this.add.rectangle(doorX, doorY, 20, 38, 0xffee88)
+          .setDepth(1); // above the castle (depth 0), below the hero
+        this.tweens.add({ targets: light, alpha: 0.6, duration: 150, yoyo: true, repeat: 2 });
+        this.powerupManager.spawnCollectParticles(doorX, doorY);
+
+        // Step 3: the hero gets smaller and fades, like walking into the distance
+        this.tweens.add({
+          targets: hero,
+          scale: 0.3,
+          alpha: 0,
+          y: doorY + 10,
+          duration: 700,
+          delay: 300,
+          ease: 'Sine.easeIn',
+          onComplete: () => {
+            // Step 4: fade to black, then start the next level (inside the castle!)
+            this.cameras.main.fadeOut(600, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+              this.scene.start('LevelIntroScene', { levelIndex: this.levelIndex + 1 });
+            });
+          },
+        });
+      },
+    });
+  }
+
+  // The hero hops on top of the pipe, then sinks down inside it — and comes
+  // out in the next level (outside the castle!).
+  enterPipe() {
+    const hero = this.hero;
+    const goal = this.levelData.goal;
+
+    // Turn off physics so the tweens below have full control of the hero
+    hero.body.enable = false;
+    if (hero.shieldIndicator) hero.shieldIndicator.setVisible(false);
+
+    // The pipe is 96px tall and its bottom sits on the ground, so its top is here
+    const pipeTop = goal.y - 48;
+    // Where the hero's center sits when standing on top of the pipe
+    const standY = pipeTop - hero.body.height / 2 - 8;
+
+    this.showFloatingText(hero.x, hero.y - 40, '+500');
+    this.add.text(goal.x, pipeTop - 70, '¡Al tubo!', {
+      fontFamily: 'Arial',
+      fontSize: '20px',
+      color: '#ffff00',
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+
+    // The pipe is drawn in front of the hero so the hero looks like it goes INSIDE
+    const pipe = this.goalFlag;
+    pipe.setDepth(2);
+    hero.setDepth(1);
+
+    // Step 1: hop up onto the pipe (a little arc: x moves steadily, y goes up)
+    const distance = Math.abs(goal.x - hero.x);
+    hero.setFlipX(goal.x < hero.x);
+    this.tweens.add({
+      targets: hero,
+      x: goal.x,
+      duration: 300 + distance * 4,
+      ease: 'Sine.easeInOut',
+    });
+    this.tweens.add({
+      targets: hero,
+      y: standY,
+      duration: 300 + distance * 4,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        // Step 2: slide down into the pipe (the pipe covers the hero as it sinks)
+        this.powerupManager.spawnCollectParticles(goal.x, pipeTop);
+        this.tweens.add({
+          targets: hero,
+          y: pipeTop + 60,
+          duration: 800,
+          delay: 250,
+          ease: 'Sine.easeIn',
+          onComplete: () => {
+            // Step 3: fade to black, then start the next level
+            this.cameras.main.fadeOut(600, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+              this.scene.start('LevelIntroScene', { levelIndex: this.levelIndex + 1 });
+            });
+          },
+        });
+      },
     });
   }
 
@@ -295,6 +460,8 @@ class LevelScene extends Phaser.Scene {
     // Update all enemies (patrol movement)
     this.enemies.getChildren().forEach(enemy => {
       if (enemy.active) enemy.update();
+      // Enemies that fall into a pit are removed (no invisible floor anymore)
+      if (enemy.active && enemy.y > WORLD.HEIGHT + 100) enemy.destroy();
     });
 
     // Update HUD
@@ -321,10 +488,8 @@ class LevelScene extends Phaser.Scene {
     }
 
     // Fade out and restart the same level from the beginning
-    this.cameras.main.fadeOut(400, 0, 0, 0);
-    this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.restart({ levelIndex: this.levelIndex });
-    });
+    this.levelComplete = false; // restartLevel() sets it again (it guards against repeats)
+    this.restartLevel();
   }
 }
 
