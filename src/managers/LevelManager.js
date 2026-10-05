@@ -12,6 +12,9 @@ class LevelManager {
   // Build everything for a level and return all the game objects
   static buildLevel(scene, levelData) {
     // --- Background ---
+    // The colorful version hides BEHIND the gray one. When the level is
+    // completed, the gray background fades out and the colors show up!
+    const colorBg = LevelManager.createColorBackground(scene, levelData);
     const bg = LevelManager.createBackground(scene, levelData);
 
     // --- World bounds ---
@@ -57,7 +60,32 @@ class LevelManager {
       });
     }
 
-    return { bg, platforms, enemies, goalFlag };
+    return { bg, colorBg, platforms, enemies, goalFlag };
+  }
+
+  // The colorful background (blue sky + colorful buildings), same layout as the gray one
+  static createColorBackground(scene, levelData) {
+    const colorBg = scene.add.graphics();
+    colorBg.setDepth(-10); // behind the gray background
+    colorBg.fillGradientStyle(0x3d9bff, 0x3d9bff, 0xcdeeff, 0xcdeeff);
+    colorBg.fillRect(0, 0, levelData.worldWidth, WORLD.HEIGHT);
+
+    const colors = [0xff6666, 0x66aaff, 0xffcc44, 0x66cc88, 0xcc88ff, 0xff9966, 0x44cccc];
+    (levelData.buildings || []).forEach((b, i) => {
+      colorBg.fillStyle(colors[i % colors.length]);
+      colorBg.fillRect(b.x, b.y, b.w, b.h);
+      // Windows with the lights on
+      colorBg.fillStyle(0xffffaa);
+      for (let wy = b.y + 15; wy < b.y + b.h - 15; wy += 20) {
+        for (let wx = b.x + 8; wx < b.x + b.w - 8; wx += 16) {
+          colorBg.fillRect(wx, wy, 8, 8);
+        }
+      }
+    });
+
+    // Same parallax speed as the gray background so they line up
+    colorBg.setScrollFactor(0.3);
+    return colorBg;
   }
 
   // Apply grayscale tint to sprites based on the level's saturation value

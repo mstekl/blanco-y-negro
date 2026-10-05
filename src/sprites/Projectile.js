@@ -113,19 +113,67 @@ class Projectile extends Phaser.Physics.Arcade.Sprite {
       gfx.destroy();
     }
 
-    // --- Shield (yellow star-like shape) ---
+    // --- Shield pickup: a WAR shield (pointed at the bottom) with a pencil on it ---
     if (!scene.textures.exists('powerup-shield')) {
       const gfx = scene.add.graphics();
-      // Yellow glowing circle
-      gfx.fillStyle(0xffdd00, 0.8);
-      gfx.fillCircle(14, 14, 14);
-      // Inner shield icon
-      gfx.fillStyle(0xffff88);
-      gfx.fillCircle(14, 14, 8);
-      // Shine highlight
-      gfx.fillStyle(0xffffff, 0.7);
-      gfx.fillCircle(10, 10, 3);
-      gfx.generateTexture('powerup-shield', 28, 28);
+      const shape = [
+        new Phaser.Geom.Point(2, 2), new Phaser.Geom.Point(26, 2),
+        new Phaser.Geom.Point(26, 16), new Phaser.Geom.Point(14, 32),
+        new Phaser.Geom.Point(2, 16),
+      ];
+      // Gold border, then blue shield inside
+      gfx.fillStyle(0xffcc33);
+      gfx.fillPoints(shape, true);
+      gfx.fillStyle(0x3366cc);
+      gfx.fillPoints([
+        new Phaser.Geom.Point(5, 5), new Phaser.Geom.Point(23, 5),
+        new Phaser.Geom.Point(23, 15), new Phaser.Geom.Point(14, 28),
+        new Phaser.Geom.Point(5, 15),
+      ], true);
+      // A little colored pencil on the shield
+      gfx.fillStyle(0xff3333);
+      gfx.fillRect(12, 8, 4, 10);
+      gfx.fillStyle(0xffdd33);
+      gfx.fillTriangle(12, 18, 16, 18, 14, 23);
+      gfx.fillStyle(0xffffff, 0.5);
+      gfx.fillRect(6, 6, 3, 8); // shine
+      gfx.generateTexture('powerup-shield', 28, 34);
+      gfx.destroy();
+    }
+
+    // --- The shield the hero HOLDS: a pencil case (caja de lápices)! ---
+    // A metal box with a latch and colored pencil tips poking out the top.
+    if (!scene.textures.exists('pencil-shield')) {
+      const gfx = scene.add.graphics();
+      // Colored pencil tips sticking out of the top
+      const tipColors = [0xff3333, 0xff8800, 0xffdd00, 0x33cc55, 0x3399ff];
+      tipColors.forEach((color, i) => {
+        gfx.fillStyle(0xe8c48a); // wood
+        gfx.fillRect(2 + i * 4, 4, 4, 6);
+        gfx.fillStyle(color);    // pencil body
+        gfx.fillRect(2 + i * 4, 8, 4, 4);
+        gfx.fillTriangle(2 + i * 4, 4, 6 + i * 4, 4, 4 + i * 4, 0); // sharp tip
+      });
+      // The box (rounded corners, like a metal tin)
+      gfx.fillStyle(0x556677);
+      gfx.fillRoundedRect(0, 10, 22, 34, 4);
+      gfx.fillStyle(0x7799bb);
+      gfx.fillRoundedRect(2, 12, 18, 30, 3);
+      // War shield decoration: gold border, a stripe and rivets
+      gfx.lineStyle(2, 0xffcc33);
+      gfx.strokeRoundedRect(1, 11, 20, 32, 4);
+      gfx.fillStyle(0xffcc33);
+      gfx.fillRect(2, 24, 18, 4);
+      gfx.fillCircle(5, 16, 1.5);
+      gfx.fillCircle(17, 16, 1.5);
+      gfx.fillCircle(5, 38, 1.5);
+      gfx.fillCircle(17, 38, 1.5);
+      // Latch in the middle
+      gfx.fillStyle(0xdddddd);
+      gfx.fillRect(8, 22, 6, 8);
+      gfx.fillStyle(0x555555);
+      gfx.fillRect(10, 25, 2, 2);
+      gfx.generateTexture('pencil-shield', 22, 44);
       gfx.destroy();
     }
   }

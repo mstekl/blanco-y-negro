@@ -290,7 +290,7 @@ export const levels = [
   // ============================================================
   // LEVEL 5 — Adentro del Castillo (Inside the Castle)
   // INSIDE the castle from level 4! Tall pillars replace the buildings.
-  // A mini-boss guards the green pipe at the end, which leads outside (level 6).
+  // No enemies here: a storm cloud chases you and throws pencils! The green pipe at the end leads outside (level 6).
   // ============================================================
   {
     id: 5,
@@ -329,15 +329,12 @@ export const levels = [
       { x: 2750, y: 320, width: 128, type: 'platform' },
     ],
 
-    enemies: [
-      { type: 'mr1', x: 400, y: 520, speed: 70, patrolMin: 200, patrolMax: 650, direction: 'right' },
-      { type: 'mr2', x: 1000, y: 520, speed: 60, patrolMin: 860, patrolMax: 1450, direction: 'left' },
-      { type: 'mr1', x: 1200, y: 270, speed: 60, patrolMin: 1200, patrolMax: 1380, direction: 'left' },
-      { type: 'mr2', x: 1850, y: 520, speed: 65, patrolMin: 1680, patrolMax: 2250, direction: 'right' },
-      // Castle guard! A boss, but the REAL final boss is waiting outside (level 6)
-      { type: 'mr2', x: 2750, y: 490, speed: 25, patrolMin: 2600, patrolMax: 2880,
-        direction: 'left', isBoss: true, health: 6, fireRate: 1400, scale: 1.8 },
-    ],
+    // No enemies in this level — a STORM CLOUD chases the hero instead!
+    enemies: [],
+
+    // The angry cloud flies after the hero and throws black and white pencils.
+    // In the final animation, colored pencils turn it into a happy cloud.
+    stormCloud: { x: 300, y: 110, speed: 120, fireRate: 1400 },
 
     powerups: [
       { type: 'color-pencil', x: 340, y: 380 },   // Gun right at the start

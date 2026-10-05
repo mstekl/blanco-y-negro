@@ -29,7 +29,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.isInvincible = false; // Can't be hurt when true
     this.hasColorGun = false;  // Can we shoot? (unlocked later with power-up)
     this.hasShield = false;    // Do we have a shield?
-    this.shieldIndicator = null; // Visual border when shield is active
+    this.shieldIndicator = null; // The pencil-case shield image (when active)
     this.lastShotTime = 0;     // Track cooldown between shots
     this.jumpCount = 0;        // How many jumps since leaving the ground (0, 1, or 2)
     this.maxJumps = 2;         // Allow double jump (press jump twice!)
@@ -104,10 +104,20 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
       this.shoot();
     }
 
-    // --- Shield indicator follows the hero ---
-    if (this.shieldIndicator && this.shieldIndicator.visible) {
-      this.shieldIndicator.setPosition(this.x, this.y);
-    }
+    // --- The pencil-case shield follows the hero ---
+    this.updateShield();
+  }
+
+  // Keep the shield in front of the hero, covering half of the body
+  updateShield() {
+    const shield = this.shieldIndicator;
+    if (!shield || !shield.visible) return;
+
+    // In front = the side the hero is looking at
+    const side = this.facingRight ? 1 : -1;
+    shield.setPosition(this.x + side * 11, this.y + 4);
+    shield.setFlipX(!this.facingRight);
+    shield.setDepth(this.depth + 1);
   }
 
   // Fire a rainbow projectile from the Color Gun!
@@ -141,8 +151,23 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     // If we have a shield, use it instead of losing a life
     if (this.hasShield) {
       this.hasShield = false;
-      // Hide the shield indicator
-      if (this.shieldIndicator) this.shieldIndicator.setVisible(false);
+      // The shield breaks: a copy flies away spinning while the real one hides
+      if (this.shieldIndicator) {
+        const broken = this.scene.add.image(
+          this.shieldIndicator.x, this.shieldIndicator.y, 'pencil-shield'
+        ).setFlipX(this.shieldIndicator.flipX).setDepth(this.depth + 2);
+        this.scene.tweens.add({
+          targets: broken,
+          x: broken.x + (this.facingRight ? 50 : -50),
+          y: broken.y - 40,
+          angle: this.facingRight ? 200 : -200,
+          alpha: 0,
+          duration: 600,
+          ease: 'Quad.easeOut',
+          onComplete: () => broken.destroy(),
+        });
+        this.shieldIndicator.setVisible(false);
+      }
       // Brief invincibility so the same enemy doesn't hit us again immediately
       this.isInvincible = true;
       this.scene.tweens.add({
