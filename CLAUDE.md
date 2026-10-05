@@ -41,6 +41,7 @@ blanco-y-negro/
 │   │   ├── Enemy.js           # Base enemy class
 │   │   ├── EnemyMR1.js        # Walker enemy
 │   │   ├── EnemyMR2.js        # Shooter enemy
+│   │   ├── CrazyDog.js        # Secret crazy dog skin (code "lebron")
 │   │   ├── StormCloud.js      # Level 5 cloud that chases you and throws pencils
 │   │   └── Projectile.js      # Bullets (hero & enemy)
 │   ├── managers/
@@ -78,7 +79,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - Parallax scrolling backgrounds with building silhouettes
 - Data-driven level system (add levels by editing levels.js)
 - World map after level 6: pick a country and play 3 levels INSIDE it, with its landmarks in the background (México: Chichén Itzá, EEUU: Estatua de la Libertad, Canadá: Torre CN; other countries get a generic landscape for now). Beating them colors the country; continents unlock in order (Norteamérica → Centroamérica → Sudamérica → África → Europa → Asia → Oceanía). Colored countries are saved in the browser (localStorage). Test shortcut: add ?mapa to the URL (?mapa=reset erases the saved countries)
-- "Hacks de mapa" on the world map (press SPACE, next to the points): type a code and ENTER. `Emi y papá 2026` = invincible mode (until the page is reloaded); `<continente> pasar` (for example `sudamerica pasar`) = that continent gets all its colors (`pass` works too); `B Y N` = the hero becomes MR.1, type it again for MR.2, and again to go back to the hero
+- "Hacks de mapa" on the world map (press SPACE, next to the points): type a code and ENTER. `Emi y papá 2026` = invincible mode (until the page is reloaded), `mortal` = turns it off again; `<continente> pasar` (for example `sudamerica pasar`) = that continent gets all its colors (`pass` works too); `B Y N` = the hero becomes MR.1, type it again for MR.2, and again to go back to the hero; `lebron` = the hero becomes a crazy dog (type it again to go back)
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log

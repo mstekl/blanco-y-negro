@@ -6,13 +6,15 @@ import Phaser from 'phaser';
 import { HERO, PROJECTILE, isGodMode } from '../utils/constants.js';
 import EnemyMR1 from './EnemyMR1.js';
 import EnemyMR2 from './EnemyMR2.js';
+import CrazyDog from './CrazyDog.js';
 
-// The secret skins (the "B Y N" code in the map hacks turns the hero into a villain!)
+// The secret skins ("B Y N" in the map hacks turns the hero into a villain, "lebron" into a crazy dog!)
 //   texture: the picture to use    make: who knows how to draw that picture
 //   body:    hitbox [width, height, offsetX, offsetY] so the feet touch the ground
 const SKINS = {
   mr1: { texture: 'enemy-mr1', make: EnemyMR1, body: [24, 40, 4, 8] },   // picture is 32x48
   mr2: { texture: 'enemy-mr2', make: EnemyMR2, body: [24, 46, 4, 8] },   // picture is 32x54 (taller)
+  perro: { texture: 'skin-perro', make: CrazyDog, body: [24, 40, 4, 8] }, // picture is 32x48
 };
 
 class Hero extends Phaser.Physics.Arcade.Sprite {

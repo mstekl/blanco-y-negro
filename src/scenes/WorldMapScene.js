@@ -575,9 +575,11 @@ class WorldMapScene extends Phaser.Scene {
   // ---------------------------------------------------------------
   // "Hacks de mapa": a box where we type a secret code
   //   Emi y papá 2026   → invincible mode (nothing hurts the hero)
+  //   mortal            → invincible mode off again
   //   <continente> pasar → that continent gets all its colors at once
   //                        (for example: sudamerica pasar; "pass" works too)
   //   B Y N             → the hero becomes MR.1, then MR.2, then the hero again
+  //   lebron            → the hero becomes a crazy dog (type it again to go back)
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -661,14 +663,31 @@ class WorldMapScene extends Phaser.Scene {
       return;
     }
 
+    // "mortal": the invincible mode is turned off again
+    if (code === 'mortal') {
+      this.registry.set('godMode', false);
+      this.godLabel.setVisible(isGodMode(this.registry));
+      this.hackSuccess('Ya eres mortal otra vez');
+      return;
+    }
+
     // "B Y N": the hero's skin changes! Every time we type it, the next skin comes:
     // hero → MR.1 → MR.2 → hero again
     if (code === 'b y n' || code === 'byn') {
       const next = { none: 'mr1', mr1: 'mr2', mr2: 'none' };
-      const now = next[this.registry.get('skin') || 'none'];
+      const now = next[this.registry.get('skin') || 'none'] || 'mr1'; // (from the dog we go to MR.1)
       this.registry.set('skin', now === 'none' ? null : now);
       const message = { mr1: '¡Ahora eres MR.1!', mr2: '¡Ahora eres MR.2!', none: 'Volviste a ser el héroe' };
       this.hackSuccess(message[now]);
+      return;
+    }
+
+    // "lebron" (with or without the accent): the hero becomes a crazy dog!
+    // Typing it again gives the normal hero back
+    if (code === 'lebron') {
+      const isDog = this.registry.get('skin') === 'perro';
+      this.registry.set('skin', isDog ? null : 'perro');
+      this.hackSuccess(isDog ? 'Volviste a ser el héroe' : '¡Guau! Ahora eres un perro loco');
       return;
     }
 
