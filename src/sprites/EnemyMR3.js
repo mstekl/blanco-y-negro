@@ -1,10 +1,11 @@
-// EnemyMR3.js — MR.3, the Bat!
-// The first enemy that FLIES. It swoops up and down in a wave while it
-// goes back and forth, so you have to time your jump (or your shot).
-// Jump on top of it or shoot it with the Color Gun to defeat it!
+// EnemyMR3.js — MR.3 and his Eraser Tank!
+// MR.3 looks like MR.1, but he is WHITE. He rides on top of a war tank
+// built out of erasers (gomas) — because erasers are what rub out color!
+// The tank drives back and forth, but when it SEES the hero it chases him.
+// Jump on MR.3's head (twice, the tank is tough) or shoot it to win.
 
 import Enemy from './Enemy.js';
-import { ENEMIES, COLORS } from '../utils/constants.js';
+import { ENEMIES } from '../utils/constants.js';
 
 class EnemyMR3 extends Enemy {
   constructor(scene, x, y, config = {}) {
@@ -22,68 +23,115 @@ class EnemyMR3 extends Enemy {
       patrolMax: config.patrolMax,
     });
 
-    // Bats don't fall: no gravity, and they fly over platforms
-    // (LevelScene checks this flag so the bat doesn't bump into them)
-    this.body.setAllowGravity(false);
-    this.isFlyer = true;
+    // When the hero gets this close, the tank stops patrolling and chases him
+    this.chaseSpeed = config.chaseSpeed || ENEMIES.MR3.chaseSpeed;
+    this.chaseRange = config.chaseRange || ENEMIES.MR3.chaseRange;
+    this.rumbleTime = 0; // used to shake the tank while it chases
 
-    // The wave: we swoop around the height where we were placed
-    this.baseY = y;
-    this.waveHeight = config.waveHeight || ENEMIES.MR3.waveHeight;
-    this.waveSpeed = config.waveSpeed || ENEMIES.MR3.waveSpeed; // radians per second
-    this.waveTime = Math.random() * Math.PI * 2; // (so two bats never flap in sync)
-
-    // Hitbox that matches the body of the bat (the wings are thin)
-    this.body.setSize(28, 18);
-    this.body.setOffset(6, 7);
+    // Hitbox covers the tank AND MR.3 sitting on top
+    // (so jumping on his head counts as a stomp)
+    this.body.setSize(58, 52);
+    this.body.setOffset(3, 8);
   }
 
-  // Patrol like the others, plus the up-and-down wave
   update() {
-    super.update();
     if (this.isDefeated) return;
 
-    this.waveTime += this.waveSpeed / 60; // update() runs 60 times per second
-    // We set the speed (not the position) so the physics stay happy
-    const targetY = this.baseY + Math.sin(this.waveTime) * this.waveHeight;
-    this.setVelocityY((targetY - this.y) * 6);
+    const hero = this.scene.hero;
+    const dx = hero ? hero.x - this.x : 9999;
+    const dy = hero ? hero.y - this.y : 9999;
 
-    // Flap the wings: squash the picture a little in a quick rhythm
-    this.setScale(1, 0.85 + Math.abs(Math.sin(this.waveTime * 4)) * 0.25);
+    // Can the tank see the hero? (close enough, and more or less on the same floor)
+    const seesHero = Math.abs(dx) < this.chaseRange && Math.abs(dy) < 150;
+
+    if (seesHero) {
+      // CHASE! Drive toward the hero, faster than when patrolling
+      this.direction = dx > 0 ? 1 : -1;
+      let speed = this.chaseSpeed;
+
+      // But never leave its piece of ground — tanks can't jump over holes!
+      if ((this.direction === -1 && this.x <= this.patrolMin) ||
+          (this.direction === 1 && this.x >= this.patrolMax)) {
+        speed = 0;
+      }
+      this.setVelocityX(speed * this.direction);
+
+      // Shake a little, like an angry engine going "brrrrr"
+      this.rumbleTime += 0.6;
+      this.setAngle(Math.sin(this.rumbleTime) * 2);
+    } else {
+      // Nobody around: patrol back and forth like the other villains
+      if (this.x <= this.patrolMin || this.body.blocked.left) this.direction = 1;
+      else if (this.x >= this.patrolMax || this.body.blocked.right) this.direction = -1;
+      this.setVelocityX(this.speed * this.direction);
+      this.setAngle(0);
+    }
+
+    // The picture faces right, so flip it when going left
+    this.setFlipX(this.direction === -1);
   }
 
-  // Draw MR.3: a black bat with spread wings and angry red eyes
+  // Draw MR.3 on his eraser tank (facing right)
   static createTexture(scene) {
     const gfx = scene.add.graphics();
-    const color = COLORS.ENEMY_MR1; // Same dark color family
+    const black = 0x1a1a1a;
+    const eraser = 0xeeeeee; // erasers are white...
+    const sleeve = 0x8a8a8a; // ...with a gray paper sleeve, like a real eraser
 
-    // Wings (two triangles, with a jagged edge like a bat)
-    gfx.fillStyle(color);
-    gfx.fillTriangle(16, 10, 0, 4, 4, 22);    // left wing
-    gfx.fillTriangle(16, 10, 40, 4, 36, 22);  // right wing
-    gfx.fillTriangle(4, 22, 10, 16, 12, 24);  // left wing tips
-    gfx.fillTriangle(36, 22, 30, 16, 28, 24); // right wing tips
-
-    // Body and head
-    gfx.fillCircle(20, 14, 9);
-    // Pointy ears
-    gfx.fillTriangle(13, 8, 15, 0, 18, 7);
-    gfx.fillTriangle(27, 8, 25, 0, 22, 7);
-
-    // Angry eyes (white with red pupils, like the other villains)
+    // --- MR.3 popping out of the hatch (like MR.1, but WHITE) ---
+    // Head with a black outline so we can see him against the white tank
+    gfx.fillStyle(black);
+    gfx.fillCircle(26, 9, 9);
     gfx.fillStyle(0xffffff);
-    gfx.fillCircle(16, 13, 2.5);
-    gfx.fillCircle(24, 13, 2.5);
+    gfx.fillCircle(26, 9, 7.5);
+    // Angry red eyes (black around them so they stand out on white)
+    gfx.fillStyle(black);
+    gfx.fillCircle(23, 8, 2);
+    gfx.fillCircle(29, 8, 2);
     gfx.fillStyle(0xff0000);
-    gfx.fillCircle(16, 13, 1.2);
-    gfx.fillCircle(24, 13, 1.2);
-
-    // Little fangs
+    gfx.fillCircle(23, 8, 1);
+    gfx.fillCircle(29, 8, 1);
+    // Body and arms (white with black outline), resting on the hatch
+    gfx.fillStyle(black);
+    gfx.fillRect(19, 17, 14, 12);
+    gfx.fillRect(12, 19, 28, 5);
     gfx.fillStyle(0xffffff);
-    gfx.fillTriangle(17, 19, 19, 19, 18, 23);
-    gfx.fillTriangle(21, 19, 23, 19, 22, 23);
+    gfx.fillRect(20, 18, 12, 11);
+    gfx.fillRect(13, 20, 26, 3);
 
-    gfx.generateTexture('enemy-mr3', 40, 26);
+    // --- The cannon: a long eraser stick pointing forward ---
+    gfx.fillStyle(black);
+    gfx.fillRect(38, 30, 26, 8);
+    gfx.fillStyle(eraser);
+    gfx.fillRect(39, 31, 24, 6);
+    gfx.fillStyle(sleeve);
+    gfx.fillRect(44, 31, 8, 6); // little sleeve band on the cannon
+
+    // --- The turret: a fat eraser block ---
+    gfx.fillStyle(black);
+    gfx.fillRect(14, 27, 26, 13);
+    gfx.fillStyle(eraser);
+    gfx.fillRect(15, 28, 24, 11);
+    gfx.fillStyle(sleeve);
+    gfx.fillRect(21, 28, 12, 11);
+
+    // --- The body of the tank: a big eraser block ---
+    gfx.fillStyle(black);
+    gfx.fillRect(2, 39, 60, 12);
+    gfx.fillStyle(eraser);
+    gfx.fillRect(3, 40, 58, 10);
+    gfx.fillStyle(sleeve);
+    gfx.fillRect(16, 40, 32, 10);
+
+    // --- Treads: a row of little erasers acting as wheels ---
+    gfx.fillStyle(black);
+    gfx.fillRoundedRect(0, 50, 64, 14, 6);
+    gfx.fillStyle(eraser);
+    for (let i = 0; i < 6; i++) {
+      gfx.fillCircle(7 + i * 10, 57, 4);
+    }
+
+    gfx.generateTexture('enemy-mr3', 64, 64);
     gfx.destroy();
   }
 }

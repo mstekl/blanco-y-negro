@@ -6,15 +6,21 @@ import Phaser from 'phaser';
 import { HERO, PROJECTILE, isGodMode } from '../utils/constants.js';
 import EnemyMR1 from './EnemyMR1.js';
 import EnemyMR2 from './EnemyMR2.js';
+import EnemyMR3 from './EnemyMR3.js';
 import CrazyDog from './CrazyDog.js';
 
-// The secret skins ("B Y N" in the map hacks turns the hero into a villain, "lebron" into a crazy dog!)
-//   texture: the picture to use    make: who knows how to draw that picture
-//   body:    hitbox [width, height, offsetX, offsetY] so the feet touch the ground
+// The secret skins ("B Y N" in the map hacks turns the hero into a villain, "lebron" into a crazy dog,
+// "goma" into MR.3 on his eraser tank!)
+//   texture:  the picture to use    make: who knows how to draw that picture
+//   body:     hitbox [width, height, offsetX, offsetY] so the feet touch the ground
+//   canShoot: true = we can shoot from the start (no Color Pencil needed)
+//   gunAt:    where the shots come out [how far in front, how far down from the middle]
 const SKINS = {
   mr1: { texture: 'enemy-mr1', make: EnemyMR1, body: [24, 40, 4, 8] },   // picture is 32x48
   mr2: { texture: 'enemy-mr2', make: EnemyMR2, body: [24, 46, 4, 8] },   // picture is 32x54 (taller)
   perro: { texture: 'skin-perro', make: CrazyDog, body: [24, 40, 4, 8] }, // picture is 32x48
+  // The tank has a cannon, so MR.3 shoots right away! (picture is 64x64)
+  mr3: { texture: 'enemy-mr3', make: EnemyMR3, body: [56, 54, 4, 10], canShoot: true, gunAt: [32, 2] },
 };
 
 class Hero extends Phaser.Physics.Arcade.Sprite {
@@ -45,7 +51,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.score = 0;
     this.facingRight = true;   // Which direction are we looking?
     this.isInvincible = false; // Can't be hurt when true
-    this.hasColorGun = false;  // Can we shoot? (unlocked later with power-up)
+    this.hasColorGun = Boolean(skin && skin.canShoot); // Can we shoot? (normally unlocked later with power-up)
+    this.gunAt = (skin && skin.gunAt) || [16, 0];     // Where the shots come out of
     this.shieldCount = 0;      // How many shields we have (0, 1 or 2)
     this.maxShields = 2;       // Picking up a shield while holding one gives us 2!
     this.shieldImages = [];    // The pencil-case shield images (one per shield)
@@ -179,10 +186,9 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     if (!projectile) return;
 
     // Fire it in the direction the hero is facing
-    const offsetX = this.facingRight ? 16 : -16;
     const direction = this.facingRight ? 1 : -1;
     projectile.fire(
-      this.x + offsetX, this.y,
+      this.x + this.gunAt[0] * direction, this.y + this.gunAt[1],
       direction,
       PROJECTILE.HERO_SPEED
     );

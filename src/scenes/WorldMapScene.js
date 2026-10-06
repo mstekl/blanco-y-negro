@@ -580,6 +580,7 @@ class WorldMapScene extends Phaser.Scene {
   //                        (for example: sudamerica pasar; "pass" works too)
   //   B Y N             → the hero becomes MR.1, then MR.2, then the hero again
   //   lebron            → the hero becomes a crazy dog (type it again to go back)
+  //   goma              → the hero becomes MR.3 on his eraser tank and can shoot (again = go back)
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -688,6 +689,15 @@ class WorldMapScene extends Phaser.Scene {
       const isDog = this.registry.get('skin') === 'perro';
       this.registry.set('skin', isDog ? null : 'perro');
       this.hackSuccess(isDog ? 'Volviste a ser el héroe' : '¡Guau! Ahora eres un perro loco');
+      return;
+    }
+
+    // "goma": the hero becomes MR.3 riding his eraser tank, and he can shoot
+    // from the very first level! Typing it again gives the normal hero back
+    if (code === 'goma') {
+      const isTank = this.registry.get('skin') === 'mr3';
+      this.registry.set('skin', isTank ? null : 'mr3');
+      this.hackSuccess(isTank ? 'Volviste a ser el héroe' : '¡Ahora eres MR.3 en su tanque de gomas!');
       return;
     }
 

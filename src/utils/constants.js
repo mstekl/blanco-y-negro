@@ -44,7 +44,7 @@ export const PROJECTILE = {
 export const ENEMIES = {
   MR1: { speed: 80, health: 1, score: 100 },
   MR2: { speed: 60, health: 2, score: 200, fireRate: 2500 },
-  MR3: { speed: 70, health: 1, score: 150, waveHeight: 45, waveSpeed: 2.5 }, // the flying bat
+  MR3: { speed: 60, chaseSpeed: 130, chaseRange: 450, health: 2, score: 250 }, // the eraser tank (chases the hero!)
   BOSS: { speed: 0, health: 10, score: 1000, fireRate: 1500 },
 };
 

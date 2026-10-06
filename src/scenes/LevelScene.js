@@ -175,6 +175,7 @@ class LevelScene extends Phaser.Scene {
   //   E then P      → invincible mode on / off
   //   P then 1-6    → jump to that level (1-3 inside a country)
   //   L             → crazy dog skin (press again to go back to the hero)
+  //   G             → MR.3 on his eraser tank, and he can shoot! (press again to go back)
   //   B then N      → hero → MR.1 → MR.2 → hero again
   // The second key of a combo must come soon after the first one.
   setupCheats() {
@@ -206,6 +207,9 @@ class LevelScene extends Phaser.Scene {
       } else if (key === 'l') {
         const isDog = this.registry.get('skin') === 'perro';
         this.changeSkin(isDog ? null : 'perro');
+      } else if (key === 'g') {
+        const isTank = this.registry.get('skin') === 'mr3';
+        this.changeSkin(isTank ? null : 'mr3');
       } else if (key === 'n' && previous === 'b') {
         const next = { none: 'mr1', mr1: 'mr2', mr2: 'none' };
         const now = next[this.registry.get('skin') || 'none'] || 'mr1'; // (from the dog we go to MR.1)

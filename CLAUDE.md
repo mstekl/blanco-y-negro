@@ -41,7 +41,7 @@ blanco-y-negro/
 │   │   ├── Enemy.js           # Base enemy class
 │   │   ├── EnemyMR1.js        # Walker enemy
 │   │   ├── EnemyMR2.js        # Shooter enemy
-│   │   ├── EnemyMR3.js        # Flying bat enemy
+│   │   ├── EnemyMR3.js        # MR.3 on his eraser tank (chases the hero)
 │   │   ├── CrazyDog.js        # Secret crazy dog skin (code "lebron")
 │   │   ├── StormCloud.js      # Level 5 cloud that chases you and throws pencils
 │   │   └── Projectile.js      # Bullets (hero & enemy)
@@ -72,7 +72,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 
 ## Game Features
 - 6 levels with increasing difficulty (castle entrance at level 4, pipe at level 5, final boss in level 6)
-- 3 enemy types: MR.1 (walker), MR.2 (shooter) and MR.3 (flying bat, levels 2, 3, 4 and 6) + boss
+- 3 enemy types: MR.1 (walker), MR.2 (shooter) and MR.3 (white MR.1 riding an eraser tank that chases you, levels 3, 4 and 6) + boss
 - Power-ups: Color Pencil (gun), Shield, Extra Life
 - Double jump mechanic
 - Grayscale tint system (world gets darker each level)
@@ -80,9 +80,9 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - Parallax scrolling backgrounds with building silhouettes
 - Data-driven level system (add levels by editing levels.js)
 - World map after level 6: pick a country and play 3 levels INSIDE it, with its landmarks in the background (México: Chichén Itzá, EEUU: Estatua de la Libertad, Canadá: Torre CN; other countries get a generic landscape for now). Beating them colors the country; continents unlock in order (Norteamérica → Centroamérica → Sudamérica → África → Europa → Asia → Oceanía). Colored countries are saved in the browser (localStorage). Test shortcut: add ?mapa to the URL (?mapa=reset erases the saved countries)
-- "Hacks de mapa" on the world map (press SPACE, next to the points): type a code and ENTER. `Emi y papá 2026` = invincible mode (until the page is reloaded), `mortal` = turns it off again; `<continente> pasar` (for example `sudamerica pasar`) = that continent gets all its colors (`pass` works too); `B Y N` = the hero becomes MR.1, type it again for MR.2, and again to go back to the hero; `lebron` = the hero becomes a crazy dog (type it again to go back)
+- "Hacks de mapa" on the world map (press SPACE, next to the points): type a code and ENTER. `Emi y papá 2026` = invincible mode (until the page is reloaded), `mortal` = turns it off again; `<continente> pasar` (for example `sudamerica pasar`) = that continent gets all its colors (`pass` works too); `B Y N` = the hero becomes MR.1, type it again for MR.2, and again to go back to the hero; `lebron` = the hero becomes a crazy dog (type it again to go back); `goma` = the hero becomes MR.3 on his eraser tank and can shoot from the start (type it again to go back)
 - `npm run dev:inmortal` starts a second server (port 5174) where nothing hurts the hero
-- Secret keys inside the levels: `E` then `P` = invincible mode on/off; `P` then `1`-`6` = jump to that level, `P` then `7` = jump to the world map; `L` = crazy dog; `B` then `N` = MR.1 / MR.2 / hero; a number `1`-`9` alone = that many jumps in the air
+- Secret keys inside the levels: `E` then `P` = invincible mode on/off; `P` then `1`-`6` = jump to that level, `P` then `7` = jump to the world map; `L` = crazy dog; `G` = MR.3 on his eraser tank (can shoot); `B` then `N` = MR.1 / MR.2 / hero; a number `1`-`9` alone = that many jumps in the air
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log
