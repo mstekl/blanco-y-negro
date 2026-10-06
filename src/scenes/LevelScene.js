@@ -99,8 +99,8 @@ class LevelScene extends Phaser.Scene {
       (hero, platform) => this.powerupManager.heroLandsOnHiddenPlatform(hero, platform),
       null, this
     );
-    // Enemies walk on platforms
-    this.physics.add.collider(this.enemies, this.platforms);
+    // Enemies walk on platforms (the flying bats go right through them)
+    this.physics.add.collider(this.enemies, this.platforms, null, (enemy) => !enemy.isFlyer, this);
 
     // Hero vs Enemies — stomp or take damage
     this.physics.add.overlap(
@@ -156,17 +156,105 @@ class LevelScene extends Phaser.Scene {
     this.hud.setLevelName(this.levelData.id, this.levelData.name);
 
     // A small reminder so we never forget that nothing can hurt us here
-    if (isGodMode(this.registry)) {
-      this.add.text(400, 80, 'MODO INMORTAL', {
-        fontFamily: 'Arial', fontSize: '14px', color: '#66ee88',
-        stroke: '#000000', strokeThickness: 3,
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
-    }
+    // (always created, because the E+P hack can turn the mode on or off while we play)
+    this.godLabel = this.add.text(400, 80, 'MODO INMORTAL', {
+      fontFamily: 'Arial', fontSize: '14px', color: '#66ee88',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100)
+      .setVisible(isGodMode(this.registry));
+
+    this.setupCheats();
     this.hud.updateLives(this.hero.lives);
     this.hud.updateScore(this.hero.score);
 
     // Fade in
     this.cameras.main.fadeIn(500);
+  }
+
+  // Secret key combos for the levels (the same hacks as the world map, but with keys):
+  //   E then P      → invincible mode on / off
+  //   P then 1-6    → jump to that level (1-3 inside a country)
+  //   L             → crazy dog skin (press again to go back to the hero)
+  //   B then N      → hero → MR.1 → MR.2 → hero again
+  // The second key of a combo must come soon after the first one.
+  setupCheats() {
+    this.lastCheatKey = null;
+    this.lastCheatTime = 0;
+
+    this.input.keyboard.on('keydown', (event) => {
+      if (this.levelComplete || event.repeat) return;
+      const key = event.key.toLowerCase();
+      const previous = this.time.now - this.lastCheatTime < 1500 ? this.lastCheatKey : null;
+      this.lastCheatKey = key;
+      this.lastCheatTime = this.time.now;
+
+      if (key === 'p' && previous === 'e') {
+        const on = !this.registry.get('godMode');
+        this.registry.set('godMode', on);
+        this.godLabel.setVisible(isGodMode(this.registry));
+        this.showCheatMessage(on ? '¡Modo inmortal activado!' : 'Ya eres mortal otra vez');
+      } else if (previous === 'p' && key === '7') {
+        this.jumpToMap();
+      } else if (previous === 'p' && /^[1-9]$/.test(key)) {
+        const target = parseInt(key, 10) - 1;
+        if (target < getLevels(this.registry).length) this.jumpToLevel(target);
+      } else if (/^[1-9]$/.test(key)) {
+        const jumps = parseInt(key, 10);
+        this.registry.set('maxJumps', jumps);
+        this.hero.maxJumps = jumps;
+        this.showCheatMessage(`¡${jumps} saltos!`);
+      } else if (key === 'l') {
+        const isDog = this.registry.get('skin') === 'perro';
+        this.changeSkin(isDog ? null : 'perro');
+      } else if (key === 'n' && previous === 'b') {
+        const next = { none: 'mr1', mr1: 'mr2', mr2: 'none' };
+        const now = next[this.registry.get('skin') || 'none'] || 'mr1'; // (from the dog we go to MR.1)
+        this.changeSkin(now === 'none' ? null : now);
+      }
+    });
+  }
+
+  // A short message at the top of the screen
+  showCheatMessage(message) {
+    const text = this.add.text(400, 110, message, {
+      fontFamily: 'Arial', fontSize: '18px', color: '#66ee88',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    this.tweens.add({
+      targets: text, alpha: 0, delay: 900, duration: 400,
+      onComplete: () => text.destroy(),
+    });
+  }
+
+  // The skin is chosen when the hero is born, so we start this level again
+  // (lives and score are kept in the registry)
+  changeSkin(skin) {
+    this.registry.set('skin', skin);
+    this.saveState();
+    this.scene.restart({ levelIndex: this.levelIndex });
+  }
+
+  // Go straight to the world map (as if we had finished the levels)
+  jumpToMap() {
+    this.levelComplete = true;
+    this.saveState();
+    this.registry.set('country', null); // the map is not inside a country
+    this.hero.setVelocity(0, 0);
+    this.cameras.main.fadeOut(300);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('WorldMapScene');
+    });
+  }
+
+  // Go straight to another level (through its "Nivel X" splash)
+  jumpToLevel(levelIndex) {
+    this.levelComplete = true; // stops the game loop while we leave
+    this.saveState();
+    this.hero.setVelocity(0, 0);
+    this.cameras.main.fadeOut(300);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('LevelIntroScene', { levelIndex });
+    });
   }
 
   // A hero projectile hits an enemy

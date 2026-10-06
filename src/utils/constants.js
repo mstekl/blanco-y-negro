@@ -2,11 +2,16 @@
 // Instead of typing "160" everywhere, we give it a name like WALK_SPEED.
 // This way, if we want to make the hero faster, we only change it in ONE place.
 
-// Invincible mode is turned on with a secret code typed in the "Hacks de
+// Invincible mode, ONLY for looking around (levels, maps...): nothing hurts the hero.
+// It is turned on by starting the server with VITE_INMORTAL=1 (see "npm run dev:inmortal"),
+// so the normal game (npm run dev) is never affected.
+export const GOD_MODE = Boolean(import.meta.env.VITE_INMORTAL);
+
+// Invincible mode can also be turned on with a secret code typed in the "Hacks de
 // mapa" box of the world map. The code is remembered in the registry (the memory
 // shared by all scenes) until the page is reloaded.
 export function isGodMode(registry) {
-  return Boolean(registry && registry.get('godMode'));
+  return GOD_MODE || Boolean(registry && registry.get('godMode'));
 }
 
 // The game window size and gravity
@@ -39,6 +44,7 @@ export const PROJECTILE = {
 export const ENEMIES = {
   MR1: { speed: 80, health: 1, score: 100 },
   MR2: { speed: 60, health: 2, score: 200, fireRate: 2500 },
+  MR3: { speed: 70, health: 1, score: 150, waveHeight: 45, waveSpeed: 2.5 }, // the flying bat
   BOSS: { speed: 0, health: 10, score: 1000, fireRate: 1500 },
 };
 

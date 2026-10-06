@@ -51,7 +51,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.shieldImages = [];    // The pencil-case shield images (one per shield)
     this.lastShotTime = 0;     // Track cooldown between shots
     this.jumpCount = 0;        // How many jumps since leaving the ground (0, 1, or 2)
-    this.maxJumps = 2;         // Allow double jump (press jump twice!)
+    // Allow double jump (press jump twice!) — the secret number keys in the levels can change it
+    this.maxJumps = scene.registry.get('maxJumps') || 2;
 
     // Set up keyboard controls
     // Arrow keys

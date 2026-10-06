@@ -119,6 +119,8 @@ export const levels = [
       { type: 'mr1', x: 1250, y: 520, speed: 120, patrolMin: 800, patrolMax: 1350, direction: 'right' },
       { type: 'mr1', x: 2000, y: 520, speed: 130, patrolMin: 1700, patrolMax: 2200, direction: 'left' },
       { type: 'mr2', x: 2850, y: 520, speed: 60, patrolMin: 2500, patrolMax: 3150, direction: 'left', fireRate: 2200 },
+      // The first flying bat!
+      { type: 'mr3', x: 1500, y: 230, speed: 70, patrolMin: 1300, patrolMax: 1800, direction: 'left' },
     ],
 
     // Power-ups — the Color Gun appears here!
@@ -194,6 +196,8 @@ export const levels = [
       { type: 'mr2', x: 1300, y: 250, speed: 60, patrolMin: 1300, patrolMax: 1480, direction: 'left', fireRate: 1600 },
       { type: 'mr2', x: 3400, y: 520, speed: 70, patrolMin: 3100, patrolMax: 3700, direction: 'left', fireRate: 1600 },
       { type: 'mr2', x: 900, y: 520, speed: 60, patrolMin: 800, patrolMax: 1400, direction: 'right', fireRate: 1800 },
+      { type: 'mr3', x: 1000, y: 230, speed: 80, patrolMin: 800, patrolMax: 1300, direction: 'right' },
+      { type: 'mr3', x: 2800, y: 230, speed: 80, patrolMin: 2500, patrolMax: 3000, direction: 'left' },
       { type: 'mr2', x: 2600, y: 520, speed: 60, patrolMin: 2300, patrolMax: 2850, direction: 'left', fireRate: 1800 },
       { type: 'mr2', x: 3800, y: 520, speed: 60, patrolMin: 3700, patrolMax: 3980, direction: 'left', fireRate: 1600 },
     ],
@@ -270,6 +274,8 @@ export const levels = [
       { type: 'mr2', x: 900, y: 520, speed: 70, patrolMin: 768, patrolMax: 1100, direction: 'left', fireRate: 1500 },
       { type: 'mr2', x: 1600, y: 520, speed: 75, patrolMin: 1472, patrolMax: 1800, direction: 'right', fireRate: 1500 },
       { type: 'mr1', x: 1150, y: 250, speed: 90, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
+      { type: 'mr3', x: 1700, y: 220, speed: 85, patrolMin: 1500, patrolMax: 2000, direction: 'left' },
+      { type: 'mr3', x: 2400, y: 220, speed: 85, patrolMin: 2200, patrolMax: 2700, direction: 'right' },
       { type: 'mr2', x: 2300, y: 520, speed: 80, patrolMin: 2112, patrolMax: 2500, direction: 'left', fireRate: 1500 },
       // Extra enemies on the ground between the gaps
       { type: 'mr1', x: 300, y: 520, speed: 130, patrolMin: 100, patrolMax: 550, direction: 'right' },
@@ -422,7 +428,9 @@ export const levels = [
       { type: 'mr2', x: 900, y: 520, speed: 75, patrolMin: 780, patrolMax: 1450, direction: 'left', fireRate: 1400 },
       { type: 'mr1', x: 1150, y: 260, speed: 90, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
       { type: 'mr2', x: 1800, y: 520, speed: 80, patrolMin: 1660, patrolMax: 2280, direction: 'right', fireRate: 1400 },
-      // Extra enemies
+      // Extra enemies (and bats to dodge on the way to the boss)
+      { type: 'mr3', x: 1300, y: 220, speed: 90, patrolMin: 1100, patrolMax: 1600, direction: 'left' },
+      { type: 'mr3', x: 2200, y: 220, speed: 90, patrolMin: 2000, patrolMax: 2500, direction: 'right' },
       { type: 'mr1', x: 1000, y: 520, speed: 140, patrolMin: 780, patrolMax: 1450, direction: 'right' },
       { type: 'mr1', x: 2000, y: 520, speed: 140, patrolMin: 1660, patrolMax: 2280, direction: 'left' },
       { type: 'mr2', x: 400, y: 520, speed: 70, patrolMin: 200, patrolMax: 580, direction: 'left', fireRate: 1600 },
