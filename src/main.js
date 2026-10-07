@@ -6,11 +6,14 @@ import Phaser from 'phaser';
 import BootScene from './scenes/BootScene.js';
 import PreloadScene from './scenes/PreloadScene.js';
 import TitleScene from './scenes/TitleScene.js';
+import SkinsScene from './scenes/SkinsScene.js';
 import LevelIntroScene from './scenes/LevelIntroScene.js';
 import LevelScene from './scenes/LevelScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 import CelebrationScene from './scenes/CelebrationScene.js';
+import WorldMapScene from './scenes/WorldMapScene.js';
 import WinScene from './scenes/WinScene.js';
+import { setupTouchControls } from './touch/TouchControls.js';
 
 // Game configuration — think of this as the "settings" for our game
 const config = {
@@ -23,6 +26,13 @@ const config = {
 
   // Where to put the game on the webpage
   parent: 'game-container',
+
+  // Make the game as big as the screen allows (without stretching it),
+  // so it fits on a computer, a tablet or a phone
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
 
   // Background color (dark — sets the mood!)
   backgroundColor: '#111111',
@@ -39,9 +49,12 @@ const config = {
   },
 
   // All the scenes in our game — Boot starts first!
-  // Boot → PreloadScene → TitleScene → LevelIntro → Level → GameOver/Celebration → Win
-  scene: [BootScene, PreloadScene, TitleScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WinScene]
+  // Boot → PreloadScene → TitleScene (↔ SkinsScene) → LevelIntro → Level → GameOver/Celebration → WorldMap → Win
+  scene: [BootScene, PreloadScene, TitleScene, SkinsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene]
 };
 
 // Create the game!
 const game = new Phaser.Game(config);
+
+// On phones and tablets: buttons and a small keyboard on the screen
+setupTouchControls();

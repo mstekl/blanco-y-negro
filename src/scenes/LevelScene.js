@@ -11,8 +11,8 @@ import HUDManager from '../managers/HUDManager.js';
 import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
 import StormCloud from '../sprites/StormCloud.js';
-import { levels } from '../data/levels.js';
-import { WORLD, HERO } from '../utils/constants.js';
+import { getLevels } from '../data/countryLevels.js';
+import { WORLD, HERO, isGodMode } from '../utils/constants.js';
 
 class LevelScene extends Phaser.Scene {
   constructor() {
@@ -33,7 +33,8 @@ class LevelScene extends Phaser.Scene {
   // create() — Build the level using LevelManager
   create() {
     // Get the level configuration data
-    this.levelData = levels[this.levelIndex];
+    // (the 6 normal levels, or the 3 levels of the country we are playing in)
+    this.levelData = getLevels(this.registry)[this.levelIndex];
 
     // Initialize game state in the registry (first time only)
     if (this.registry.get('lives') === undefined) {
@@ -98,8 +99,8 @@ class LevelScene extends Phaser.Scene {
       (hero, platform) => this.powerupManager.heroLandsOnHiddenPlatform(hero, platform),
       null, this
     );
-    // Enemies walk on platforms
-    this.physics.add.collider(this.enemies, this.platforms);
+    // Enemies walk on platforms (the flying bats go right through them)
+    this.physics.add.collider(this.enemies, this.platforms, null, (enemy) => !enemy.isFlyer, this);
 
     // Hero vs Enemies — stomp or take damage
     this.physics.add.overlap(
@@ -130,13 +131,18 @@ class LevelScene extends Phaser.Scene {
 
     // --- Storm cloud (only in levels that have one) ---
     // It chases the hero and throws black and white pencils
+    // (The scene object is reused for every level, so we forget the cloud of the
+    // previous level first — otherwise an old, destroyed cloud keeps updating)
+    this.stormCloud = null;
     if (this.levelData.stormCloud) {
       const cfg = this.levelData.stormCloud;
       this.stormCloud = new StormCloud(this, cfg.x, cfg.y, this.hero, cfg);
-      // A pencil hits the hero — works like an enemy bullet
+      // A pencil hits the hero — works like an enemy bullet.
+      // Careful: when a single sprite (the hero) meets a group, Phaser gives
+      // us the SPRITE first and the group member second — so (hero, pencil)!
       this.physics.add.overlap(
-        this.stormCloud.pencils, this.hero,
-        (pencil, hero) => this.pencilHitsHero(pencil, hero), null, this
+        this.hero, this.stormCloud.pencils,
+        (hero, pencil) => this.pencilHitsHero(pencil, hero), null, this
       );
     }
 
@@ -148,11 +154,57 @@ class LevelScene extends Phaser.Scene {
     // --- HUD ---
     this.hud = new HUDManager(this);
     this.hud.setLevelName(this.levelData.id, this.levelData.name);
+
+    // A small reminder so we never forget that nothing can hurt us here
+    // (always created, because the E+P hack can turn the mode on or off while we play)
+    this.godLabel = this.add.text(400, 80, 'MODO INMORTAL', {
+      fontFamily: 'Arial', fontSize: '14px', color: '#66ee88',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100)
+      .setVisible(isGodMode(this.registry));
+
+    this.setupCheats();
     this.hud.updateLives(this.hero.lives);
     this.hud.updateScore(this.hero.score);
 
     // Fade in
     this.cameras.main.fadeIn(500);
+  }
+
+  // Secret key combo for the levels:
+  //   E then P      → invincible mode on / off
+  // (the skins are chosen in the 'sala' before playing, never in the middle of a level)
+  // The second key of the combo must come soon after the first one.
+  setupCheats() {
+    this.lastCheatKey = null;
+    this.lastCheatTime = 0;
+
+    this.input.keyboard.on('keydown', (event) => {
+      if (this.levelComplete || event.repeat) return;
+      const key = event.key.toLowerCase();
+      const previous = this.time.now - this.lastCheatTime < 1500 ? this.lastCheatKey : null;
+      this.lastCheatKey = key;
+      this.lastCheatTime = this.time.now;
+
+      if (key === 'p' && previous === 'e') {
+        const on = !this.registry.get('godMode');
+        this.registry.set('godMode', on);
+        this.godLabel.setVisible(isGodMode(this.registry));
+        this.showCheatMessage(on ? '¡Modo inmortal activado!' : 'Ya eres mortal otra vez');
+      }
+    });
+  }
+
+  // A short message at the top of the screen
+  showCheatMessage(message) {
+    const text = this.add.text(400, 110, message, {
+      fontFamily: 'Arial', fontSize: '18px', color: '#66ee88',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    this.tweens.add({
+      targets: text, alpha: 0, delay: 900, duration: 400,
+      onComplete: () => text.destroy(),
+    });
   }
 
   // A hero projectile hits an enemy
@@ -201,16 +253,15 @@ class LevelScene extends Phaser.Scene {
     if (!pencil.active || this.levelComplete) return;
     pencil.destroy();
 
-    // Same rules as enemy bullets: the shield absorbs it, otherwise restart the level
-    const livesBefore = hero.lives;
+    // The shield absorbs it; otherwise we lose a life but KEEP playing.
+    // We don't restart the level here: the cloud keeps chasing us, so going
+    // back to the start every time would be too harsh.
     hero.takeDamage();
     this.saveState();
     this.hud.updateLives(hero.lives);
 
     if (hero.lives <= 0) {
       this.gameOver();
-    } else if (hero.lives < livesBefore) {
-      this.restartLevel();
     }
   }
 
@@ -294,6 +345,9 @@ class LevelScene extends Phaser.Scene {
     this.saveState();
     this.hud.updateScore(this.hero.score);
 
+    // The black-and-white villains that are still around get their colors back
+    this.colorizeEnemies();
+
     // A castle goal gets a special animation: the hero walks inside!
     if (this.levelData.goal.type === 'castle') {
       this.enterCastle();
@@ -322,11 +376,18 @@ class LevelScene extends Phaser.Scene {
     // Go to next level or win!
     this.time.delayedCall(4200, () => {
       const nextLevel = this.levelIndex + 1;
-      if (nextLevel < levels.length) {
+      const country = this.registry.get('country');
+      if (nextLevel < getLevels(this.registry).length) {
         // Next level!
         this.cameras.main.fadeOut(400);
         this.cameras.main.once('camerafadeoutcomplete', () => {
           this.scene.start('LevelIntroScene', { levelIndex: nextLevel });
+        });
+      } else if (country) {
+        // Beat the 3 levels of a country: back to the map, where it gets its color
+        this.cameras.main.fadeOut(800, 255, 255, 255);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('WorldMapScene', { completedCountry: country.id });
         });
       } else {
         // Beat all levels! The city celebrates (then the WinScene comes next)
@@ -335,6 +396,32 @@ class LevelScene extends Phaser.Scene {
           this.scene.start('CelebrationScene');
         });
       }
+    });
+  }
+
+  // Every enemy still standing turns a bright color (blue, orange, red,
+  // violet, yellow...) with a little hop and a burst of color.
+  colorizeEnemies() {
+    const colors = [0x0088ff, 0xff8800, 0xff0000, 0x8800ff, 0xffdd00, 0x00cc44, 0xff44aa];
+
+    this.enemies.getChildren().forEach((enemy, i) => {
+      if (!enemy.active || enemy.isDefeated) return;
+
+      // Freeze the enemy so it doesn't keep walking (or shooting) while it celebrates
+      enemy.isDefeated = true;
+      enemy.setVelocity(0, 0);
+
+      // Each enemy changes a little after the previous one, so it feels like a wave.
+      // The color is a solid "fill" because the enemies are almost black: a normal
+      // tint would multiply with black and stay dark.
+      this.time.delayedCall(300 + i * 150, () => {
+        if (!enemy.active) return;
+        enemy.setTintFill(colors[i % colors.length]);
+        enemy.spawnColorParticles();
+        // A happy little hop
+        enemy.body.setAllowGravity(true);
+        enemy.setVelocityY(-180);
+      });
     });
   }
 
@@ -410,7 +497,7 @@ class LevelScene extends Phaser.Scene {
     // Turn off physics so the tweens below have full control of the hero
     hero.body.enable = false;
     hero.setDepth(2); // draw the hero in front of the castle
-    if (hero.shieldIndicator) hero.shieldIndicator.setVisible(false);
+    hero.hideShields();
 
     // Door position (the door is drawn in the bottom-middle of the castle texture)
     const doorX = goal.x;
@@ -472,7 +559,7 @@ class LevelScene extends Phaser.Scene {
 
     // Turn off physics so the tweens below have full control of the hero
     hero.body.enable = false;
-    if (hero.shieldIndicator) hero.shieldIndicator.setVisible(false);
+    hero.hideShields();
 
     // The pipe is 96px tall and its bottom sits on the ground, so its top is here
     const pipeTop = goal.y - 48;
@@ -588,6 +675,13 @@ class LevelScene extends Phaser.Scene {
 
   // Hero fell off the bottom of the screen — lose a life and restart this level
   heroFell() {
+    // Invincible mode: falling into a pit just puts us back at the start
+    if (isGodMode(this.registry)) {
+      this.hero.setPosition(this.levelData.heroStart.x, this.levelData.heroStart.y);
+      this.hero.setVelocity(0, 0);
+      return;
+    }
+
     // Prevent multiple triggers
     if (this.levelComplete) return;
     this.levelComplete = true;

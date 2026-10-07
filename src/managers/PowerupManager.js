@@ -135,16 +135,15 @@ class PowerupManager {
         break;
 
       case 'shield':
-        // Shield — absorbs one hit
-        hero.hasShield = true;
-        this.showCollectText(powerup.x, powerup.y, '¡Escudo!', '#ffdd00');
-        // The hero holds a pencil-case shield in front of the body
-        // (Hero.update keeps it in the right place and facing the right way)
-        if (!hero.shieldIndicator) {
-          hero.shieldIndicator = scene.add.image(hero.x, hero.y, 'pencil-shield');
-        }
-        hero.shieldIndicator.setVisible(true);
-        hero.updateShield();
+        // Shield — each one absorbs one hit, and we can hold 2 at once
+        // The hero holds pencil-case shields in front of the body
+        // (Hero.update keeps them in the right place and facing the right way)
+        hero.addShield();
+        this.showCollectText(
+          powerup.x, powerup.y,
+          hero.shieldCount > 1 ? '¡Doble Escudo!' : '¡Escudo!',
+          '#ffdd00'
+        );
         break;
     }
 

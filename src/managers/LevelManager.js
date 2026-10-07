@@ -6,7 +6,15 @@
 
 import EnemyMR1 from '../sprites/EnemyMR1.js';
 import EnemyMR2 from '../sprites/EnemyMR2.js';
+import EnemyMR3 from '../sprites/EnemyMR3.js';
+import { drawLandmarkScene } from './LandmarkArt.js';
 import { WORLD } from '../utils/constants.js';
+
+// The background moves slower than the hero (parallax), so only a part of it is
+// ever seen: the first 800px plus 30% of how far the camera travels
+function visibleBackgroundWidth(levelData) {
+  return Math.min(levelData.worldWidth, 800 + 0.3 * (levelData.worldWidth - 800));
+}
 
 class LevelManager {
   // Build everything for a level and return all the game objects
@@ -63,12 +71,58 @@ class LevelManager {
     return { bg, colorBg, platforms, enemies, goalFlag };
   }
 
+  // Draw a brick wall that fills the whole background (used inside the castle).
+  // baseColor is the brick color as {r, g, b}; each brick gets a slightly
+  // different shade so the wall doesn't look flat.
+  static drawBrickWall(gfx, width, baseColor) {
+    const brickW = 48;
+    const brickH = 24;
+    const gap = 3; // the dark lines between bricks (the mortar)
+
+    // Mortar first: one big dark rectangle, the bricks go on top of it
+    gfx.fillStyle(Phaser.Display.Color.GetColor(
+      baseColor.r * 0.4, baseColor.g * 0.4, baseColor.b * 0.4
+    ));
+    gfx.fillRect(0, 0, width, WORLD.HEIGHT);
+
+    const rows = Math.ceil(WORLD.HEIGHT / brickH);
+    for (let row = 0; row < rows; row++) {
+      // Every other row is shifted by half a brick, like a real wall
+      const offset = row % 2 === 0 ? 0 : -brickW / 2;
+      for (let x = offset; x < width; x += brickW) {
+        // Simple repeating pattern (not random, so it looks the same every time)
+        const shade = 0.85 + ((row * 7 + Math.floor(x / brickW) * 13) % 5) * 0.075;
+        gfx.fillStyle(Phaser.Display.Color.GetColor(
+          Math.min(255, baseColor.r * shade),
+          Math.min(255, baseColor.g * shade),
+          Math.min(255, baseColor.b * shade)
+        ));
+        gfx.fillRect(x + gap / 2, row * brickH + gap / 2, brickW - gap, brickH - gap);
+      }
+    }
+  }
+
   // The colorful background (blue sky + colorful buildings), same layout as the gray one
   static createColorBackground(scene, levelData) {
     const colorBg = scene.add.graphics();
     colorBg.setDepth(-10); // behind the gray background
+
+    // Castle levels have a warm red brick wall instead of a sky
+    if (levelData.backgroundStyle === 'bricks') {
+      LevelManager.drawBrickWall(colorBg, levelData.worldWidth, { r: 190, g: 80, b: 60 });
+      colorBg.setScrollFactor(0.3);
+      return colorBg;
+    }
+
     colorBg.fillGradientStyle(0x3d9bff, 0x3d9bff, 0xcdeeff, 0xcdeeff);
     colorBg.fillRect(0, 0, levelData.worldWidth, WORLD.HEIGHT);
+
+    // Levels inside a country: the landmark of the country, in full color
+    if (levelData.backgroundStyle === 'landmark') {
+      drawLandmarkScene(colorBg, levelData.theme, visibleBackgroundWidth(levelData), true);
+      colorBg.setScrollFactor(0.3);
+      return colorBg;
+    }
 
     const colors = [0xff6666, 0x66aaff, 0xffcc44, 0x66cc88, 0xcc88ff, 0xff9966, 0x44cccc];
     (levelData.buildings || []).forEach((b, i) => {
@@ -116,8 +170,30 @@ class LevelManager {
     const bottomColor = Phaser.Display.Color.GetColor(bottomGray, bottomGray, bottomGray);
 
     const bg = scene.add.graphics();
+
+    // Castle levels: a gray brick wall, with the tall pillars standing in front of it
+    if (levelData.backgroundStyle === 'bricks') {
+      const brickGray = Math.floor(70 + (40 * sat));
+      LevelManager.drawBrickWall(bg, levelData.worldWidth,
+        { r: brickGray, g: brickGray, b: brickGray });
+      // Pillars are darker than the wall so they stand out (no windows!)
+      bg.fillStyle(Phaser.Display.Color.GetColor(25, 25, 25), 0.7);
+      for (const b of levelData.buildings || []) {
+        bg.fillRect(b.x, b.y, b.w, b.h);
+      }
+      bg.setScrollFactor(0.3);
+      return bg;
+    }
+
     bg.fillGradientStyle(topColor, topColor, bottomColor, bottomColor);
     bg.fillRect(0, 0, levelData.worldWidth, WORLD.HEIGHT);
+
+    // Levels inside a country: the landmark of the country, in gray
+    if (levelData.backgroundStyle === 'landmark') {
+      drawLandmarkScene(bg, levelData.theme, visibleBackgroundWidth(levelData), false, sat);
+      bg.setScrollFactor(0.3);
+      return bg;
+    }
 
     // Building silhouettes for depth
     if (levelData.buildings) {
@@ -173,6 +249,8 @@ class LevelManager {
         enemy = new EnemyMR1(scene, config.x, config.y, config);
       } else if (config.type === 'mr2') {
         enemy = new EnemyMR2(scene, config.x, config.y, config);
+      } else if (config.type === 'mr3') {
+        enemy = new EnemyMR3(scene, config.x, config.y, config);
       }
 
       if (enemy) {

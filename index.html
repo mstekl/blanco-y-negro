@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Blanco y Negro</title>
   <style>
     /* Make the page look clean with a dark background */
@@ -12,6 +12,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      /* On phones: touching the screen must not scroll or zoom the page */
+      touch-action: none;
+    }
+    /* The game fills the whole window (Phaser makes it fit inside) */
+    #game-container {
+      width: 100vw;
       height: 100vh;
     }
   </style>

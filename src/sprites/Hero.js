@@ -3,12 +3,42 @@
 // how it moves, jumps, and looks on screen.
 
 import Phaser from 'phaser';
-import { HERO, PROJECTILE } from '../utils/constants.js';
+import { HERO, PROJECTILE, isGodMode } from '../utils/constants.js';
+import EnemyMR1 from './EnemyMR1.js';
+import EnemyMR2 from './EnemyMR2.js';
+import EnemyMR3 from './EnemyMR3.js';
+import CrazyDog from './CrazyDog.js';
+import { BossSkin, CloudSkin, PencilSkin, NinjaSkin } from './MoreSkins.js';
+
+// The secret skins! They are won with the "Hacks de sala" on the title screen
+// ("B Y N" = MR.1 and MR.2, "lebron" = crazy dog, "goma" = MR.3 on his eraser tank)
+// and they can only be put on there, before playing.
+//   texture:  the picture to use    make: who knows how to draw that picture
+//   body:     hitbox [width, height, offsetX, offsetY] so the feet touch the ground
+//   canShoot: true = we can shoot from the start (no Color Pencil needed)
+//   gunAt:    where the shots come out [how far in front, how far down from the middle]
+export const SKINS = {
+  mr1: { texture: 'enemy-mr1', make: EnemyMR1, body: [24, 40, 4, 8] },   // picture is 32x48
+  mr2: { texture: 'enemy-mr2', make: EnemyMR2, body: [24, 46, 4, 8] },   // picture is 32x54 (taller)
+  perro: { texture: 'skin-perro', make: CrazyDog, body: [24, 40, 4, 8] }, // picture is 32x48
+  // The tank has a cannon, so MR.3 shoots right away! (picture is 64x64)
+  mr3: { texture: 'enemy-mr3', make: EnemyMR3, body: [56, 54, 4, 10], canShoot: true, gunAt: [32, 2] },
+  // The final boss and the storm cloud are villains that shoot, so they shoot right away too!
+  jefe: { texture: 'skin-jefe', make: BossSkin, body: [24, 46, 4, 8], canShoot: true, gunAt: [16, -4] }, // 32x54
+  nube: { texture: 'skin-nube', make: CloudSkin, body: [24, 40, 4, 8], canShoot: true, gunAt: [14, -10] }, // 32x48
+  lapiz: { texture: 'skin-lapiz', make: PencilSkin, body: [24, 40, 4, 8] }, // picture is 32x48
+  ninja: { texture: 'skin-ninja', make: NinjaSkin, body: [24, 40, 4, 8] },  // picture is 32x48
+};
 
 class Hero extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
+    // Which picture do we wear? The normal hero, or a secret skin chosen in the sala
+    // (the registry is the memory shared by all scenes)
+    const skin = SKINS[scene.registry.get('skin')];
+    if (skin && !scene.textures.exists(skin.texture)) skin.make.createTexture(scene);
+
     // Create the hero sprite using our placeholder texture
-    super(scene, x, y, 'hero');
+    super(scene, x, y, skin ? skin.texture : 'hero');
 
     // Add the hero to the scene and enable physics
     scene.add.existing(this);
@@ -19,17 +49,20 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
 
     // Make the hitbox a bit smaller than the texture so it feels fair
-    this.body.setSize(24, 40);
-    this.body.setOffset(4, 8);
+    const [bodyWidth, bodyHeight, offsetX, offsetY] = skin ? skin.body : [24, 40, 4, 8];
+    this.body.setSize(bodyWidth, bodyHeight);
+    this.body.setOffset(offsetX, offsetY);
 
     // Hero state — keeps track of what's happening to our hero
     this.lives = HERO.INITIAL_LIVES;
     this.score = 0;
     this.facingRight = true;   // Which direction are we looking?
     this.isInvincible = false; // Can't be hurt when true
-    this.hasColorGun = false;  // Can we shoot? (unlocked later with power-up)
-    this.hasShield = false;    // Do we have a shield?
-    this.shieldIndicator = null; // The pencil-case shield image (when active)
+    this.hasColorGun = Boolean(skin && skin.canShoot); // Can we shoot? (normally unlocked later with power-up)
+    this.gunAt = (skin && skin.gunAt) || [16, 0];     // Where the shots come out of
+    this.shieldCount = 0;      // How many shields we have (0, 1 or 2)
+    this.maxShields = 2;       // Picking up a shield while holding one gives us 2!
+    this.shieldImages = [];    // The pencil-case shield images (one per shield)
     this.lastShotTime = 0;     // Track cooldown between shots
     this.jumpCount = 0;        // How many jumps since leaving the ground (0, 1, or 2)
     this.maxJumps = 2;         // Allow double jump (press jump twice!)
@@ -108,16 +141,41 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.updateShield();
   }
 
-  // Keep the shield in front of the hero, covering half of the body
-  updateShield() {
-    const shield = this.shieldIndicator;
-    if (!shield || !shield.visible) return;
+  // True when we have at least one shield
+  get hasShield() {
+    return this.shieldCount > 0;
+  }
 
+  // Pick up a shield (we can hold up to maxShields at the same time)
+  addShield() {
+    if (this.shieldCount >= this.maxShields) return;
+    this.shieldCount += 1;
+
+    // Make the picture for this shield the first time we need it
+    const index = this.shieldCount - 1;
+    if (!this.shieldImages[index]) {
+      this.shieldImages[index] = this.scene.add.image(this.x, this.y, 'pencil-shield');
+    }
+    this.shieldImages[index].setVisible(true);
+    this.updateShield();
+  }
+
+  // Hide all shield pictures (used when the hero walks into a door or pipe)
+  hideShields() {
+    this.shieldImages.forEach((img) => img.setVisible(false));
+  }
+
+  // Keep the shields in front of the hero, covering half of the body
+  updateShield() {
     // In front = the side the hero is looking at
     const side = this.facingRight ? 1 : -1;
-    shield.setPosition(this.x + side * 11, this.y + 4);
-    shield.setFlipX(!this.facingRight);
-    shield.setDepth(this.depth + 1);
+    this.shieldImages.forEach((shield, i) => {
+      if (!shield.visible) return;
+      // The second shield sits a bit further in front, so both can be seen
+      shield.setPosition(this.x + side * (11 + i * 8), this.y + 4);
+      shield.setFlipX(!this.facingRight);
+      shield.setDepth(this.depth + 1 + i);
+    });
   }
 
   // Fire a rainbow projectile from the Color Gun!
@@ -134,10 +192,9 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     if (!projectile) return;
 
     // Fire it in the direction the hero is facing
-    const offsetX = this.facingRight ? 16 : -16;
     const direction = this.facingRight ? 1 : -1;
     projectile.fire(
-      this.x + offsetX, this.y,
+      this.x + this.gunAt[0] * direction, this.y + this.gunAt[1],
       direction,
       PROJECTILE.HERO_SPEED
     );
@@ -145,17 +202,22 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
 
   // Called when the hero gets hurt by an enemy
   takeDamage() {
+    // Invincible mode (the secret code from the map hacks): nothing hurts us
+    if (isGodMode(this.scene.registry)) return;
+
     // If we're invincible, ignore the damage
     if (this.isInvincible) return;
 
     // If we have a shield, use it instead of losing a life
     if (this.hasShield) {
-      this.hasShield = false;
+      // Only the last shield we picked up breaks; the other one stays
+      this.shieldCount -= 1;
+      const shieldImage = this.shieldImages[this.shieldCount];
       // The shield breaks: a copy flies away spinning while the real one hides
-      if (this.shieldIndicator) {
+      if (shieldImage) {
         const broken = this.scene.add.image(
-          this.shieldIndicator.x, this.shieldIndicator.y, 'pencil-shield'
-        ).setFlipX(this.shieldIndicator.flipX).setDepth(this.depth + 2);
+          shieldImage.x, shieldImage.y, 'pencil-shield'
+        ).setFlipX(shieldImage.flipX).setDepth(this.depth + 3);
         this.scene.tweens.add({
           targets: broken,
           x: broken.x + (this.facingRight ? 50 : -50),
@@ -166,7 +228,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
           ease: 'Quad.easeOut',
           onComplete: () => broken.destroy(),
         });
-        this.shieldIndicator.setVisible(false);
+        shieldImage.setVisible(false);
       }
       // Brief invincibility so the same enemy doesn't hit us again immediately
       this.isInvincible = true;
