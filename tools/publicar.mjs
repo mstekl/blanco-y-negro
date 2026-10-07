@@ -4,7 +4,7 @@
 // on GitHub. GitHub Pages shows whatever is in that branch as a web page,
 // so after a minute the game is at https://mstekl.github.io/blanco-y-negro/
 import { execSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, rmSync } from 'node:fs';
 
 // Run a git command inside the dist folder and show what it does
 function git(command) {
@@ -16,7 +16,9 @@ writeFileSync('dist/.nojekyll', '');
 
 // dist is a brand-new little repository every time: we only need the latest game,
 // not its history, so we replace the gh-pages branch completely (--force)
+// (Vite does not erase the old dist/.git when it builds, so we erase it ourselves)
 const url = execSync('git remote get-url origin').toString().trim();
+rmSync('dist/.git', { recursive: true, force: true });
 git('init -q -b gh-pages');
 git('add -A');
 git('commit -q -m "Publicar el juego"');
