@@ -193,6 +193,9 @@ class TitleScene extends Phaser.Scene {
   //   N A     → rainbow ninja       N5 C → storm cloud
   //   LP      → color pencil        J F  → the final boss
   //   goma    → MR.3 on his eraser tank (he can shoot from the start!)
+  //   A B     → color astronaut (he can shoot too!)
+  //   R S     → color robot         G P  → painter cat
+  //   T       → ALL the skins at once!
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -289,7 +292,9 @@ class TitleScene extends Phaser.Scene {
     saveSkins(this.registry, this.skinsWon, this.chosenSkin);
     this.refreshSkin();
 
-    const names = prize.map((id) => SKIN_LIST.find((s) => s.id === id).name).join(' y ');
+    // With "T" the list of names would be too long for the box, so we just say "TODAS"
+    const names = code === 't' ? 'TODAS las skins'
+      : prize.map((id) => SKIN_LIST.find((s) => s.id === id).name).join(' y ');
     this.hackMessage.setColor('#ffffff')
       .setText(isNew ? `¡Ganaste: ${names}!` : `Ya tenías: ${names}`);
     // Close the box by itself after a moment, so we can see the result

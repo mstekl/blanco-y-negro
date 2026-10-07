@@ -187,3 +187,175 @@ export const NinjaSkin = {
     gfx.destroy();
   },
 };
+
+// Three more skins (won with "A C", "R C" and "G P" in the Hacks de sala):
+//   AstronautSkin: an astronaut who paints space — rainbow visor and a paint rocket backpack
+//   RobotSkin:     a square robot with rainbow lights on its belly
+//   CatSkin:       a painter cat with a beret and a brush on its tail
+
+// The color astronaut: white suit with paint stains, a rainbow visor, and a backpack
+// that is a rocket full of paint (32 x 48). He can shoot color rays from the start!
+export const AstronautSkin = {
+  createTexture(scene) {
+    const gfx = scene.add.graphics();
+    const suit = 0xf4f4f4;
+
+    // The rocket backpack behind him, with a rainbow flame coming out of the bottom
+    gfx.fillStyle(0xbbbbbb);
+    gfx.fillRect(2, 18, 7, 16);
+    RAINBOW.forEach((color, i) => {
+      gfx.fillStyle(color);
+      gfx.fillRect(2 + (i % 3) * 2, 34 + Math.floor(i / 3) * 2, 2, 2);
+    });
+
+    // Round helmet
+    gfx.fillStyle(suit);
+    gfx.fillCircle(16, 11, 10);
+
+    // The visor: every rainbow color, one stripe under the other
+    RAINBOW.forEach((color, i) => {
+      gfx.fillStyle(color);
+      gfx.fillRect(10, 6 + i * 2, 13, 2);
+    });
+    gfx.fillStyle(0xffffff);
+    gfx.fillRect(19, 7, 2, 2); // a little shine, so it looks like glass
+
+    // Puffy suit: body, arms and legs
+    gfx.fillStyle(suit);
+    gfx.fillRect(9, 21, 15, 17);
+    gfx.fillRect(4, 23, 6, 5);
+    gfx.fillRect(23, 23, 6, 5);
+    gfx.fillRect(10, 38, 5, 8);
+    gfx.fillRect(18, 38, 5, 8);
+
+    // Paint stains on the suit — he paints space!
+    gfx.fillStyle(0xff3399);
+    gfx.fillCircle(13, 26, 2);
+    gfx.fillStyle(0x00ccff);
+    gfx.fillCircle(20, 31, 2);
+    gfx.fillStyle(0xffdd00);
+    gfx.fillCircle(14, 34, 1.5);
+
+    // Big boots
+    gfx.fillStyle(0x777777);
+    gfx.fillRect(9, 45, 7, 3);
+    gfx.fillRect(17, 45, 7, 3);
+
+    gfx.generateTexture('skin-astronauta', 32, 48);
+    gfx.destroy();
+  },
+};
+
+// The color robot: a gray square robot with an antenna and rainbow lights on its belly (32 x 48)
+export const RobotSkin = {
+  createTexture(scene) {
+    const gfx = scene.add.graphics();
+    const metal = 0x8a8f99;
+    const darkMetal = 0x5a5f69;
+
+    // Antenna with a little light on top
+    gfx.fillStyle(darkMetal);
+    gfx.fillRect(15, 0, 2, 5);
+    gfx.fillStyle(0xff0000);
+    gfx.fillCircle(16, 2, 2);
+
+    // Square head with screen eyes and a grid mouth
+    gfx.fillStyle(metal);
+    gfx.fillRect(8, 5, 16, 13);
+    gfx.fillStyle(0x00ffcc);
+    gfx.fillRect(11, 8, 4, 4);
+    gfx.fillRect(18, 8, 4, 4);
+    gfx.fillStyle(darkMetal);
+    gfx.fillRect(12, 14, 9, 2);
+
+    // Square body
+    gfx.fillStyle(metal);
+    gfx.fillRect(7, 19, 18, 19);
+
+    // The rainbow lights on the belly: 2 rows of 3 little squares
+    RAINBOW.forEach((color, i) => {
+      gfx.fillStyle(color);
+      gfx.fillRect(10 + (i % 3) * 4, 23 + Math.floor(i / 3) * 5, 3, 3);
+    });
+
+    // Arms with claw hands
+    gfx.fillStyle(darkMetal);
+    gfx.fillRect(2, 21, 5, 3);
+    gfx.fillRect(25, 21, 5, 3);
+    gfx.fillRect(1, 24, 3, 4);
+    gfx.fillRect(28, 24, 3, 4);
+
+    // Legs and flat feet
+    gfx.fillRect(10, 38, 4, 8);
+    gfx.fillRect(18, 38, 4, 8);
+    gfx.fillRect(8, 45, 7, 3);
+    gfx.fillRect(17, 45, 7, 3);
+
+    gfx.generateTexture('skin-robot', 32, 48);
+    gfx.destroy();
+  },
+};
+
+// The painter cat: an orange cat with a red beret, standing on two legs,
+// with a paint brush at the end of its tail (32 x 48)
+export const CatSkin = {
+  createTexture(scene) {
+    const gfx = scene.add.graphics();
+    const fur = 0xff9933;
+
+    // The tail goes up behind the cat, and the brush tip is full of blue paint
+    gfx.fillStyle(fur);
+    gfx.fillRect(2, 22, 3, 18);
+    gfx.fillStyle(0x8b5a2b);
+    gfx.fillRect(1, 17, 5, 5);
+    gfx.fillStyle(0x0088ff);
+    gfx.fillTriangle(1, 17, 6, 17, 3.5, 11);
+
+    // Pointy ears and head
+    gfx.fillStyle(fur);
+    gfx.fillTriangle(8, 8, 13, 6, 9, 0);
+    gfx.fillTriangle(19, 6, 24, 8, 23, 0);
+    gfx.fillCircle(16, 12, 8);
+
+    // Red painter beret, a bit tilted, with a little stem on top
+    gfx.fillStyle(0xdd1133);
+    gfx.fillEllipse(14, 5, 14, 5);
+    gfx.fillRect(13, 1, 2, 2);
+
+    // Green eyes, pink nose and whiskers
+    gfx.fillStyle(0x33cc33);
+    gfx.fillCircle(13, 12, 2);
+    gfx.fillCircle(19, 12, 2);
+    gfx.fillStyle(0x000000);
+    gfx.fillRect(12.5, 11, 1, 2.5);
+    gfx.fillRect(18.5, 11, 1, 2.5);
+    gfx.fillStyle(0xff88aa);
+    gfx.fillTriangle(15, 15, 17, 15, 16, 16.5);
+    gfx.lineStyle(1, 0x000000);
+    gfx.lineBetween(7, 15, 12, 16);
+    gfx.lineBetween(20, 16, 25, 15);
+
+    // Body with a white painter apron full of paint stains
+    gfx.fillStyle(fur);
+    gfx.fillRect(9, 20, 14, 18);
+    gfx.fillStyle(0xffffff);
+    gfx.fillRect(11, 23, 10, 14);
+    RAINBOW.forEach((color, i) => {
+      gfx.fillStyle(color);
+      gfx.fillCircle(13 + (i % 2) * 5, 26 + Math.floor(i / 2) * 4, 1.3);
+    });
+
+    // Arms, legs and paws
+    gfx.fillStyle(fur);
+    gfx.fillRect(5, 22, 4, 4);
+    gfx.fillRect(23, 22, 4, 4);
+    gfx.fillRect(10, 38, 5, 8);
+    gfx.fillRect(17, 38, 5, 8);
+    gfx.fillStyle(0xffffff);
+    gfx.fillRect(9, 45, 7, 3);
+    gfx.fillRect(16, 45, 7, 3);
+
+    gfx.generateTexture('skin-gato', 32, 48);
+    gfx.destroy();
+  },
+};
