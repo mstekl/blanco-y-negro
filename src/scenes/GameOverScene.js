@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import EnemyMR1 from '../sprites/EnemyMR1.js';
 import EnemyMR2 from '../sprites/EnemyMR2.js';
+import { checkRecord, loadRecord, formatPoints } from '../data/record.js';
 
 class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -95,7 +96,7 @@ class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Final score
-    this.add.text(400, 150, `Puntos: ${String(finalScore).padStart(5, '0')}`, {
+    this.add.text(400, 140, `Puntos: ${formatPoints(finalScore)}`, {
       fontFamily: 'Arial',
       fontSize: '28px',
       color: '#ffffff',
@@ -103,8 +104,11 @@ class GameOverScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
 
+    // The record: did we beat it? Even when we lose, a new record is a reason to celebrate!
+    addRecordText(this, finalScore, 400, 178);
+
     // Encouraging message
-    this.add.text(400, 205, '¡Los colores te necesitan!', {
+    this.add.text(400, 215, '¡Los colores te necesitan!', {
       fontFamily: 'Arial',
       fontSize: '20px',
       color: '#ffcc00',
@@ -148,6 +152,24 @@ class GameOverScene extends Phaser.Scene {
       });
     });
   }
+}
+
+// Show the record under the points. If the game just beat it, we save it and
+// say "¡NUEVO RÉCORD!" in big blinking letters (the victory screen uses this too)
+export function addRecordText(scene, score, x, y) {
+  const isNew = checkRecord(score);
+  const text = scene.add.text(x, y,
+    isNew ? '¡NUEVO RÉCORD!' : `Récord: ${formatPoints(loadRecord())}`, {
+      fontFamily: 'Arial',
+      fontSize: isNew ? '24px' : '20px',
+      color: isNew ? '#ffdd00' : '#bbbbbb',
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setOrigin(0.5);
+  if (isNew) {
+    scene.tweens.add({ targets: text, scale: 1.15, duration: 400, yoyo: true, repeat: -1 });
+  }
+  return text;
 }
 
 export default GameOverScene;

@@ -10,6 +10,7 @@ import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
 import { SAVE_KEY } from './WorldMapScene.js';
 import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } from '../data/skins.js';
+import { loadRecord, formatPoints } from '../data/record.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -52,6 +53,14 @@ class TitleScene extends Phaser.Scene {
     this.add.text(16, 578, 'Por Emi y Papá', {
       fontFamily: 'Arial', fontSize: '14px', color: '#888888',
     });
+
+    // --- Record --- (only once somebody has played: a "00000" record is boring)
+    const record = loadRecord();
+    if (record > 0) {
+      this.add.text(400, 578, `🏆 Récord: ${formatPoints(record)}`, {
+        fontFamily: 'Arial', fontSize: '16px', color: '#ffdd00',
+      }).setOrigin(0.5, 0);
+    }
 
     // --- Keyboard ---
     // ENTER = play, SPACE = open the hacks, S = skins
