@@ -14,6 +14,9 @@ Father-and-son 2D platformer game built with Phaser 3 and Vite. A colorful hero 
 npm run dev
 ```
 Then open the URL shown in the terminal (usually http://localhost:5173).
+To play on an iPad or phone on the same Wi-Fi: `npm run dev -- --host` and open the "Network" address it shows.
+
+The game is also on the internet at https://mstekl.github.io/blanco-y-negro/ (works in Safari, iPads and phones). To put new changes there: `npm run publicar` (it builds the game and uploads the `dist` folder to the `gh-pages` branch, which GitHub Pages shows).
 
 ## Project Structure
 ```
