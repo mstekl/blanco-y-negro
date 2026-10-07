@@ -171,13 +171,10 @@ class LevelScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500);
   }
 
-  // Secret key combos for the levels (the same hacks as the world map, but with keys):
+  // Secret key combo for the levels:
   //   E then P      → invincible mode on / off
-  //   P then 1-6    → jump to that level (1-3 inside a country)
-  //   L             → crazy dog skin (press again to go back to the hero)
-  //   G             → MR.3 on his eraser tank, and he can shoot! (press again to go back)
-  //   B then N      → hero → MR.1 → MR.2 → hero again
-  // The second key of a combo must come soon after the first one.
+  // (the skins are chosen in the 'sala' before playing, never in the middle of a level)
+  // The second key of the combo must come soon after the first one.
   setupCheats() {
     this.lastCheatKey = null;
     this.lastCheatTime = 0;
@@ -194,26 +191,6 @@ class LevelScene extends Phaser.Scene {
         this.registry.set('godMode', on);
         this.godLabel.setVisible(isGodMode(this.registry));
         this.showCheatMessage(on ? '¡Modo inmortal activado!' : 'Ya eres mortal otra vez');
-      } else if (previous === 'p' && key === '7') {
-        this.jumpToMap();
-      } else if (previous === 'p' && /^[1-9]$/.test(key)) {
-        const target = parseInt(key, 10) - 1;
-        if (target < getLevels(this.registry).length) this.jumpToLevel(target);
-      } else if (/^[1-9]$/.test(key)) {
-        const jumps = parseInt(key, 10);
-        this.registry.set('maxJumps', jumps);
-        this.hero.maxJumps = jumps;
-        this.showCheatMessage(`¡${jumps} saltos!`);
-      } else if (key === 'l') {
-        const isDog = this.registry.get('skin') === 'perro';
-        this.changeSkin(isDog ? null : 'perro');
-      } else if (key === 'g') {
-        const isTank = this.registry.get('skin') === 'mr3';
-        this.changeSkin(isTank ? null : 'mr3');
-      } else if (key === 'n' && previous === 'b') {
-        const next = { none: 'mr1', mr1: 'mr2', mr2: 'none' };
-        const now = next[this.registry.get('skin') || 'none'] || 'mr1'; // (from the dog we go to MR.1)
-        this.changeSkin(now === 'none' ? null : now);
       }
     });
   }
@@ -227,37 +204,6 @@ class LevelScene extends Phaser.Scene {
     this.tweens.add({
       targets: text, alpha: 0, delay: 900, duration: 400,
       onComplete: () => text.destroy(),
-    });
-  }
-
-  // The skin is chosen when the hero is born, so we start this level again
-  // (lives and score are kept in the registry)
-  changeSkin(skin) {
-    this.registry.set('skin', skin);
-    this.saveState();
-    this.scene.restart({ levelIndex: this.levelIndex });
-  }
-
-  // Go straight to the world map (as if we had finished the levels)
-  jumpToMap() {
-    this.levelComplete = true;
-    this.saveState();
-    this.registry.set('country', null); // the map is not inside a country
-    this.hero.setVelocity(0, 0);
-    this.cameras.main.fadeOut(300);
-    this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start('WorldMapScene');
-    });
-  }
-
-  // Go straight to another level (through its "Nivel X" splash)
-  jumpToLevel(levelIndex) {
-    this.levelComplete = true; // stops the game loop while we leave
-    this.saveState();
-    this.hero.setVelocity(0, 0);
-    this.cameras.main.fadeOut(300);
-    this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start('LevelIntroScene', { levelIndex });
     });
   }
 

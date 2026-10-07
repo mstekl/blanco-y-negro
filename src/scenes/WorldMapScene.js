@@ -578,9 +578,7 @@ class WorldMapScene extends Phaser.Scene {
   //   mortal            → invincible mode off again
   //   <continente> pasar → that continent gets all its colors at once
   //                        (for example: sudamerica pasar; "pass" works too)
-  //   B Y N             → the hero becomes MR.1, then MR.2, then the hero again
-  //   lebron            → the hero becomes a crazy dog (type it again to go back)
-  //   goma              → the hero becomes MR.3 on his eraser tank and can shoot (again = go back)
+  // (the skin codes live in the "Hacks de sala" of the title screen now)
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -669,35 +667,6 @@ class WorldMapScene extends Phaser.Scene {
       this.registry.set('godMode', false);
       this.godLabel.setVisible(isGodMode(this.registry));
       this.hackSuccess('Ya eres mortal otra vez');
-      return;
-    }
-
-    // "B Y N": the hero's skin changes! Every time we type it, the next skin comes:
-    // hero → MR.1 → MR.2 → hero again
-    if (code === 'b y n' || code === 'byn') {
-      const next = { none: 'mr1', mr1: 'mr2', mr2: 'none' };
-      const now = next[this.registry.get('skin') || 'none'] || 'mr1'; // (from the dog we go to MR.1)
-      this.registry.set('skin', now === 'none' ? null : now);
-      const message = { mr1: '¡Ahora eres MR.1!', mr2: '¡Ahora eres MR.2!', none: 'Volviste a ser el héroe' };
-      this.hackSuccess(message[now]);
-      return;
-    }
-
-    // "lebron" (with or without the accent): the hero becomes a crazy dog!
-    // Typing it again gives the normal hero back
-    if (code === 'lebron') {
-      const isDog = this.registry.get('skin') === 'perro';
-      this.registry.set('skin', isDog ? null : 'perro');
-      this.hackSuccess(isDog ? 'Volviste a ser el héroe' : '¡Guau! Ahora eres un perro loco');
-      return;
-    }
-
-    // "goma": the hero becomes MR.3 riding his eraser tank, and he can shoot
-    // from the very first level! Typing it again gives the normal hero back
-    if (code === 'goma') {
-      const isTank = this.registry.get('skin') === 'mr3';
-      this.registry.set('skin', isTank ? null : 'mr3');
-      this.hackSuccess(isTank ? 'Volviste a ser el héroe' : '¡Ahora eres MR.3 en su tanque de gomas!');
       return;
     }
 

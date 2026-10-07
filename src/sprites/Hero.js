@@ -8,24 +8,31 @@ import EnemyMR1 from './EnemyMR1.js';
 import EnemyMR2 from './EnemyMR2.js';
 import EnemyMR3 from './EnemyMR3.js';
 import CrazyDog from './CrazyDog.js';
+import { BossSkin, CloudSkin, PencilSkin, NinjaSkin } from './MoreSkins.js';
 
-// The secret skins ("B Y N" in the map hacks turns the hero into a villain, "lebron" into a crazy dog,
-// "goma" into MR.3 on his eraser tank!)
+// The secret skins! They are won with the "Hacks de sala" on the title screen
+// ("B Y N" = MR.1 and MR.2, "lebron" = crazy dog, "goma" = MR.3 on his eraser tank)
+// and they can only be put on there, before playing.
 //   texture:  the picture to use    make: who knows how to draw that picture
 //   body:     hitbox [width, height, offsetX, offsetY] so the feet touch the ground
 //   canShoot: true = we can shoot from the start (no Color Pencil needed)
 //   gunAt:    where the shots come out [how far in front, how far down from the middle]
-const SKINS = {
+export const SKINS = {
   mr1: { texture: 'enemy-mr1', make: EnemyMR1, body: [24, 40, 4, 8] },   // picture is 32x48
   mr2: { texture: 'enemy-mr2', make: EnemyMR2, body: [24, 46, 4, 8] },   // picture is 32x54 (taller)
   perro: { texture: 'skin-perro', make: CrazyDog, body: [24, 40, 4, 8] }, // picture is 32x48
   // The tank has a cannon, so MR.3 shoots right away! (picture is 64x64)
   mr3: { texture: 'enemy-mr3', make: EnemyMR3, body: [56, 54, 4, 10], canShoot: true, gunAt: [32, 2] },
+  // The final boss and the storm cloud are villains that shoot, so they shoot right away too!
+  jefe: { texture: 'skin-jefe', make: BossSkin, body: [24, 46, 4, 8], canShoot: true, gunAt: [16, -4] }, // 32x54
+  nube: { texture: 'skin-nube', make: CloudSkin, body: [24, 40, 4, 8], canShoot: true, gunAt: [14, -10] }, // 32x48
+  lapiz: { texture: 'skin-lapiz', make: PencilSkin, body: [24, 40, 4, 8] }, // picture is 32x48
+  ninja: { texture: 'skin-ninja', make: NinjaSkin, body: [24, 40, 4, 8] },  // picture is 32x48
 };
 
 class Hero extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
-    // Which picture do we wear? The normal hero, or a secret skin chosen on the map
+    // Which picture do we wear? The normal hero, or a secret skin chosen in the sala
     // (the registry is the memory shared by all scenes)
     const skin = SKINS[scene.registry.get('skin')];
     if (skin && !scene.textures.exists(skin.texture)) skin.make.createTexture(scene);
@@ -58,8 +65,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.shieldImages = [];    // The pencil-case shield images (one per shield)
     this.lastShotTime = 0;     // Track cooldown between shots
     this.jumpCount = 0;        // How many jumps since leaving the ground (0, 1, or 2)
-    // Allow double jump (press jump twice!) — the secret number keys in the levels can change it
-    this.maxJumps = scene.registry.get('maxJumps') || 2;
+    this.maxJumps = 2;         // Allow double jump (press jump twice!)
 
     // Set up keyboard controls
     // Arrow keys
