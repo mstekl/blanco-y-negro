@@ -53,6 +53,8 @@ blanco-y-negro/
 │   │   ├── LandmarkArt.js     # Draws the landmarks (Chichén Itzá, Statue of Liberty, CN Tower...)
 │   │   ├── PowerupManager.js  # Power-up effects
 │   │   └── HUDManager.js      # Score, lives, UI
+│   ├── touch/
+│   │   └── TouchControls.js   # On-screen buttons and small keyboard for phones and tablets
 │   └── utils/
 │       └── constants.js       # Game constants
 ├── arte/                      # Reference art from Emi
@@ -72,6 +74,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - **Shift** — Run
 - **Z / X** — Fire Color Gun (after picking up Color Pencil)
 - **Enter** — Start game / Retry
+- **Phones and tablets** — buttons on the screen: ◀ ▶ walk, ▲ jump, 🎨 shoot, CORRER run, OK (= Enter), ESC, and ⌨ for a small keyboard (it opens by itself in the Hacks boxes). The buttons pretend to be keyboard keys, so the rest of the game did not need changes. Add ?tactil to the URL to see them on the computer
 
 ## Game Features
 - 6 levels with increasing difficulty (castle entrance at level 4, pipe at level 5, final boss in level 6)

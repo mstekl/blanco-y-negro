@@ -13,6 +13,7 @@ import GameOverScene from './scenes/GameOverScene.js';
 import CelebrationScene from './scenes/CelebrationScene.js';
 import WorldMapScene from './scenes/WorldMapScene.js';
 import WinScene from './scenes/WinScene.js';
+import { setupTouchControls } from './touch/TouchControls.js';
 
 // Game configuration — think of this as the "settings" for our game
 const config = {
@@ -25,6 +26,13 @@ const config = {
 
   // Where to put the game on the webpage
   parent: 'game-container',
+
+  // Make the game as big as the screen allows (without stretching it),
+  // so it fits on a computer, a tablet or a phone
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
 
   // Background color (dark — sets the mood!)
   backgroundColor: '#111111',
@@ -47,3 +55,6 @@ const config = {
 
 // Create the game!
 const game = new Phaser.Game(config);
+
+// On phones and tablets: buttons and a small keyboard on the screen
+setupTouchControls();

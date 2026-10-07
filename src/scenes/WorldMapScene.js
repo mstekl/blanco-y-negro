@@ -612,11 +612,14 @@ class WorldMapScene extends Phaser.Scene {
     this.tooltip.setVisible(false);
     this.updateHackInput();
     this.hackBox.setVisible(true);
+    // Tell the screen buttons (phones and tablets) to show the small keyboard
+    window.dispatchEvent(new Event('hacks-abiertos'));
   }
 
   closeHacks() {
     this.hackOpen = false;
     this.hackBox.setVisible(false);
+    window.dispatchEvent(new Event('hacks-cerrados'));
   }
 
   // The text we typed, with a "|" at the end like a cursor
