@@ -17,6 +17,7 @@ Then open the URL shown in the terminal (usually http://localhost:5173).
 To play on an iPad or phone on the same Wi-Fi: `npm run dev -- --host` and open the "Network" address it shows.
 
 The game is also on the internet at https://mstekl.github.io/blanco-y-negro/ (works in Safari, iPads and phones). To put new changes there: `npm run publicar` (it builds the game and uploads the `dist` folder to the `gh-pages` branch, which GitHub Pages shows).
+To share it: `npm run compartir` makes a `compartir` folder with a QR code, an invitation to print (`invitacion.html`) and a zip ready to upload to itch.io. The link shows a preview picture (`public/preview.png`) and can be added to the home screen of an iPad or phone like an app (`public/manifest.webmanifest` and the icons in `public/`).
 
 ## Project Structure
 ```
@@ -93,6 +94,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - The "sala" (title screen): black-and-white city, big JUGAR button bottom right (or ENTER), and in the middle left the "Hacks de sala" (SPACE) and a small SKINS button (or S). Typing a code in the hacks WINS a skin: `B Y N` = MR.1 and MR.2, `lebron` = crazy dog, `goma` = MR.3 on his eraser tank (can shoot from the start), `N A` = rainbow ninja, `N5 C` = storm cloud (can shoot), `LP` = color pencil, `J F` = the final boss (can shoot), `A B` = color astronaut (can shoot), `R S` = color robot, `G P` = painter cat, `T` = ALL the skins at once. A new player only has the hero. The SKINS button opens the skins screen (like Paper.io 2): the skin is big in the middle, the arrows move to the next one, ELEGIR puts it on, and skins not won yet have a lock. Won skins are saved in the browser (localStorage). Skins can ONLY be changed in the sala, never in the middle of a level
 - `npm run dev:inmortal` starts a second server (port 5174) where nothing hurts the hero
 - Secret key inside the levels: `E` then `P` = invincible mode on/off (the old level keys for skins, extra jumps and jumping to a level were removed)
+- Record: the highest score is saved in the browser (`src/data/record.js`). It shows in the sala, and the Game Over and victory screens say "¡NUEVO RÉCORD!" when it is beaten
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log
