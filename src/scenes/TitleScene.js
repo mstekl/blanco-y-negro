@@ -204,6 +204,8 @@ class TitleScene extends Phaser.Scene {
   //   goma    → MR.3 on his eraser tank (he can shoot from the start!)
   //   A B     → color astronaut (he can shoot too!)
   //   R S     → color robot         G P  → painter cat
+  //   D R     → rainbow dinosaur (he can shoot too!)
+  //   S C     → superhero with a cape
   //   T       → ALL the skins at once!
   // ---------------------------------------------------------------
   createHackBox() {

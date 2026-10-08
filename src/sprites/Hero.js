@@ -10,6 +10,7 @@ import EnemyMR3 from './EnemyMR3.js';
 import CrazyDog from './CrazyDog.js';
 import {
   BossSkin, CloudSkin, PencilSkin, NinjaSkin, AstronautSkin, RobotSkin, CatSkin,
+  DinoSkin, HeroCapeSkin,
 } from './MoreSkins.js';
 
 // The secret skins! They are won with the "Hacks de sala" on the title screen
@@ -34,6 +35,9 @@ export const SKINS = {
   astronauta: { texture: 'skin-astronauta', make: AstronautSkin, body: [24, 40, 4, 8], canShoot: true, gunAt: [14, 0] }, // 32x48
   robot: { texture: 'skin-robot', make: RobotSkin, body: [24, 40, 4, 8] }, // picture is 32x48
   gato: { texture: 'skin-gato', make: CatSkin, body: [24, 40, 4, 8] },     // picture is 32x48
+  // The rainbow dinosaur roars color, so he shoots right away!
+  dino: { texture: 'skin-dino', make: DinoSkin, body: [24, 40, 4, 8], canShoot: true, gunAt: [14, -14] }, // 32x48
+  super: { texture: 'skin-super', make: HeroCapeSkin, body: [24, 40, 4, 8] }, // picture is 32x48
 };
 
 class Hero extends Phaser.Physics.Arcade.Sprite {

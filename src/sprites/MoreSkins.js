@@ -359,3 +359,122 @@ export const CatSkin = {
     gfx.destroy();
   },
 };
+
+// Two more skins (won with "D R" and "S C" in the Hacks de sala):
+//   DinoSkin: a rainbow T-rex with tiny arms — he can shoot!
+//   HeroCapeSkin: a superhero with a red cape and a mask
+
+// The rainbow dinosaur: a T-rex standing up, his back has rainbow spikes
+// and his belly is yellow (32 x 48). He roars color, so he can shoot from the start!
+export const DinoSkin = {
+  createTexture(scene) {
+    const gfx = scene.add.graphics();
+    const green = 0x33bb44;
+
+    // The big tail goes down behind him (a triangle to the left)
+    gfx.fillStyle(green);
+    gfx.fillTriangle(0, 40, 12, 26, 12, 38);
+
+    // Rainbow spikes on his back, from the head down to the tail
+    RAINBOW.forEach((color, i) => {
+      gfx.fillStyle(color);
+      const y = 4 + i * 5;
+      gfx.fillTriangle(9 - i, y, 13 - i, y + 4, 7 - i, y + 5);
+    });
+
+    // Big head looking to the right, with a long mouth
+    gfx.fillStyle(green);
+    gfx.fillRect(10, 2, 16, 12);
+    gfx.fillRect(22, 6, 9, 8);
+
+    // Eye and teeth
+    gfx.fillStyle(0xffffff);
+    gfx.fillCircle(19, 6, 2.5);
+    gfx.fillStyle(0x000000);
+    gfx.fillCircle(20, 6, 1.2);
+    gfx.fillStyle(0xffffff);
+    gfx.fillTriangle(23, 14, 25, 14, 24, 16);
+    gfx.fillTriangle(27, 14, 29, 14, 28, 16);
+
+    // Body, with a yellow belly
+    gfx.fillStyle(green);
+    gfx.fillRect(10, 14, 14, 24);
+    gfx.fillStyle(0xffdd44);
+    gfx.fillRect(16, 17, 8, 19);
+
+    // The famous tiny arms (very short!)
+    gfx.fillStyle(green);
+    gfx.fillRect(24, 19, 4, 2);
+    gfx.fillRect(27, 20, 2, 2);
+
+    // Strong legs and big feet
+    gfx.fillRect(11, 36, 6, 9);
+    gfx.fillRect(19, 36, 5, 9);
+    gfx.fillStyle(0x227733);
+    gfx.fillRect(10, 45, 9, 3);
+    gfx.fillRect(18, 45, 9, 3);
+
+    gfx.generateTexture('skin-dino', 32, 48);
+    gfx.destroy();
+  },
+};
+
+// The superhero: blue suit, red cape flying behind him, a black mask
+// and a rainbow star on his chest (32 x 48)
+export const HeroCapeSkin = {
+  createTexture(scene) {
+    const gfx = scene.add.graphics();
+    const suit = 0x2255dd;
+    const skin = 0xffcc99;
+
+    // The red cape flies behind him (to the left, like he is running fast)
+    gfx.fillStyle(0xdd1122);
+    gfx.fillTriangle(10, 18, 14, 18, 0, 44);
+    gfx.fillTriangle(10, 18, 14, 38, 0, 44);
+
+    // Head with black hair
+    gfx.fillStyle(skin);
+    gfx.fillCircle(16, 10, 8);
+    gfx.fillStyle(0x222222);
+    gfx.fillRect(8, 2, 16, 4);
+
+    // The black mask with white eyes
+    gfx.fillStyle(0x000000);
+    gfx.fillRect(9, 8, 15, 4);
+    gfx.fillStyle(0xffffff);
+    gfx.fillRect(12, 9, 3, 2);
+    gfx.fillRect(18, 9, 3, 2);
+
+    // Big smile
+    gfx.fillStyle(0x990000);
+    gfx.fillRect(13, 14, 6, 1);
+
+    // Blue suit: body and arms
+    gfx.fillStyle(suit);
+    gfx.fillRect(9, 18, 15, 18);
+    gfx.fillRect(5, 19, 4, 10);
+    gfx.fillRect(24, 19, 4, 10);
+
+    // A rainbow star on the chest: little colored squares in a star shape
+    RAINBOW.forEach((color, i) => {
+      gfx.fillStyle(color);
+      const spots = [[15, 21], [12, 24], [18, 24], [15, 24], [13, 27], [17, 27]];
+      gfx.fillRect(spots[i][0], spots[i][1], 3, 3);
+    });
+
+    // Yellow belt
+    gfx.fillStyle(0xffdd00);
+    gfx.fillRect(9, 33, 15, 3);
+
+    // Legs and red boots
+    gfx.fillStyle(suit);
+    gfx.fillRect(10, 36, 5, 9);
+    gfx.fillRect(18, 36, 5, 9);
+    gfx.fillStyle(0xdd1122);
+    gfx.fillRect(9, 43, 7, 5);
+    gfx.fillRect(17, 43, 7, 5);
+
+    gfx.generateTexture('skin-super', 32, 48);
+    gfx.destroy();
+  },
+};
