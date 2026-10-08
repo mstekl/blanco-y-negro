@@ -16,7 +16,7 @@ npm run dev
 Then open the URL shown in the terminal (usually http://localhost:5173).
 To play on an iPad or phone on the same Wi-Fi: `npm run dev -- --host` and open the "Network" address it shows.
 
-The game is also on the internet at https://mstekl.github.io/blanco-y-negro/ (works in Safari, iPads and phones). To put new changes there: `npm run publicar` (it builds the game and uploads the `dist` folder to the `gh-pages` branch, which GitHub Pages shows).
+The game is also on the internet in two places: https://blanco-y-negro.vercel.app and https://mstekl.github.io/blanco-y-negro/ (both work in Safari, iPads and phones). To put new changes in BOTH: commit them and run `npm run publicar`. It builds the game, merges the current branch into `main` and pushes it (Vercel rebuilds itself from `main`), and uploads the `dist` folder to the `gh-pages` branch (which GitHub Pages shows). It stops if there are uncommitted changes, so the two pages never end up different.
 To share it: `npm run compartir` makes a `compartir` folder with a QR code, an invitation to print (`invitacion.html`) and a zip ready to upload to itch.io. The link shows a preview picture (`public/preview.png`) and can be added to the home screen of an iPad or phone like an app (`public/manifest.webmanifest` and the icons in `public/`).
 
 ## Project Structure
