@@ -4,6 +4,7 @@
 // rainbow confetti falls, and we celebrate!
 
 import Phaser from 'phaser';
+import { addRecordText } from './GameOverScene.js';
 
 class WinScene extends Phaser.Scene {
   constructor() {
@@ -99,6 +100,10 @@ class WinScene extends Phaser.Scene {
       duration: 600,
       delay: 3000,
     });
+
+    // The record appears right after the points
+    const recordText = addRecordText(this, finalScore, 400, 455).setAlpha(0);
+    this.tweens.add({ targets: recordText, alpha: 1, duration: 600, delay: 3400 });
 
     // --- Confetti particles ---
     // Create a small white square for confetti

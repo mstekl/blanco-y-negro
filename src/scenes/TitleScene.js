@@ -10,6 +10,7 @@ import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
 import { SAVE_KEY } from './WorldMapScene.js';
 import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } from '../data/skins.js';
+import { loadRecord, formatPoints } from '../data/record.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -52,6 +53,14 @@ class TitleScene extends Phaser.Scene {
     this.add.text(16, 578, 'Por Emi y Papá', {
       fontFamily: 'Arial', fontSize: '14px', color: '#888888',
     });
+
+    // --- Record --- (only once somebody has played: a "00000" record is boring)
+    const record = loadRecord();
+    if (record > 0) {
+      this.add.text(400, 578, `🏆 Récord: ${formatPoints(record)}`, {
+        fontFamily: 'Arial', fontSize: '16px', color: '#ffdd00',
+      }).setOrigin(0.5, 0);
+    }
 
     // --- Keyboard ---
     // ENTER = play, SPACE = open the hacks, S = skins
@@ -193,6 +202,11 @@ class TitleScene extends Phaser.Scene {
   //   N A     → rainbow ninja       N5 C → storm cloud
   //   LP      → color pencil        J F  → the final boss
   //   goma    → MR.3 on his eraser tank (he can shoot from the start!)
+  //   A B     → color astronaut (he can shoot too!)
+  //   R S     → color robot         G P  → painter cat
+  //   D R     → rainbow dinosaur (he can shoot too!)
+  //   S C     → superhero with a cape
+  //   T       → ALL the skins at once!
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -289,7 +303,9 @@ class TitleScene extends Phaser.Scene {
     saveSkins(this.registry, this.skinsWon, this.chosenSkin);
     this.refreshSkin();
 
-    const names = prize.map((id) => SKIN_LIST.find((s) => s.id === id).name).join(' y ');
+    // With "T" the list of names would be too long for the box, so we just say "TODAS"
+    const names = code === 't' ? 'TODAS las skins'
+      : prize.map((id) => SKIN_LIST.find((s) => s.id === id).name).join(' y ');
     this.hackMessage.setColor('#ffffff')
       .setText(isNew ? `¡Ganaste: ${names}!` : `Ya tenías: ${names}`);
     // Close the box by itself after a moment, so we can see the result

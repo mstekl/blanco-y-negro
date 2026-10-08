@@ -19,6 +19,11 @@ export const SKIN_LIST = [
   { id: 'nube', name: 'Nube de tormenta' },
   { id: 'lapiz', name: 'Lápiz de color' },
   { id: 'ninja', name: 'Ninja arcoíris' },
+  { id: 'astronauta', name: 'Astronauta de colores' },
+  { id: 'robot', name: 'Robot de colores' },
+  { id: 'gato', name: 'Gato pintor' },
+  { id: 'dino', name: 'Dinosaurio arcoíris' },
+  { id: 'super', name: 'Superhéroe' },
 ];
 
 // The secret codes of the "Hacks de sala", and which skins each one gives us.
@@ -31,6 +36,14 @@ export const SKIN_CODES = {
   n5c: ['nube'],
   lp: ['lapiz'],
   jf: ['jefe'],
+  ab: ['astronauta'],
+  rs: ['robot'],
+  gp: ['gato'],
+  dr: ['dino'],
+  sc: ['super'],
+  // The best secret: "T" (for "Todas") gives us EVERY skin at once!
+  // We take them from SKIN_LIST, so new skins are added here by themselves
+  t: SKIN_LIST.map((skin) => skin.id).filter((id) => id !== 'heroe'),
 };
 
 // Which skins did we win, and which one are we wearing?
