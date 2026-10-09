@@ -3,6 +3,7 @@
 // so we keep it in ONE place.
 
 import { SKINS } from '../sprites/Hero.js';
+import { SKIN_PACK } from '../sprites/SkinPack.js';
 
 // The browser remembers the skins we won and the one we chose, even after closing the page
 const SKINS_WON_KEY = 'blancoYNegro.skinsGanadas';
@@ -24,6 +25,8 @@ export const SKIN_LIST = [
   { id: 'gato', name: 'Gato pintor' },
   { id: 'dino', name: 'Dinosaurio arcoíris' },
   { id: 'super', name: 'Superhéroe' },
+  // ...and the 30 skins that come out of the pencils (src/sprites/SkinPack.js)
+  ...SKIN_PACK.map(({ id, name }) => ({ id, name })),
 ];
 
 // The secret codes of the "Hacks de sala", and which skins each one gives us.

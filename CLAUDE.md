@@ -29,6 +29,7 @@ blanco-y-negro/
 │   │   ├── levels.js          # Level configurations (6 levels)
 │   │   ├── countryLevels.js   # The 3 levels played inside a country (built from normal levels)
 │   │   ├── skins.js           # The skin list, the codes that win them, and saving them
+│   │   ├── coins.js           # Coins, the pencil price, and how rare each skin is
 │   │   ├── countryThemes.js   # Which landmark each country has in the background
 │   │   └── worldMap.json      # Country shapes for the map (made by tools/build-world-map.mjs)
 │   ├── scenes/
@@ -36,6 +37,7 @@ blanco-y-negro/
 │   │   ├── PreloadScene.js    # Asset loading with progress bar
 │   │   ├── TitleScene.js      # The "sala": JUGAR button, Hacks de sala and the SKINS button
 │   │   ├── SkinsScene.js      # Skins screen (like Paper.io 2): big skin in the middle, arrows, ELEGIR
+│   │   ├── PencilsScene.js    # LÁPICES screen: buy a pencil with coins, it paints a surprise skin
 │   │   ├── LevelIntroScene.js # Level splash ("Nivel X")
 │   │   ├── LevelScene.js      # Main gameplay
 │   │   ├── GameOverScene.js   # Game over screen
@@ -50,6 +52,7 @@ blanco-y-negro/
 │   │   ├── EnemyMR3.js        # MR.3 on his eraser tank (chases the hero)
 │   │   ├── CrazyDog.js        # Secret crazy dog skin (code "lebron" in the Hacks de sala)
 │   │   ├── MoreSkins.js       # More skins: final boss, storm cloud, color pencil, rainbow ninja, astronaut, robot, painter cat, rainbow dinosaur, superhero
+│   │   ├── SkinPack.js        # 30 more skins that come out of the pencils (a "person mold" + what makes each one special)
 │   │   ├── StormCloud.js      # Level 5 cloud that chases you and throws pencils
 │   │   └── Projectile.js      # Bullets (hero & enemy)
 │   ├── managers/
@@ -94,6 +97,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - The "sala" (title screen): black-and-white city, big JUGAR button bottom right (or ENTER), and in the middle left the "Hacks de sala" (SPACE) and a small SKINS button (or S). Typing a code in the hacks WINS a skin: `B Y N` = MR.1 and MR.2, `lebron` = crazy dog, `goma` = MR.3 on his eraser tank (can shoot from the start), `N A` = rainbow ninja, `N5 C` = storm cloud (can shoot), `LP` = color pencil, `J F` = the final boss (can shoot), `A B` = color astronaut (can shoot), `R S` = color robot, `G P` = painter cat, `D R` = rainbow dinosaur (can shoot), `S C` = superhero with a cape, `T` = ALL the skins at once. A new player only has the hero. The SKINS button opens the skins screen (like Paper.io 2): the skin is big in the middle, the arrows move to the next one, ELEGIR puts it on, and skins not won yet have a lock. Won skins are saved in the browser (localStorage). Skins can ONLY be changed in the sala, never in the middle of a level
 - `npm run dev:inmortal` starts a second server (port 5174) where nothing hurts the hero
 - Secret key inside the levels: `E` then `P` = invincible mode on/off (the old level keys for skins, extra jumps and jumping to a level were removed)
+- Coins and pencils (lápices): gold coins float above the floating platforms of every level (they are placed by themselves from the platforms) and are saved in the browser right away. In the sala, the LÁPICES button (or L) opens a screen where a pencil costs 25 coins: it paints a random skin on a sheet of paper, line by line. Skins are COMÚN, RARO, ÉPICO or LEGENDARIO; rarer ones come out less (`SKIN_RARITY` in `src/data/coins.js` for the first 13 skins, `rarity` in `src/sprites/SkinPack.js` for the other 30). There are 44 skins in all: the 14 old ones plus 30 from the pencils (firefighter, chef, footballer, doctor, penguin, frog, chick, bee, clown, cowboy, farmer, police; pirate, ghost, mummy, zombie, diver, octopus, panda, samurai, detective; vampire, unicorn, alien, snowman, wizard, shark; and the legendary phoenix, golden knight and Rey del Color). The pencil skins have no codes of their own (only `T` gives them all). The skins screen shows 13 small pictures around the current skin, since they don't all fit. A repeated skin is just bad luck. This is the normal way to win skins; the codes are the secret way. Test shortcut: `?monedas=100` in the URL gives 100 coins
 - Record: the highest score is saved in the browser (`src/data/record.js`). It shows in the sala, and the Game Over and victory screens say "¡NUEVO RÉCORD!" when it is beaten
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 

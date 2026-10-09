@@ -10,6 +10,7 @@ import Projectile from '../sprites/Projectile.js';
 import HUDManager from '../managers/HUDManager.js';
 import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
+import { addCoins, loadCoins } from '../data/coins.js';
 import StormCloud from '../sprites/StormCloud.js';
 import { getLevels } from '../data/countryLevels.js';
 import { WORLD, HERO, isGodMode } from '../utils/constants.js';
@@ -44,9 +45,10 @@ class LevelScene extends Phaser.Scene {
     this.registry.set('currentLevel', this.levelIndex);
 
     // --- Build the level from data ---
-    const { bg, platforms, enemies, goalFlag } = LevelManager.buildLevel(
+    const { bg, platforms, enemies, goalFlag, coins } = LevelManager.buildLevel(
       this, this.levelData
     );
+    this.coins = coins;
     this.grayBackground = bg;
     this.platforms = platforms;
     this.enemies = enemies;
@@ -119,6 +121,9 @@ class LevelScene extends Phaser.Scene {
       null, this
     );
 
+    // Hero picks up coins (to buy pencils in the sala)
+    this.physics.add.overlap(this.hero, this.coins, this.collectCoin, null, this);
+
     // Hero's projectiles hit enemies
     this.physics.add.overlap(
       this.heroProjectiles, this.enemies, this.projectileHitsEnemy, null, this
@@ -166,6 +171,7 @@ class LevelScene extends Phaser.Scene {
     this.setupCheats();
     this.hud.updateLives(this.hero.lives);
     this.hud.updateScore(this.hero.score);
+    this.hud.updateCoins(loadCoins());
 
     // Fade in
     this.cameras.main.fadeIn(500);
@@ -329,6 +335,14 @@ class LevelScene extends Phaser.Scene {
       ease: 'Power2',
       onComplete: () => floatingText.destroy(),
     });
+  }
+
+  // Pick up a coin: it is saved right away, so we keep it even if we lose
+  collectCoin(hero, coin) {
+    coin.destroy();
+    const total = addCoins(1);
+    this.hud.updateCoins(total);
+    this.showFloatingText(coin.x, coin.y - 10, '+1');
   }
 
   // Hero reaches the goal flag — level complete!

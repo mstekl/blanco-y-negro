@@ -12,6 +12,7 @@ import {
   BossSkin, CloudSkin, PencilSkin, NinjaSkin, AstronautSkin, RobotSkin, CatSkin,
   DinoSkin, HeroCapeSkin,
 } from './MoreSkins.js';
+import { SKIN_PACK, makeSkinTexture } from './SkinPack.js';
 
 // The secret skins! They are won with the "Hacks de sala" on the title screen
 // ("B Y N" = MR.1 and MR.2, "lebron" = crazy dog, "goma" = MR.3 on his eraser tank)
@@ -39,6 +40,18 @@ export const SKINS = {
   dino: { texture: 'skin-dino', make: DinoSkin, body: [24, 40, 4, 8], canShoot: true, gunAt: [14, -14] }, // 32x48
   super: { texture: 'skin-super', make: HeroCapeSkin, body: [24, 40, 4, 8] }, // picture is 32x48
 };
+
+// The 30 skins of the pencils (SkinPack.js) are added to the list here.
+// They are all 32x48, so they all use the same hitbox.
+for (const skin of SKIN_PACK) {
+  SKINS[skin.id] = {
+    texture: `skin-${skin.id}`,
+    make: { createTexture: (scene) => makeSkinTexture(scene, skin) },
+    body: [24, 40, 4, 8],
+    canShoot: skin.canShoot,
+    gunAt: skin.gunAt,
+  };
+}
 
 class Hero extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
