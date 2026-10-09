@@ -9,6 +9,7 @@ import EnemyMR2 from '../sprites/EnemyMR2.js';
 import EnemyMR3 from '../sprites/EnemyMR3.js';
 import { drawLandmarkScene } from './LandmarkArt.js';
 import { WORLD } from '../utils/constants.js';
+import { makeCoinTexture } from '../data/coins.js';
 
 // The background moves slower than the hero (parallax), so only a part of it is
 // ever seen: the first 800px plus 30% of how far the camera travels
@@ -47,6 +48,10 @@ class LevelManager {
     const enemies = scene.add.group();
     LevelManager.spawnEnemies(scene, enemies, levelData.enemies);
 
+    // --- Coins ---
+    // They are NOT tinted gray: shiny gold coins catch the eye
+    const coins = LevelManager.spawnCoins(scene, levelData.platforms);
+
     // --- Goal flag ---
     // (goal can be a flag (default), a castle or a pipe)
     const goalTextures = { castle: 'goal-castle', pipe: 'goal-pipe' };
@@ -68,7 +73,7 @@ class LevelManager {
       });
     }
 
-    return { bg, colorBg, platforms, enemies, goalFlag };
+    return { bg, colorBg, platforms, enemies, goalFlag, coins };
   }
 
   // Draw a brick wall that fills the whole background (used inside the castle).
@@ -238,6 +243,30 @@ class LevelManager {
         platformGroup.create(tileX, tileY, tileKey);
       }
     }
+  }
+
+  // Put coins floating above every floating platform (not the ground), so we
+  // have to jump up to get them. We place them by ourselves from the platforms,
+  // so EVERY level (and every country level) gets coins without writing them by hand.
+  static spawnCoins(scene, platformList) {
+    makeCoinTexture(scene);
+
+    const coins = scene.physics.add.group({ allowGravity: false, immovable: true });
+    for (const plat of platformList) {
+      if (plat.type === 'ground') continue;
+      // A small platform gets 1 coin, a big one up to 3
+      const count = Math.max(1, Math.min(3, Math.floor(plat.width / 64)));
+      const spacing = plat.width / count;
+      for (let i = 0; i < count; i++) {
+        const coin = coins.create(plat.x + spacing * (i + 0.5), plat.y - 36, 'coin');
+        // The coin "spins": it gets thin and wide again, over and over
+        scene.tweens.add({
+          targets: coin, scaleX: 0.2, duration: 500,
+          yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+      }
+    }
+    return coins;
   }
 
   // Spawn enemies from the level data array

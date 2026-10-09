@@ -39,6 +39,16 @@ class HUDManager {
       strokeThickness: 3,
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
+    // --- Coins (below the level name) ---
+    this.coinIcon = scene.add.image(0, 44, 'coin').setScrollFactor(0).setDepth(100);
+    this.coinText = scene.add.text(780, 44, '0', {
+      fontFamily: 'Arial',
+      fontSize: '18px',
+      color: '#ffd700',
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setOrigin(1, 0.5).setScrollFactor(0).setDepth(100);
+
     // --- Color Gun status (below hearts) ---
     this.colorGunText = scene.add.text(24, 48, '', {
       fontFamily: 'Arial',
@@ -85,6 +95,12 @@ class HUDManager {
     // Pad the score with zeros so it always shows 5 digits (like 00350)
     const padded = String(score).padStart(5, '0');
     this.scoreText.setText(`Puntos: ${padded}`);
+  }
+
+  // Update the coins display (the coin picture sits just left of the number)
+  updateCoins(coins) {
+    this.coinText.setText(String(coins));
+    this.coinIcon.setX(this.coinText.x - this.coinText.width - 14);
   }
 
   // Set the level name text

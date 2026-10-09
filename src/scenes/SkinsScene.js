@@ -3,7 +3,7 @@
 //   - The skin we are looking at is BIG in the middle; the ones next to it are small on the sides
 //   - The arrows (on screen or on the keyboard) move to the next skin
 //   - ELEGIR puts on the skin. The ones we haven't won have a lock:
-//     they are won with a secret code in the "Hacks de sala"
+//     they are won by opening pencils (LÁPICES) or with a secret code
 //   - ESC or "← SALA" goes back
 
 import Phaser from 'phaser';
@@ -133,23 +133,29 @@ class SkinsScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------
-  // Bottom: a little picture of every skin (click one to go to it)
+  // Bottom: little pictures of the skins around the one we are looking at
+  // (there are too many skins to show them all, so we show 13: the one in
+  // the middle is the big one, and we see 6 on each side. Click one to go to it)
   // ---------------------------------------------------------------
   createThumbnails() {
-    this.thumbs = SKIN_LIST.map((info, i) => {
-      const x = 400 + (i - (SKIN_LIST.length - 1) / 2) * 56;
+    const SLOTS = 13;
+    const middle = Math.floor(SLOTS / 2);
+    this.thumbs = [];
+    for (let slot = 0; slot < SLOTS; slot++) {
+      const x = 400 + (slot - middle) * 56;
       const frame = this.add.rectangle(x, 565, 46, 46, 0x777777)
         .setStrokeStyle(2, 0x333333)
         .setInteractive({ useHandCursor: true });
-      const image = this.add.image(x, 565, skinTexture(this, info.id));
-      fitImage(image, 36);
+      const image = this.add.image(x, 565, 'hero');
       const check = this.add.text(x + 18, 545, '✓', {
         fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
         stroke: '#000000', strokeThickness: 4,
       }).setOrigin(0.5);
-      frame.on('pointerdown', () => { this.index = i; this.refresh(true); });
-      return { info, frame, image, check };
-    });
+      // "step" = how far this little picture is from the middle one
+      const step = slot - middle;
+      frame.on('pointerdown', () => this.move(step));
+      this.thumbs.push({ step, frame, image, check });
+    }
   }
 
   // The skin at a position of the list (going around: after the last one comes the first one)
@@ -210,7 +216,7 @@ class SkinsScene extends Phaser.Scene {
     if (!isWon) {
       this.chooseButton.setFillStyle(0x333333);
       this.chooseLabel.setColor('#888888').setText('BLOQUEADA');
-      this.chooseHint.setText('Gánala con un código en los Hacks de sala');
+      this.chooseHint.setText('Gánala abriendo LÁPICES');
     } else if (info.id === this.chosenSkin) {
       this.chooseButton.setFillStyle(0xaaaaaa);
       this.chooseLabel.setColor('#000000').setText('ELEGIDA ✓');
@@ -221,8 +227,11 @@ class SkinsScene extends Phaser.Scene {
       this.chooseHint.setText('o presiona ENTER');
     }
 
-    this.thumbs.forEach(({ info: t, frame, image, check }, i) => {
-      const here = i === this.index;
+    this.thumbs.forEach(({ step, frame, image, check }) => {
+      const t = this.skinAt(this.index + step);
+      const here = step === 0;
+      image.setTexture(skinTexture(this, t.id));
+      fitImage(image, 36);
       if (this.skinsWon.has(t.id)) image.clearTint(); else image.setTint(0x000000);
       frame.setStrokeStyle(here ? 4 : 2, here ? 0xffffff : 0x333333);
       frame.setFillStyle(here ? 0xaaaaaa : 0x777777);

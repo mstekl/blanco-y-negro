@@ -5,12 +5,14 @@
 //   - open the "Hacks de sala" (SPACE) and type a secret code to WIN a skin
 //   - press the SKINS button (or S) to go to the skins screen and choose one
 //     (only here: skins can't be changed in the middle of a level)
+//   - press the LÁPICES button (or L) to buy a pencil with coins and open it
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
 import { SAVE_KEY } from './WorldMapScene.js';
 import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } from '../data/skins.js';
 import { loadRecord, formatPoints } from '../data/record.js';
+import { loadCoins, saveCoins, makeCoinTexture } from '../data/coins.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -27,6 +29,10 @@ class TitleScene extends Phaser.Scene {
         // Storage blocked: nothing was saved anyway
       }
     }
+
+    // Testing shortcut: add ?monedas=100 to the URL to have 100 coins
+    const testCoins = new URLSearchParams(window.location.search).get('monedas');
+    if (testCoins !== null) saveCoins(Math.max(0, parseInt(testCoins, 10) || 0));
 
     // Testing shortcut: add ?mapa to the URL to jump straight to the world map
     if (new URLSearchParams(window.location.search).has('mapa')) {
@@ -63,7 +69,7 @@ class TitleScene extends Phaser.Scene {
     }
 
     // --- Keyboard ---
-    // ENTER = play, SPACE = open the hacks, S = skins
+    // ENTER = play, SPACE = open the hacks, S = skins, L = pencils
     // (while the hacks box is open, the keys are for typing the code)
     this.input.keyboard.on('keydown', (event) => this.onKeyDown(event));
 
@@ -132,6 +138,22 @@ class TitleScene extends Phaser.Scene {
     skinButton.on('pointerover', () => skinButton.setFillStyle(0x999999));
     skinButton.on('pointerout', () => skinButton.setFillStyle(0x777777));
     skinButton.on('pointerdown', () => { if (!this.hackOpen) this.openSkins(); });
+
+    // LÁPICES button, under SKINS, with a gold border and how many coins we have
+    makeCoinTexture(this);
+    const pencilButton = this.add.rectangle(150, 440, 180, 48, 0x222222)
+      .setStrokeStyle(3, 0xffd700)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(150, 432, '✏️ LÁPICES [L]', {
+      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    this.add.image(148, 452, 'coin').setScale(0.7);
+    this.add.text(158, 452, String(loadCoins()), {
+      fontFamily: 'Arial', fontSize: '14px', fontStyle: 'bold', color: '#ffd700',
+    }).setOrigin(0, 0.5);
+    pencilButton.on('pointerover', () => pencilButton.setFillStyle(0x444444));
+    pencilButton.on('pointerout', () => pencilButton.setFillStyle(0x222222));
+    pencilButton.on('pointerdown', () => { if (!this.hackOpen) this.openPencils(); });
   }
 
   // Show the chosen skin in the big preview and in the SKINS button
@@ -145,11 +167,20 @@ class TitleScene extends Phaser.Scene {
 
   // Go to the skins screen
   openSkins() {
+    this.goTo('SkinsScene');
+  }
+
+  // Go to the pencils screen (buy and open pencils)
+  openPencils() {
+    this.goTo('PencilsScene');
+  }
+
+  goTo(sceneName) {
     if (this.leaving) return;
     this.leaving = true;
     this.cameras.main.fadeOut(250);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start('SkinsScene');
+      this.scene.start(sceneName);
     });
   }
 
@@ -263,6 +294,7 @@ class TitleScene extends Phaser.Scene {
       if (event.key === 'Enter') this.startGame();
       else if (event.code === 'Space') this.openHacks();
       else if (event.code === 'KeyS') this.openSkins();
+      else if (event.code === 'KeyL') this.openPencils();
       return;
     }
 
