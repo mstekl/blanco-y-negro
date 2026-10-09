@@ -3,7 +3,7 @@
 // it PAINTS a surprise skin! (The secret way is still the codes in the Hacks de sala.)
 
 import { SKIN_LIST } from './skins.js';
-import { SKIN_PACK } from '../sprites/SkinPack.js';
+import { PENCIL_SKINS } from '../sprites/PencilSkins.js';
 
 // The browser remembers our coins, even after closing the page
 const COINS_KEY = 'blancoYNegro.monedas';
@@ -82,7 +82,7 @@ export const SKIN_RARITY = {
   jefe: 'legendario',
 };
 // The skins of the pack say their own rarity
-SKIN_PACK.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
+PENCIL_SKINS.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
 
 // Open a pencil: pick a skin at random, using the tickets of each rarity.
 // Like putting all the tickets in a hat and taking one out with closed eyes.
