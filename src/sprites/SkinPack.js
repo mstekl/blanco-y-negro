@@ -1,89 +1,17 @@
 // SkinPack.js — 30 more skins for the hero! They come out of the pencils (LÁPICES).
 // Every skin is a little drawing of 32 x 48 pixels, made with simple shapes.
+// Many of them are people, drawn with the "person mold" of SkinParts.js:
+// every skin only draws the things that make it special on top (a helmet, a hat...).
 //
-// Many of them are people (a firefighter, a chef, a pirate...), so instead of
-// drawing a whole person 20 times, we have a "mold": person() draws the head,
-// body, arms and legs with the colors we ask for. Then every skin only draws
-// the things that make it special on top: a helmet, a hat, a beard...
-//
-// To add a new skin: add one more object to SKIN_PACK. It shows up by itself
-// in the skins screen, in the pencils and in the "T" code!
-//   id:       a short name for the code (no spaces)
+// To add a new skin: add one more object to SKIN_PACK (or to SKIN_PACK_2 in
+// SkinPack2.js). It shows up by itself in the skins screen, in the pencils and in the "T" code!
+//   id:       a short name (no spaces, different from all the other skins)
 //   name:     the name the player sees
 //   rarity:   'comun', 'raro', 'epico' or 'legendario' (see src/data/coins.js)
 //   canShoot: true = it shoots from the start     gunAt: where the shots come out
 //   draw:     draws the skin
 
-const RAINBOW = [0xff0000, 0xff8800, 0xffee00, 0x00cc00, 0x0088ff, 0x8800ff];
-const SKIN_COLOR = 0xf1c27d;
-
-// The mold of a person. The head is a circle in the middle top (16, 13).
-//   o.skin, o.shirt, o.pants, o.shoes: colors
-//   o.arms: 'forward' = both arms stretched in front (like a zombie!)
-//   o.face: false = don't draw eyes and mouth (when something covers the face)
-function person(gfx, o) {
-  const skin = o.skin ?? SKIN_COLOR;
-
-  // Legs and shoes
-  gfx.fillStyle(o.pants);
-  gfx.fillRect(11, 37, 4, 9);
-  gfx.fillRect(17, 37, 4, 9);
-  gfx.fillStyle(o.shoes ?? 0x333333);
-  gfx.fillRect(10, 45, 6, 3);
-  gfx.fillRect(16, 45, 6, 3);
-
-  // Body
-  gfx.fillStyle(o.shirt);
-  gfx.fillRect(9, 21, 14, 17);
-
-  // Arms and hands
-  gfx.fillStyle(o.sleeves ?? o.shirt);
-  if (o.arms === 'forward') {
-    gfx.fillRect(20, 22, 10, 3);
-    gfx.fillRect(20, 27, 10, 3);
-    gfx.fillStyle(skin);
-    gfx.fillCircle(30, 23.5, 2);
-    gfx.fillCircle(30, 28.5, 2);
-  } else {
-    gfx.fillRect(5, 22, 4, 11);
-    gfx.fillRect(23, 22, 4, 11);
-    gfx.fillStyle(o.hands ?? skin);
-    gfx.fillCircle(7, 34, 2.2);
-    gfx.fillCircle(25, 34, 2.2);
-  }
-
-  // Head
-  gfx.fillStyle(skin);
-  gfx.fillCircle(16, 13, 7);
-  if (o.face !== false) face(gfx, o.eyes ?? 0x000000);
-}
-
-// Two eyes and a little mouth
-function face(gfx, eyeColor = 0x000000, y = 13) {
-  gfx.fillStyle(eyeColor);
-  gfx.fillCircle(13, y, 1.3);
-  gfx.fillCircle(19, y, 1.3);
-  gfx.fillStyle(0x000000);
-  gfx.fillRect(14, y + 4, 4, 1.2);
-}
-
-// A cape behind the body (draw it BEFORE the person, so it stays behind)
-function cape(gfx, color) {
-  gfx.fillStyle(color);
-  gfx.fillTriangle(9, 20, 23, 20, 3, 46);
-  gfx.fillTriangle(9, 20, 23, 20, 29, 46);
-  gfx.fillRect(9, 20, 14, 26);
-}
-
-// Round eyes with a black dot, for animals
-function bigEyes(gfx, y, left = 12, right = 20, size = 3) {
-  gfx.fillStyle(0xffffff);
-  gfx.fillCircle(left, y, size);
-  gfx.fillCircle(right, y, size);
-  gfx.fillStyle(0x000000);
-  gfx.fillCircle(left + 0.5, y + 0.5, size / 2);
-  gfx.fillCircle(right + 0.5, y + 0.5, size / 2);
-}
+import { RAINBOW, SKIN_COLOR, person, face, cape, bigEyes } from './SkinParts.js';
 
 export const SKIN_PACK = [
   // =============================================================
@@ -799,11 +727,3 @@ export const SKIN_PACK = [
     },
   },
 ];
-
-// Draw a skin of the pack and save it as a picture called "skin-<id>"
-export function makeSkinTexture(scene, skin) {
-  const gfx = scene.add.graphics();
-  skin.draw(gfx);
-  gfx.generateTexture(`skin-${skin.id}`, 32, 48);
-  gfx.destroy();
-}
