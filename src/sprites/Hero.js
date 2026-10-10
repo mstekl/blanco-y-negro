@@ -55,7 +55,11 @@ for (const skin of PENCIL_SKINS) {
 }
 
 class Hero extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y) {
+  // "controls" says which keys move this hero:
+  //   'normal' = arrows AND WASD both work (one player)
+  //   'wasd'   = only W A D (+ S to shoot): player 1 in the race
+  //   'arrows' = only the arrows (+ ↓ to shoot): player 2 in the race
+  constructor(scene, x, y, controls = 'normal') {
     // Which picture do we wear? The normal hero, or a secret skin chosen in the sala
     // (the registry is the memory shared by all scenes)
     const skin = SKINS[scene.registry.get('skin')];
@@ -91,18 +95,38 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.jumpCount = 0;        // How many jumps since leaving the ground (0, 1, or 2)
     this.maxJumps = 2;         // Allow double jump (press jump twice!)
 
-    // Set up keyboard controls
-    // Arrow keys
-    this.cursors = scene.input.keyboard.createCursorKeys();
-    // WASD keys (alternative controls)
-    this.keyA = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    this.keyD = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    this.keyW = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-    // Run key
-    this.keyShift = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-    // Shoot keys (Z and X — easy for small hands!)
-    this.keyZ = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-    this.keyX = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    // Set up keyboard controls: a list of keys for each action
+    const K = Phaser.Input.Keyboard.KeyCodes;
+    const key = (code) => scene.input.keyboard.addKey(code);
+    if (controls === 'wasd') {
+      // Race, player 1 (left half). No run key: both players walk at the same speed
+      this.keys = { left: [key(K.A)], right: [key(K.D)], jump: [key(K.W)], shoot: [key(K.S)], run: [] };
+    } else if (controls === 'arrows') {
+      // Race, player 2 (right half)
+      this.keys = {
+        left: [key(K.LEFT)], right: [key(K.RIGHT)], jump: [key(K.UP)], shoot: [key(K.DOWN)], run: [],
+      };
+    } else {
+      // One player: arrows or WASD to move, Shift to run,
+      // Z and X to shoot (easy for small hands!)
+      this.keys = {
+        left: [key(K.LEFT), key(K.A)],
+        right: [key(K.RIGHT), key(K.D)],
+        jump: [key(K.UP), key(K.W), key(K.SPACE)],
+        shoot: [key(K.Z), key(K.X)],
+        run: [key(K.SHIFT)],
+      };
+    }
+  }
+
+  // Is any key of this list held down?
+  anyDown(keys) {
+    return keys.some((k) => k.isDown);
+  }
+
+  // Was any key of this list JUST pressed? (each press counts only once)
+  anyJustDown(keys) {
+    return keys.some((k) => Phaser.Input.Keyboard.JustDown(k));
   }
 
   // update() runs every frame (60 times per second!)
@@ -111,9 +135,9 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     const onGround = this.body.touching.down || this.body.blocked.down;
 
     // --- Horizontal movement ---
-    const leftPressed = this.cursors.left.isDown || this.keyA.isDown;
-    const rightPressed = this.cursors.right.isDown || this.keyD.isDown;
-    const running = this.keyShift.isDown;
+    const leftPressed = this.anyDown(this.keys.left);
+    const rightPressed = this.anyDown(this.keys.right);
+    const running = this.anyDown(this.keys.run);
 
     if (leftPressed) {
       // Move left (negative X = left on screen)
@@ -139,9 +163,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Use JustDown so each key press counts as one jump
-    const jumpJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.up)
-      || Phaser.Input.Keyboard.JustDown(this.keyW)
-      || Phaser.Input.Keyboard.JustDown(this.cursors.space);
+    const jumpJustPressed = this.anyJustDown(this.keys.jump);
 
     if (jumpJustPressed && this.jumpCount < this.maxJumps) {
       // First jump = normal, second jump = a bit weaker (like a boost)
@@ -153,9 +175,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     }
 
     // --- Shooting ---
-    // Press Z or X to fire the Color Gun (if we have it!)
-    const shootPressed = Phaser.Input.Keyboard.JustDown(this.keyZ)
-      || Phaser.Input.Keyboard.JustDown(this.keyX);
+    // Press Z or X (or S / ↓ in the race) to fire the Color Gun (if we have it!)
+    const shootPressed = this.anyJustDown(this.keys.shoot);
 
     if (shootPressed && this.hasColorGun) {
       this.shoot();

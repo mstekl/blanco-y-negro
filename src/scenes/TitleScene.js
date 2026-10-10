@@ -6,13 +6,15 @@
 //   - press the SKINS button (or S) to go to the skins screen and choose one
 //     (only here: skins can't be changed in the middle of a level)
 //   - press the LÁPICES button (or L) to buy a pencil with coins and open it
+//   - press the CARRERA button (or C) for a race: two players, split screen
+//   - press the BÚSQUEDA button (or B) to look for 5 colored pencils: two players, split screen
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
 import { SAVE_KEY } from './WorldMapScene.js';
 import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } from '../data/skins.js';
 import { loadRecord, formatPoints } from '../data/record.js';
-import { loadCoins, saveCoins, makeCoinTexture } from '../data/coins.js';
+import { loadCoins, saveCoins, addCoins, makeCoinTexture } from '../data/coins.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -148,12 +150,24 @@ class TitleScene extends Phaser.Scene {
       fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0.5);
     this.add.image(148, 452, 'coin').setScale(0.7);
-    this.add.text(158, 452, String(loadCoins()), {
+    // We keep the coin number, so a hack that gives coins can change it right away
+    this.coinLabel = this.add.text(158, 452, String(loadCoins()), {
       fontFamily: 'Arial', fontSize: '14px', fontStyle: 'bold', color: '#ffd700',
     }).setOrigin(0, 0.5);
     pencilButton.on('pointerover', () => pencilButton.setFillStyle(0x444444));
     pencilButton.on('pointerout', () => pencilButton.setFillStyle(0x222222));
     pencilButton.on('pointerdown', () => { if (!this.hackOpen) this.openPencils(); });
+
+    // CARRERA button, under LÁPICES: two players race, each on half of the screen
+    const raceButton = this.add.rectangle(150, 500, 180, 44, 0x222222)
+      .setStrokeStyle(3, 0x66ee88)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(150, 500, '🏁 CARRERA [C]', {
+      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    raceButton.on('pointerover', () => raceButton.setFillStyle(0x444444));
+    raceButton.on('pointerout', () => raceButton.setFillStyle(0x222222));
+    raceButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace(); });
   }
 
   // Show the chosen skin in the big preview and in the SKINS button
@@ -170,17 +184,24 @@ class TitleScene extends Phaser.Scene {
     this.goTo('SkinsScene');
   }
 
+  // Go to the race (mode 'carrera') or the search (mode 'busqueda'):
+  // both heroes wear the skin chosen here
+  startRace(mode = 'carrera') {
+    this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
+    this.goTo('RaceScene', { mode });
+  }
+
   // Go to the pencils screen (buy and open pencils)
   openPencils() {
     this.goTo('PencilsScene');
   }
 
-  goTo(sceneName) {
+  goTo(sceneName, data) {
     if (this.leaving) return;
     this.leaving = true;
     this.cameras.main.fadeOut(250);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start(sceneName);
+      this.scene.start(sceneName, data);
     });
   }
 
@@ -199,6 +220,17 @@ class TitleScene extends Phaser.Scene {
     button.on('pointerover', () => { button.setFillStyle(0xdddddd); label.setScale(1.08); });
     button.on('pointerout', () => { button.setFillStyle(0xffffff); label.setScale(1); });
     button.on('pointerdown', () => { if (!this.hackOpen) this.startGame(); });
+
+    // BÚSQUEDA button, just above JUGAR: two players look for 5 colored pencils
+    const searchButton = this.add.rectangle(645, 452, 220, 40, 0x222222)
+      .setStrokeStyle(3, 0xff77cc)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(645, 452, '🔍 BÚSQUEDA [B]', {
+      fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    searchButton.on('pointerover', () => searchButton.setFillStyle(0x444444));
+    searchButton.on('pointerout', () => searchButton.setFillStyle(0x222222));
+    searchButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace('busqueda'); });
 
     this.add.text(645, 582, 'o presiona ENTER', {
       fontFamily: 'Arial', fontSize: '13px', color: '#aaaaaa',
@@ -237,7 +269,8 @@ class TitleScene extends Phaser.Scene {
   //   R S     → color robot         G P  → painter cat
   //   D R     → rainbow dinosaur (he can shoot too!)
   //   S C     → superhero with a cape
-  //   T       → ALL the skins at once!
+  //   T       → ALL the skins at once! (T again, with all of them → only the hero is left)
+  //   10000   → 10000 coins to buy pencils!
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -295,6 +328,8 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'Space') this.openHacks();
       else if (event.code === 'KeyS') this.openSkins();
       else if (event.code === 'KeyL') this.openPencils();
+      else if (event.code === 'KeyC') this.startRace();
+      else if (event.code === 'KeyB') this.startRace('busqueda');
       return;
     }
 
@@ -321,6 +356,15 @@ class TitleScene extends Phaser.Scene {
 
   submitHack() {
     const code = this.normalizeCode(this.hackText);
+    // "10000" is not a skin: it gives us 10000 coins
+    if (code === '10000') {
+      const total = addCoins(10000);
+      this.coinLabel.setText(String(total));
+      this.hackMessage.setColor('#ffd700').setText('¡Ganaste 10000 monedas!');
+      this.closeTimer = this.time.delayedCall(1300, () => this.closeHacks());
+      return;
+    }
+
     const prize = SKIN_CODES[code];
 
     if (!prize) {
@@ -329,6 +373,20 @@ class TitleScene extends Phaser.Scene {
     }
 
     const isNew = prize.some((id) => !this.skinsWon.has(id));
+
+    // "T" again when we ALREADY have every skin takes them all away:
+    // we go back to having only the normal hero (like a new player)
+    if (code === 't' && !isNew) {
+      this.skinsWon.clear();
+      this.skinsWon.add('heroe');
+      this.chosenSkin = 'heroe';
+      saveSkins(this.registry, this.skinsWon, this.chosenSkin);
+      this.refreshSkin();
+      this.hackMessage.setColor('#ffffff').setText('¡Perdiste TODAS las skins! Solo te queda el Héroe');
+      this.closeTimer = this.time.delayedCall(1300, () => this.closeHacks());
+      return;
+    }
+
     prize.forEach((id) => this.skinsWon.add(id));
     // We put on the first skin of the prize right away, to see it
     this.chosenSkin = prize[0];

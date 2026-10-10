@@ -14,6 +14,8 @@ import GameOverScene from './scenes/GameOverScene.js';
 import CelebrationScene from './scenes/CelebrationScene.js';
 import WorldMapScene from './scenes/WorldMapScene.js';
 import WinScene from './scenes/WinScene.js';
+import RaceScene, { RaceLeftScene, RaceRightScene } from './scenes/RaceScene.js';
+import { SearchLeftScene, SearchRightScene } from './scenes/SearchLevelScene.js';
 import { setupTouchControls } from './touch/TouchControls.js';
 
 // Game configuration — think of this as the "settings" for our game
@@ -51,7 +53,10 @@ const config = {
 
   // All the scenes in our game — Boot starts first!
   // Boot → PreloadScene → TitleScene (↔ SkinsScene, PencilsScene) → LevelIntro → Level → GameOver/Celebration → WorldMap → Win
-  scene: [BootScene, PreloadScene, TitleScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene]
+  // The race (from the sala): RaceScene on top, with RaceLeft and RaceRight (one level for each half)
+  // The search (BÚSQUEDA) uses RaceScene too, with SearchLeft and SearchRight
+  scene: [BootScene, PreloadScene, TitleScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
+    RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, RaceScene]
 };
 
 // Create the game!

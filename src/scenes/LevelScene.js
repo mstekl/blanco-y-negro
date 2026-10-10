@@ -13,17 +13,23 @@ import PowerupManager from '../managers/PowerupManager.js';
 import { addCoins, loadCoins } from '../data/coins.js';
 import StormCloud from '../sprites/StormCloud.js';
 import { getLevels } from '../data/countryLevels.js';
+import { levels } from '../data/levels.js';
 import { WORLD, HERO, isGodMode } from '../utils/constants.js';
 
 class LevelScene extends Phaser.Scene {
-  constructor() {
-    super('LevelScene');
+  // The race (RaceScene) makes two copies of this scene, one for each half of
+  // the screen, and Phaser needs a different name (key) for each copy
+  constructor(key = 'LevelScene') {
+    super(key);
   }
 
   // init() runs before preload — we receive data from the previous scene
   init(data) {
     this.levelIndex = data.levelIndex || 0;
     this.levelComplete = false;
+    // In a race (two players, split screen) this says which player we are,
+    // which half of the screen is ours and which keys we use. null = normal game
+    this.race = data.race || null;
   }
 
   // preload() — Textures are now generated in PreloadScene
@@ -35,14 +41,19 @@ class LevelScene extends Phaser.Scene {
   create() {
     // Get the level configuration data
     // (the 6 normal levels, or the 3 levels of the country we are playing in)
-    this.levelData = getLevels(this.registry)[this.levelIndex];
+    // (the race always uses the normal levels)
+    this.levelData = (this.race ? levels : getLevels(this.registry))[this.levelIndex];
 
-    // Initialize game state in the registry (first time only)
-    if (this.registry.get('lives') === undefined) {
-      this.registry.set('lives', HERO.INITIAL_LIVES);
-      this.registry.set('score', 0);
+    // Initialize game state in the registry (first time only).
+    // The race does NOT use the registry: there are two heroes, and the
+    // registry can only remember the lives and points of one
+    if (!this.race) {
+      if (this.registry.get('lives') === undefined) {
+        this.registry.set('lives', HERO.INITIAL_LIVES);
+        this.registry.set('score', 0);
+      }
+      this.registry.set('currentLevel', this.levelIndex);
     }
-    this.registry.set('currentLevel', this.levelIndex);
 
     // --- Build the level from data ---
     const { bg, platforms, enemies, goalFlag, coins } = LevelManager.buildLevel(
@@ -86,11 +97,13 @@ class LevelScene extends Phaser.Scene {
     this.hero = new Hero(
       this,
       this.levelData.heroStart.x,
-      this.levelData.heroStart.y
+      this.levelData.heroStart.y,
+      this.race ? this.race.controls : 'normal'
     );
     // Restore lives and score from registry
-    this.hero.lives = this.registry.get('lives');
-    this.hero.score = this.registry.get('score');
+    // (in the race we always have all our lives: losing one just starts the level again)
+    this.hero.lives = this.race ? HERO.INITIAL_LIVES : this.registry.get('lives');
+    this.hero.score = this.race ? 0 : this.registry.get('score');
 
     // --- Collisions ---
     // Hero stands on platforms
@@ -155,20 +168,27 @@ class LevelScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.hero, true, 0.1, 0.1);
     this.cameras.main.setBounds(0, 0, this.levelData.worldWidth, WORLD.HEIGHT);
     this.cameras.main.setDeadzone(100, 50);
+    // In the race our camera only draws on OUR half of the screen
+    if (this.race) this.cameras.main.setViewport(this.race.side * 400, 0, 400, 600);
 
     // --- HUD ---
     this.hud = new HUDManager(this);
     this.hud.setLevelName(this.levelData.id, this.levelData.name);
+    if (this.race) this.hud.useHalfScreen(this.race.help, this.race.shootKey);
 
     // A small reminder so we never forget that nothing can hurt us here
     // (always created, because the E+P hack can turn the mode on or off while we play)
-    this.godLabel = this.add.text(400, 80, 'MODO INMORTAL', {
+    this.godLabel = this.add.text(this.race ? 200 : 400, 80, 'MODO INMORTAL', {
       fontFamily: 'Arial', fontSize: '14px', color: '#66ee88',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100)
       .setVisible(isGodMode(this.registry));
 
-    this.setupCheats();
+    // No secret keys in the race: both halves would hear the keys, and
+    // E+P would turn the mode on in one half and off again in the other!
+    if (!this.race) this.setupCheats();
+    // In the race, a big "Nivel 2" tells us we got to the next level
+    if (this.race && this.levelIndex > 0) this.showRaceLevel();
     this.hud.updateLives(this.hero.lives);
     this.hud.updateScore(this.hero.score);
     this.hud.updateCoins(loadCoins());
@@ -198,6 +218,18 @@ class LevelScene extends Phaser.Scene {
         this.godLabel.setVisible(isGodMode(this.registry));
         this.showCheatMessage(on ? '¡Modo inmortal activado!' : 'Ya eres mortal otra vez');
       }
+    });
+  }
+
+  // Race: "Nivel 2" in big letters in the middle of our half, for a moment
+  showRaceLevel() {
+    const text = this.add.text(200, 260, `Nivel ${this.levelData.id}`, {
+      fontFamily: 'Arial', fontSize: '48px', fontStyle: 'bold', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 6,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    this.tweens.add({
+      targets: text, alpha: 0, delay: 1000, duration: 500,
+      onComplete: () => text.destroy(),
     });
   }
 
@@ -313,7 +345,7 @@ class LevelScene extends Phaser.Scene {
 
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.restart({ levelIndex: this.levelIndex });
+      this.scene.restart({ levelIndex: this.levelIndex, race: this.race });
     });
   }
 
@@ -361,6 +393,12 @@ class LevelScene extends Phaser.Scene {
 
     // The black-and-white villains that are still around get their colors back
     this.colorizeEnemies();
+
+    // In the race there are no castle or color animations: we hurry to the next level!
+    if (this.race) {
+      this.finishRaceLevel();
+      return;
+    }
 
     // A castle goal gets a special animation: the hero walks inside!
     if (this.levelData.goal.type === 'castle') {
@@ -410,6 +448,31 @@ class LevelScene extends Phaser.Scene {
           this.scene.start('CelebrationScene');
         });
       }
+    });
+  }
+
+  // Race: we finished a level. Was it the last one? Then we WIN the race!
+  finishRaceLevel() {
+    const nextLevel = this.levelIndex + 1;
+    const wonRace = nextLevel >= this.race.goalLevel;
+
+    this.add.text(200, 250, wonRace ? `¡Llegaste al Nivel ${nextLevel + 1}!` : '¡Nivel Completado!', {
+      fontFamily: 'Arial', fontSize: '32px', color: '#ffff00',
+      stroke: '#000000', strokeThickness: 6,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+    if (wonRace) {
+      // Tell the race (the scene on top) that we got there first
+      this.scene.get('RaceScene').playerWon(this.race.player);
+      return;
+    }
+
+    // A short moment to see the message, then the next level in OUR half
+    this.time.delayedCall(1500, () => {
+      this.cameras.main.fadeOut(300);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.restart({ levelIndex: nextLevel, race: this.race });
+      });
     });
   }
 
@@ -646,6 +709,12 @@ class LevelScene extends Phaser.Scene {
 
   // Game over — lost all lives
   gameOver() {
+    // In the race there is no game over: we just try the level again
+    if (this.race) {
+      this.levelComplete = false; // heroFell() may have set it: restartLevel() must not skip
+      this.restartLevel();
+      return;
+    }
     this.levelComplete = true;
     this.hero.setVelocity(0, 0);
 
@@ -657,6 +726,7 @@ class LevelScene extends Phaser.Scene {
 
   // Save hero state to registry (persists between scenes)
   saveState() {
+    if (this.race) return; // the race doesn't use the registry (see create)
     this.registry.set('lives', this.hero.lives);
     this.registry.set('score', this.hero.score);
   }
@@ -664,6 +734,8 @@ class LevelScene extends Phaser.Scene {
   // update() — The game loop! 60 times per second
   update(time, delta) {
     if (this.levelComplete) return;
+    // In the race nobody moves until the countdown says "¡YA!"
+    if (this.race && !this.scene.get('RaceScene').started) return;
 
     // Update hero (input and movement)
     this.hero.update();
