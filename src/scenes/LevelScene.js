@@ -30,6 +30,9 @@ class LevelScene extends Phaser.Scene {
     // In a race (two players, split screen) this says which player we are,
     // which half of the screen is ours and which keys we use. null = normal game
     this.race = data.race || null;
+    // The middle of OUR part of the screen: half of a half (200) in the split
+    // screen, or the middle of the whole screen (400) when the screen is all ours
+    this.midX = this.race && !this.race.full ? 200 : 400;
   }
 
   // preload() — Textures are now generated in PreloadScene
@@ -104,6 +107,9 @@ class LevelScene extends Phaser.Scene {
     // (in the race we always have all our lives: losing one just starts the level again)
     this.hero.lives = this.race ? HERO.INITIAL_LIVES : this.registry.get('lives');
     this.hero.score = this.race ? 0 : this.registry.get('score');
+    // No running in a race (alone on the screen we have the normal keys, Shift too):
+    // so everybody goes at the same speed, also online
+    if (this.race) this.hero.keys.run = [];
 
     // --- Collisions ---
     // Hero stands on platforms
@@ -169,16 +175,22 @@ class LevelScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.levelData.worldWidth, WORLD.HEIGHT);
     this.cameras.main.setDeadzone(100, 50);
     // In the race our camera only draws on OUR half of the screen
-    if (this.race) this.cameras.main.setViewport(this.race.side * 400, 0, 400, 600);
+    // (ONLINE and against the MÁQUINA we play alone on this screen: the whole screen is ours)
+    if (this.race && !this.race.full) this.cameras.main.setViewport(this.race.side * 400, 0, 400, 600);
 
     // --- HUD ---
     this.hud = new HUDManager(this);
     this.hud.setLevelName(this.levelData.id, this.levelData.name);
-    if (this.race) this.hud.useHalfScreen(this.race.help, this.race.shootKey);
+    if (this.race && this.race.full) this.hud.useFullRace(this.race.help, this.race.shootKey);
+    else if (this.race) this.hud.useHalfScreen(this.race.help, this.race.shootKey);
+
+    // Against the MÁQUINA, we see it as a see-through "ghost" in our level
+    this.createGhost();
 
     // A small reminder so we never forget that nothing can hurt us here
     // (always created, because the E+P hack can turn the mode on or off while we play)
-    this.godLabel = this.add.text(this.race ? 200 : 400, 80, 'MODO INMORTAL', {
+    // (in a full-screen race it goes a bit lower, under the bars that say how everybody goes)
+    this.godLabel = this.add.text(this.midX, this.race && this.race.full ? 112 : 80, 'MODO INMORTAL', {
       fontFamily: 'Arial', fontSize: '14px', color: '#66ee88',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100)
@@ -221,9 +233,34 @@ class LevelScene extends Phaser.Scene {
     });
   }
 
+  // The MÁQUINA's ghost: a see-through, light blue hero with a 🤖 on top.
+  // The machine itself lives in the RaceScene (see Bot.js); here we only draw it.
+  createGhost() {
+    this.ghost = null;
+    const bot = this.race && this.scene.get('RaceScene').bot;
+    if (!bot) return;
+    const body = this.add.image(0, 0, 'hero').setTint(0x99ddff);
+    const tag = this.add.text(0, -36, '🤖', { fontSize: '18px' }).setOrigin(0.5);
+    this.ghost = this.add.container(bot.x, bot.y, [body, tag]).setAlpha(0.5).setDepth(2);
+  }
+
+  // The ghost goes where the machine is, but only if it is in OUR level
+  moveGhost() {
+    if (!this.ghost) return;
+    const bot = this.scene.get('RaceScene').bot;
+    this.ghost.setVisible(bot.levelIndex === this.levelIndex && !bot.finished);
+    // It glides there smoothly (no jumps from one place to another),
+    // unless it is very far away (it just started a new level)
+    if (Math.abs(bot.x - this.ghost.x) > 400) this.ghost.setPosition(bot.x, bot.y);
+    this.ghost.x += (bot.x - this.ghost.x) * 0.3;
+    this.ghost.y += (bot.y - this.ghost.y) * 0.15;
+    // It looks the way it walks
+    this.ghost.first.setFlipX(bot.x < this.ghost.x - 1);
+  }
+
   // Race: "Nivel 2" in big letters in the middle of our half, for a moment
   showRaceLevel() {
-    const text = this.add.text(200, 260, `Nivel ${this.levelData.id}`, {
+    const text = this.add.text(this.midX, 260, `Nivel ${this.levelData.id}`, {
       fontFamily: 'Arial', fontSize: '48px', fontStyle: 'bold', color: '#ffffff',
       stroke: '#000000', strokeThickness: 6,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
@@ -456,7 +493,7 @@ class LevelScene extends Phaser.Scene {
     const nextLevel = this.levelIndex + 1;
     const wonRace = nextLevel >= this.race.goalLevel;
 
-    this.add.text(200, 250, wonRace ? `¡Llegaste al Nivel ${nextLevel + 1}!` : '¡Nivel Completado!', {
+    this.add.text(this.midX, 250, wonRace ? `¡Llegaste al Nivel ${nextLevel + 1}!` : '¡Nivel Completado!', {
       fontFamily: 'Arial', fontSize: '32px', color: '#ffff00',
       stroke: '#000000', strokeThickness: 6,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
@@ -733,6 +770,7 @@ class LevelScene extends Phaser.Scene {
 
   // update() — The game loop! 60 times per second
   update(time, delta) {
+    this.moveGhost();
     if (this.levelComplete) return;
     // In the race nobody moves until the countdown says "¡YA!"
     if (this.race && !this.scene.get('RaceScene').started) return;

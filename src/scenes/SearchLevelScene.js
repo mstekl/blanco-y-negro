@@ -64,7 +64,7 @@ class SearchLevelScene extends LevelScene {
   // Top middle of our half: 5 empty slots that fill up with the pencils we find
   createFoundBar() {
     this.slots = GOOD_PENCILS.map((pencil, i) => {
-      const x = 200 + (i - 2) * 28;
+      const x = this.midX + (i - 2) * 28;
       this.add.rectangle(x, 24, 22, 30, 0x000000, 0.5)
         .setStrokeStyle(2, pencil.color).setScrollFactor(0).setDepth(100);
       // The pencil picture is hidden until we find that color
@@ -77,24 +77,9 @@ class SearchLevelScene extends LevelScene {
   // along the ground. The places are SHUFFLED, so they are different every
   // time, and different in each half of the screen.
   hidePencils() {
-    const spots = [];
-    for (const plat of this.levelData.platforms) {
-      if (plat.type === 'ground') {
-        // Along the ground, one spot every 260 pixels (but not right at the start)
-        for (let x = plat.x + 130; x < plat.x + plat.width; x += 260) {
-          if (x > 250) spots.push({ x, y: plat.y - 26 });
-        }
-      } else {
-        spots.push({ x: plat.x + plat.width / 2, y: plat.y - 26 });
-      }
-    }
+    const spots = pencilSpots(this.levelData);
     Phaser.Utils.Array.Shuffle(spots);
-
-    // 5 good ones and 2 of each bad color
-    const toHide = [
-      ...GOOD_PENCILS.map((p) => ({ ...p, good: true })),
-      ...BAD_PENCILS.flatMap((p) => Array(BAD_COPIES).fill({ ...p, good: false })),
-    ];
+    const toHide = pencilsToHide();
 
     this.pencils = toHide.slice(0, spots.length).map((pencil, i) => {
       const image = this.add.image(spots[i].x, spots[i].y, pencilTexture(this, pencil.color))
@@ -167,6 +152,31 @@ class SearchLevelScene extends LevelScene {
     this.hero.setPosition(this.levelData.heroStart.x, this.levelData.heroStart.y);
     this.hero.setVelocity(0, 0);
   }
+}
+
+// The places where pencils can be hidden: on top of every floating platform
+// and along the ground. (The MÁQUINA uses this list too, see Bot.js)
+export function pencilSpots(levelData) {
+  const spots = [];
+  for (const plat of levelData.platforms) {
+    if (plat.type === 'ground') {
+      // Along the ground, one spot every 260 pixels (but not right at the start)
+      for (let x = plat.x + 130; x < plat.x + plat.width; x += 260) {
+        if (x > 250) spots.push({ x, y: plat.y - 26 });
+      }
+    } else {
+      spots.push({ x: plat.x + plat.width / 2, y: plat.y - 26 });
+    }
+  }
+  return spots;
+}
+
+// The pencils to hide: 5 good ones and 2 of each bad color
+export function pencilsToHide() {
+  return [
+    ...GOOD_PENCILS.map((p) => ({ ...p, good: true })),
+    ...BAD_PENCILS.flatMap((p) => Array(BAD_COPIES).fill({ ...p, good: false })),
+  ];
 }
 
 // A colored pencil picture (one for each color, made the first time we need it)

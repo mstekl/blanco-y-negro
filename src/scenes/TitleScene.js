@@ -212,11 +212,12 @@ class TitleScene extends Phaser.Scene {
     this.goTo('SkinsScene');
   }
 
-  // Go to the race (mode 'carrera') or the search (mode 'busqueda'):
+  // Go to the race (mode 'carrera') or the search (mode 'busqueda'),
+  // first to the screen that asks ONLINE, OFFLINE or MÁQUINA:
   // both heroes wear the skin chosen here
   startRace(mode = 'carrera') {
     this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
-    this.goTo('RaceScene', { mode });
+    this.goTo('ModeChoiceScene', { mode });
   }
 
   // Go to the pencils screen (buy and open pencils)
