@@ -46,7 +46,9 @@ blanco-y-negro/
 │   │   ├── CelebrationScene.js # City gets its color back (after level 6)
 │   │   ├── WorldMapScene.js   # World map: pick a country to color (after the celebration)
 │   │   ├── WinScene.js        # Victory celebration
-│   │   ├── RaceScene.js       # The race: 2 players, split screen (RaceLeft + RaceRight are copies of LevelScene). Also runs BÚSQUEDA
+│   │   ├── ModeChoiceScene.js # Before CARRERA or BÚSQUEDA: ONLINE / OFFLINE / MÁQUINA (and FÁCIL / NORMAL / DIFÍCIL)
+│   │   ├── OnlineScene.js     # ONLINE: CREAR PARTIDA (get a secret word) or UNIRSE (type the friend's word)
+│   │   ├── RaceScene.js       # The race: 2 players split screen (RaceLeft + RaceRight are copies of LevelScene), or alone on the whole screen (online / máquina) with progress bars. Also runs BÚSQUEDA
 │   │   └── SearchLevelScene.js # BÚSQUEDA: one half of the screen, find the 5 colored pencils (SearchLeft + SearchRight)
 │   ├── sprites/
 │   │   ├── Hero.js            # Player character
@@ -67,6 +69,9 @@ blanco-y-negro/
 │   │   ├── LandmarkArt.js     # Draws the landmarks (Chichén Itzá, Statue of Liberty, CN Tower...)
 │   │   ├── PowerupManager.js  # Power-up effects
 │   │   └── HUDManager.js      # Score, lives, UI
+│   ├── online/
+│   │   ├── Net.js             # Online connection with PeerJS: the secret word becomes the name to find the friend
+│   │   └── Bot.js             # The MÁQUINA: a ghost that runs the race or looks for its own pencils
 │   ├── touch/
 │   │   └── TouchControls.js   # On-screen buttons and small keyboard for phones and tablets
 │   └── utils/
@@ -109,7 +114,8 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - Record: the highest score is saved in the browser (`src/data/record.js`). It shows in the sala, and the Game Over and victory screens say "¡NUEVO RÉCORD!" when it is beaten
 - CARRERA (race) from the sala (button under LÁPICES, or C): the screen is split in two halves and two players play at the same time on the same keyboard, each in their own copy of the levels. After a 3-2-1 countdown, the first one to reach level 4 (finish level 3) wins. In the race there are no hearts, points or game over: losing a life just starts that level again. ESC goes back to the sala. On phones and tablets each half gets its own buttons (see `TouchControls.js`), so two people can play on one iPad
 - BÚSQUEDA (search) from the sala (button just above JUGAR, or B): split screen like the race, both players in the map of level 1 with no villains and no coins. 5 GOOD pencils are hidden all over the map (rojo, azul, verde, violeta, naranja) and 6 BAD ones (2 amarillo, 2 rosa, 2 marrón). The places are shuffled, so they are different in each half and every game. Stand next to a pencil and grab it: player 1 with Z, player 2 with ↓. A bad pencil takes 1 of your 3 lives. The first to find the 5 good ones wins; losing the 3 lives means the other player wins. Falling into a pit only sends you back to the start
-- Our player (TU JUGADOR): the first time the game opens, before the sala, we write a name (more than 3 letters and less than 14) and pick an avatar (ANY of the 94 skins, even ones not won yet; it is only the picture other players see, not the skin we wear). It is saved in the browser (`src/data/profile.js`). It shows in the top-left corner of the sala; touching it (or N) changes it. It is for the online race and search (coming next, with Firebase)
+- ONLINE / OFFLINE / MÁQUINA: CARRERA and BÚSQUEDA first ask how to play (keys 1 2 3). OFFLINE = the split screen above. MÁQUINA = alone on the whole screen against the computer (FÁCIL, NORMAL or DIFÍCIL), which is a see-through ghost with a 🤖 in our level (`src/online/Bot.js`; speeds and mistakes are in `LEVELS` there). ONLINE = each one on their own device: CREAR PARTIDA gives a secret word (like LEON), the friend chooses UNIRSE and types it. It uses PeerJS (free, no account: the two browsers talk directly, `src/online/Net.js`). The one who created the game decides if it is CARRERA or BÚSQUEDA. Alone on the screen, two bars at the top show how far each one is. If the friend leaves (or is silent 8 seconds) the game says SE DESCONECTÓ. Normal keys alone on the screen: arrows/WASD, Z grabs in the search
+- Our player (TU JUGADOR): the first time the game opens, before the sala, we write a name (more than 3 letters and less than 14) and pick an avatar (ANY of the 94 skins, even ones not won yet; it is only the picture other players see, not the skin we wear). It is saved in the browser (`src/data/profile.js`). It shows in the top-left corner of the sala; touching it (or N) changes it. The online race and search show it to the other player
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log

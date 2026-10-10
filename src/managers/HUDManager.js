@@ -95,6 +95,16 @@ class HUDManager {
     this.helpText.setX(200).setText(controlsHelp);
   }
 
+  // A race (or search) ONLINE or against the MÁQUINA: the whole screen is ours,
+  // but like in the split screen there are no points, and no hearts in the race
+  useFullRace(controlsHelp, shootKey) {
+    this.shootKey = shootKey;
+    this.halfScreen = true;
+    this.hearts.forEach((heart) => heart.setVisible(false));
+    this.scoreText.setVisible(false);
+    this.helpText.setText(controlsHelp);
+  }
+
   // The search mode (BÚSQUEDA) is also on half the screen, but there the lives DO matter
   showHearts() {
     this.heartsInHalf = true;
