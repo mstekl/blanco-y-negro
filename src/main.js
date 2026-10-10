@@ -66,5 +66,9 @@ const config = {
 // Create the game!
 const game = new Phaser.Game(config);
 
+// Only while we build the game (npm run dev): we can look inside it from the
+// browser console, for example window.juego.scene.getScenes(true)
+if (import.meta.env.DEV) window.juego = game;
+
 // On phones and tablets: buttons and a small keyboard on the screen
 setupTouchControls();
