@@ -8,6 +8,8 @@
 //   - press the LÁPICES button (or L) to buy a pencil with coins and open it
 //   - press the CARRERA button (or C) for a race: two players, split screen
 //   - press the BÚSQUEDA button (or B) to look for 5 colored pencils: two players, split screen
+//   - press our player (name + avatar, top left, or N) to change them.
+//     The very first time, we go to make our player before anything else
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
@@ -15,6 +17,7 @@ import { SAVE_KEY } from './WorldMapScene.js';
 import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } from '../data/skins.js';
 import { loadRecord, formatPoints } from '../data/record.js';
 import { loadCoins, saveCoins, addCoins, makeCoinTexture } from '../data/coins.js';
+import { loadProfile } from '../data/profile.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -42,6 +45,13 @@ class TitleScene extends Phaser.Scene {
       return;
     }
 
+    // No player yet (first time playing)? First we write a name and pick an avatar
+    this.profile = loadProfile();
+    if (!this.profile) {
+      this.scene.start('ProfileScene');
+      return;
+    }
+
     this.leaving = false;
     const { won, chosen } = loadSkins(this.registry);
     this.skinsWon = won;
@@ -52,6 +62,7 @@ class TitleScene extends Phaser.Scene {
 
     drawGrayCity(this);
     this.drawTitle();
+    this.createProfileButton();
     this.createHeroPreview();
     this.createLeftButtons();
     this.createPlayButton();
@@ -94,6 +105,23 @@ class TitleScene extends Phaser.Scene {
       fontFamily: 'Arial', fontSize: '22px', color: '#dddddd',
       stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5);
+  }
+
+  // ---------------------------------------------------------------
+  // Top left: our player (avatar + name). Touching it lets us change them
+  // ---------------------------------------------------------------
+  createProfileButton() {
+    const button = this.add.rectangle(84, 30, 156, 44, 0x222222)
+      .setStrokeStyle(2, 0xbbbbbb)
+      .setInteractive({ useHandCursor: true });
+    const avatar = this.add.image(28, 30, skinTexture(this, this.profile.avatar));
+    fitImage(avatar, 34);
+    this.add.text(52, 30, this.profile.name, {
+      fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0, 0.5);
+    button.on('pointerover', () => button.setFillStyle(0x444444));
+    button.on('pointerout', () => button.setFillStyle(0x222222));
+    button.on('pointerdown', () => { if (!this.hackOpen) this.goTo('ProfileScene'); });
   }
 
   // ---------------------------------------------------------------
@@ -330,6 +358,7 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyL') this.openPencils();
       else if (event.code === 'KeyC') this.startRace();
       else if (event.code === 'KeyB') this.startRace('busqueda');
+      else if (event.code === 'KeyN') this.goTo('ProfileScene');
       return;
     }
 
