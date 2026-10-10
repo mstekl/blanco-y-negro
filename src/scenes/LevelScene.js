@@ -12,6 +12,8 @@ import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
 import { addCoins, loadCoins } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
+import { playSound, playMusic } from '../audio/Sound.js';
+import { useShopItems } from '../data/shop.js';
 import StormCloud from '../sprites/StormCloud.js';
 import { getLevels } from '../data/countryLevels.js';
 import { levels } from '../data/levels.js';
@@ -206,6 +208,11 @@ class LevelScene extends Phaser.Scene {
     this.hud.updateScore(this.hero.score);
     this.hud.updateCoins(loadCoins());
 
+    // The game song (it keeps playing if it was already on)
+    playMusic('juego');
+    // Things we bought in the TIENDA (only when a new game starts, see shop.js)
+    if (!this.race) useShopItems(this);
+
     // Fade in
     this.cameras.main.fadeIn(500);
   }
@@ -303,6 +310,7 @@ class LevelScene extends Phaser.Scene {
     if (enemy.isDefeated) {
       this.hero.addScore(enemy.scoreValue);
       reportMission('villanos'); // for the MISIONES DEL DÍA
+      playSound('pisar');
       this.saveState();
       this.hud.updateScore(this.hero.score);
       this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
@@ -362,6 +370,7 @@ class LevelScene extends Phaser.Scene {
       hero.setVelocityY(HERO.JUMP_VELOCITY * 0.6);
       hero.addScore(enemy.scoreValue);
       if (enemy.isDefeated) reportMission('villanos');
+      playSound('pisar');
       this.saveState();
       this.hud.updateScore(hero.score);
       this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
@@ -419,6 +428,7 @@ class LevelScene extends Phaser.Scene {
     coin.destroy();
     const total = addCoins(1);
     reportMission('monedas');
+    playSound('moneda');
     this.hud.updateCoins(total);
     this.showFloatingText(coin.x, coin.y - 10, '+1');
   }
@@ -434,6 +444,7 @@ class LevelScene extends Phaser.Scene {
 
     // A level done counts for the MISIONES (only real levels, not the race)
     if (!this.race) reportMission('niveles');
+    playSound('ganar');
 
     // Bonus points for completing the level
     this.hero.addScore(500);
@@ -766,6 +777,7 @@ class LevelScene extends Phaser.Scene {
     }
     this.levelComplete = true;
     this.hero.setVelocity(0, 0);
+    playSound('perder');
 
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {

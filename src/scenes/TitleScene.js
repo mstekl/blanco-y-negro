@@ -20,7 +20,9 @@ import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } fr
 import { loadRecord, formatPoints } from '../data/record.js';
 import { loadCoins, saveCoins, addCoins, makeCoinTexture } from '../data/coins.js';
 import { loadProfile } from '../data/profile.js';
-import { missionStatus } from '../data/missions.js';
+import { drawTopBar } from '../ui/TopBar.js';
+import { takeShopItems } from '../data/shop.js';
+import { playMusic, isMuted, toggleSound } from '../audio/Sound.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -64,12 +66,15 @@ class TitleScene extends Phaser.Scene {
     this.cameras.main.fadeIn(600);
 
     drawGrayCity(this);
+    // The bar at the top, like in Fortnite: INICIO · PASE · TIENDA · CASILLERO
+    this.refreshBarCoins = drawTopBar(this, 'TitleScene', (scene) => this.goTo(scene));
     this.drawTitle();
     this.createProfileButton();
     this.createHeroPreview();
     this.createLeftButtons();
     this.createPlayButton();
     this.createRightButtons();
+    playMusic('sala');
     this.createHackBox();
 
     // --- Credits ---
@@ -94,8 +99,8 @@ class TitleScene extends Phaser.Scene {
   }
 
   drawTitle() {
-    const title = this.add.text(400, 90, 'BLANCO Y NEGRO', {
-      fontFamily: 'Arial', fontSize: '64px', color: '#ffffff',
+    const title = this.add.text(400, 134, 'BLANCO Y NEGRO', {
+      fontFamily: 'Arial', fontSize: '56px', color: '#ffffff',
       stroke: '#000000', strokeThickness: 8,
     }).setOrigin(0.5);
 
@@ -105,7 +110,7 @@ class TitleScene extends Phaser.Scene {
       yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
 
-    this.add.text(400, 150, '¡Devuelve el color al mundo!', {
+    this.add.text(400, 186, '¡Devuelve el color al mundo!', {
       fontFamily: 'Arial', fontSize: '22px', color: '#dddddd',
       stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5);
@@ -115,12 +120,12 @@ class TitleScene extends Phaser.Scene {
   // Top left: our player (avatar + name). Touching it lets us change them
   // ---------------------------------------------------------------
   createProfileButton() {
-    const button = this.add.rectangle(84, 30, 156, 44, 0x222222)
+    const button = this.add.rectangle(84, 74, 156, 44, 0x222222)
       .setStrokeStyle(2, 0xbbbbbb)
       .setInteractive({ useHandCursor: true });
-    const avatar = this.add.image(28, 30, skinTexture(this, this.profile.avatar));
+    const avatar = this.add.image(28, 74, skinTexture(this, this.profile.avatar));
     fitImage(avatar, 34);
-    this.add.text(52, 30, this.profile.name, {
+    this.add.text(52, 74, this.profile.name, {
       fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0, 0.5);
     button.on('pointerover', () => button.setFillStyle(0x444444));
@@ -271,13 +276,19 @@ class TitleScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------
-  // Right side, next to the big hero: MISIONES and SUPERVIVENCIA
+  // Right side, next to the big hero: EDITOR and SUPERVIVENCIA
+  // (and the 🔊 button at the top left, next to our player)
   // ---------------------------------------------------------------
   createRightButtons() {
-    // MISIONES: it also says how many of today's 3 missions are done
-    const done = missionStatus().filter((m) => m.done).length;
-    this.sideButton(700, 235, `📋 MISIONES [M]  ${done}/3`, 0x44aaff, () => this.goTo('MissionsScene'));
+    // (MISIONES is in the CASILLERO tab, and the TIENDA has its own tab in the top bar)
+    this.sideButton(700, 341, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
     this.sideButton(700, 395, '🛡 SUPERVIVENCIA [V]', 0xff5555, () => this.startSurvival());
+
+    // Sound on / off
+    const soundButton = this.add.rectangle(190, 74, 44, 44, 0x222222)
+      .setStrokeStyle(2, 0xbbbbbb).setInteractive({ useHandCursor: true });
+    const soundIcon = this.add.text(190, 74, isMuted() ? '🔇' : '🔊', { fontSize: '22px' }).setOrigin(0.5);
+    soundButton.on('pointerdown', () => soundIcon.setText(toggleSound() ? '🔇' : '🔊'));
   }
 
   sideButton(x, y, label, color, onClick) {
@@ -292,10 +303,16 @@ class TitleScene extends Phaser.Scene {
     button.on('pointerdown', () => { if (!this.hackOpen) onClick(); });
   }
 
-  // SUPERVIVENCIA: the hero wears the skin chosen here, like in the levels
+  // SUPERVIVENCIA: first we choose ONLINE or SOLO.
+  // The hero wears the skin chosen here, like in the levels
   startSurvival() {
     this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
-    this.goTo('SurvivalScene');
+    this.goTo('ModeChoiceScene', { mode: 'supervivencia' });
+  }
+
+  // The EDITOR DE NIVELES: draw our own levels
+  openEditor() {
+    this.goTo('EditorScene');
   }
 
   startGame() {
@@ -309,6 +326,8 @@ class TitleScene extends Phaser.Scene {
     this.registry.set('country', null); // we start in the normal levels, not inside a country
     // The hero is born with the skin chosen in the skins screen (null = the normal hero)
     this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
+    // We take one of each thing we bought in the TIENDA (the hero gets them in the first level)
+    takeShopItems(this.registry);
 
     this.cameras.main.fadeOut(500);
     this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -394,6 +413,10 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
       else if (event.code === 'KeyM') this.goTo('MissionsScene');
       else if (event.code === 'KeyV') this.startSurvival();
+      else if (event.code === 'KeyT') this.goTo('ShopScene');
+      else if (event.code === 'KeyP') this.goTo('PassScene');
+      else if (event.code === 'KeyK') this.goTo('LockerScene');
+      else if (event.code === 'KeyE') this.openEditor();
       return;
     }
 
@@ -424,6 +447,7 @@ class TitleScene extends Phaser.Scene {
     if (code === '10000') {
       const total = addCoins(10000);
       this.coinLabel.setText(String(total));
+      this.refreshBarCoins();
       this.hackMessage.setColor('#ffd700').setText('¡Ganaste 10000 monedas!');
       this.closeTimer = this.time.delayedCall(1300, () => this.closeHacks());
       return;

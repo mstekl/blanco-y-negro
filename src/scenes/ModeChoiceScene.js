@@ -11,6 +11,7 @@ import { drawGrayCity } from './TitleScene.js';
 const TITLES = {
   carrera: '🏁 CARRERA',
   busqueda: '🔍 BÚSQUEDA',
+  supervivencia: '🛡 SUPERVIVENCIA',
 };
 
 class ModeChoiceScene extends Phaser.Scene {
@@ -18,9 +19,9 @@ class ModeChoiceScene extends Phaser.Scene {
     super('ModeChoiceScene');
   }
 
-  // data.mode = 'carrera' or 'busqueda'
+  // data.mode = 'carrera', 'busqueda' or 'supervivencia'
   init(data) {
-    this.mode = data.mode === 'busqueda' ? 'busqueda' : 'carrera';
+    this.mode = ['busqueda', 'supervivencia'].includes(data.mode) ? data.mode : 'carrera';
     this.leaving = false;
   }
 
@@ -44,12 +45,20 @@ class ModeChoiceScene extends Phaser.Scene {
     this.howPage = this.add.container();
     this.levelPage = this.add.container();
 
-    this.makeButton(this.howPage, 200, '1', '🌐 ONLINE', 'Juega con otra persona con una palabra secreta', 0x44aaff,
-      () => this.goTo('OnlineScene', { mode: this.mode }));
-    this.makeButton(this.howPage, 330, '2', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
-      () => this.goTo('RaceScene', { mode: this.mode, how: 'dos' }));
-    this.makeButton(this.howPage, 460, '3', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
-      () => this.showPage('levels'));
+    if (this.mode === 'supervivencia') {
+      // SUPERVIVENCIA has only 2 ways: with friends online, or alone
+      this.makeButton(this.howPage, 230, '1', '🌐 ONLINE', 'Con amigos: gana el último que sigue vivo', 0x44aaff,
+        () => this.goTo('OnlineScene', { mode: this.mode }));
+      this.makeButton(this.howPage, 380, '2', '🙂 SOLO', '¿Cuánto aguantas tú solo?', 0x66ee88,
+        () => this.goTo('SurvivalScene'));
+    } else {
+      this.makeButton(this.howPage, 200, '1', '🌐 ONLINE', 'Juega con otra persona con una palabra secreta', 0x44aaff,
+        () => this.goTo('OnlineScene', { mode: this.mode }));
+      this.makeButton(this.howPage, 330, '2', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
+        () => this.goTo('RaceScene', { mode: this.mode, how: 'dos' }));
+      this.makeButton(this.howPage, 460, '3', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
+        () => this.showPage('levels'));
+    }
 
     this.makeButton(this.levelPage, 200, '1', '🙂 FÁCIL', 'La máquina va despacito', 0x66ee88,
       () => this.playMachine('facil'));
@@ -69,7 +78,7 @@ class ModeChoiceScene extends Phaser.Scene {
       }
       const number = parseInt(event.key, 10);
       const buttons = this.page === 'how' ? this.howPage.buttons : this.levelPage.buttons;
-      if (number >= 1 && number <= 3) buttons[number - 1]();
+      if (buttons[number - 1]) buttons[number - 1]();
     });
 
     this.cameras.main.fadeIn(250);

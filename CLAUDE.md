@@ -31,6 +31,9 @@ blanco-y-negro/
 │   │   ├── skins.js           # The skin list, the codes that win them, and saving them
 │   │   ├── profile.js         # Our player (name + avatar), saved in the browser
 │   │   ├── missions.js        # The MISIONES DEL DÍA: the list, today's 3, progress, prizes (reportMission)
+│   │   ├── pass.js            # PASE BLANCO Y NEGRO: stars, levels, prizes, seasons, PREMIUM
+│   │   ├── shop.js            # TIENDA power-ups and the backpack (mochila)
+│   │   ├── customLevels.js    # The 5 levels made in the editor
 │   │   ├── coins.js           # Coins, the pencil price, and how rare each skin is
 │   │   ├── countryThemes.js   # Which landmark each country has in the background
 │   │   └── worldMap.json      # Country shapes for the map (made by tools/build-world-map.mjs)
@@ -51,6 +54,11 @@ blanco-y-negro/
 │   │   ├── OnlineScene.js     # ONLINE: CREAR PARTIDA (get a secret word) or UNIRSE (type the friend's word), 2 to 4 players, the creator presses EMPEZAR
 │   │   ├── SurvivalScene.js   # SUPERVIVENCIA: alone in an arena, waves of villains, how long can you last?
 │   │   ├── MissionsScene.js   # MISIONES DEL DÍA: the 3 missions of today and how far we got
+│   │   ├── PassScene.js       # PASE BLANCO Y NEGRO tab: 50 levels, GRATIS and PREMIUM rows
+│   │   ├── ShopScene.js       # TIENDA tab: 4 skins of the day + power-ups for the backpack
+│   │   ├── LockerScene.js     # CASILLERO tab: SKINS, TU JUGADOR and MISIONES
+│   │   ├── EditorScene.js     # EDITOR DE NIVELES: 5 slots, draw a level with tools
+│   │   ├── CustomLevelScene.js # Plays a level made in the editor
 │   │   ├── RaceScene.js       # The race: 2 players split screen (RaceLeft + RaceRight are copies of LevelScene), or alone on the whole screen (online / máquina) with progress bars. Also runs BÚSQUEDA
 │   │   └── SearchLevelScene.js # BÚSQUEDA: one half of the screen, find the 5 colored pencils (SearchLeft + SearchRight)
 │   ├── sprites/
@@ -65,6 +73,7 @@ blanco-y-negro/
 │   │   ├── SkinPack.js        # 30 skins that come out of the pencils
 │   │   ├── SkinPack2.js       # 50 more pencil skins (jobs, animals, food, legends)
 │   │   ├── PencilSkins.js     # Joins both packs in one list
+│   │   ├── PassSkins.js       # The 7 skins of the PASE BLANCO Y NEGRO (never from pencils)
 │   │   ├── StormCloud.js      # Level 5 cloud that chases you and throws pencils
 │   │   └── Projectile.js      # Bullets (hero & enemy)
 │   ├── managers/
@@ -121,6 +130,12 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - ONLINE with 3 or 4: everybody types the same secret word, the creator sees the list (👑 = creator) and presses EMPEZAR (ENTER). One bar per player. The first to win wins for everybody; in the search, losing the 3 lives means "¡QUEDASTE FUERA!" and the others keep playing (the last one left wins). The REVANCHA starts when everybody who is still there presses R. If the creator leaves, the game ends for everybody (the creator is the center). Online prize: 15 coins + 5 for each extra rival
 - SUPERVIVENCIA (sala button on the right, or V): alone in an arena with no pits, 3 lives and the Color Pencil from the start. Villains come in waves from both sides (MR.1, then MR.2 from wave 3, MR.3 from wave 5), a new wave when all are defeated or after 25 seconds, a shield every 3 waves. At the end: time, wave, record (`blancoYNegro.supervivencia`) and coins (1 per 10 seconds + 2 per wave)
 - MISIONES DEL DÍA (sala button on the right, or M): 3 missions a day (FÁCIL, MEDIA, DIFÍCIL) picked from the date, so they change every day. The game calls `reportMission(event)` (villains, coins, levels, pencils, wins, countries, survival...) and a finished mission gives its coins right away with a message at the top. The list is in `src/data/missions.js`
+- TOP BAR in the sala (like Fortnite): INICIO · PASE BLANCO Y NEGRO (P) · TIENDA (T) · CASILLERO (K), with the coins on the right. CASILLERO has SKINS, TU JUGADOR and MISIONES (M). The sala also has EDITOR (E), SUPERVIVENCIA (V) and the 🔊/🔇 sound button next to our player
+- PASE BLANCO Y NEGRO (`src/data/pass.js`): playing gives ⭐ stars (every `reportMission` event: villains, coins, levels, pencils, wins, countries, waves; a finished mission gives 50). 100 stars = 1 level, 50 levels. Each level has a GRATIS prize and a PREMIUM prize (PREMIUM costs 1.000.000 coins per season; buying it later gives the premium prizes already reached). Prizes: coins, power-ups for the backpack, and skins (GRATIS 25 and 50, PREMIUM 10, 20, 30, 40, 50: the 7 skins of `PassSkins.js`; an already-owned skin gives 100 coins). A new SEASON every month (season 1 = October 2026): the pass goes back to 0. The hack `T` does NOT give the pass skins
+- TIENDA: 4 skins of the day (picked from the date, never pass skins; 50 / 100 / 200 / 400 coins by rarity) and the power-ups Escudo (15), Vida extra (20), Lápiz de color (25), up to 5 of each in the backpack. When JUGAR or SUPERVIVENCIA starts, the hero gets one of each thing in the backpack (`takeShopItems` / `useShopItems` in `src/data/shop.js`)
+- SUPERVIVENCIA ONLINE: SUPERVIVENCIA asks ONLINE or SOLO. Online (2 to 4, same secret word) everybody has the same waves, a line per player shows hearts and wave, and the last one still alive wins (coins: survival coins + 10 + 5 per rival). REVANCHA when everybody presses R
+- EDITOR DE NIVELES (E): 5 slots saved in the browser. Tools 1-9 and 0: SUELO (toggle ground columns, makes pits), PLATAFORMA, MR.1, MR.2, MR.3, LÁPIZ, ESCUDO, META, INICIO, BORRAR. ◀ ▶ or the mini-map move along the 2400px level. GUARDAR, PROBAR (plays it in CustomLevelScene), SALIR. Custom levels have no coins (so nobody can farm them) and do not count for missions
+- SOUND: retro sounds and music made with code (`src/audio/Sound.js`): jump, coin, shoot, stomp, hit, power-up, pencils, countdown, waves, win, lose, missions, buying. Music in the sala and in the levels. 🔊/🔇 in the sala (remembered)
 - Our player (TU JUGADOR): the first time the game opens, before the sala, we write a name (more than 3 letters and less than 14) and pick an avatar (ANY of the 94 skins, even ones not won yet; it is only the picture other players see, not the skin we wear). It is saved in the browser (`src/data/profile.js`). It shows in the top-left corner of the sala; touching it (or N) changes it. The online race and search show it to the other player
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 

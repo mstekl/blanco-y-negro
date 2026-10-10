@@ -4,6 +4,7 @@
 
 import { SKINS } from '../sprites/Hero.js';
 import { PENCIL_SKINS } from '../sprites/PencilSkins.js';
+import { PASS_SKINS } from '../sprites/PassSkins.js';
 
 // The browser remembers the skins we won and the one we chose, even after closing the page
 const SKINS_WON_KEY = 'blancoYNegro.skinsGanadas';
@@ -27,7 +28,13 @@ export const SKIN_LIST = [
   { id: 'super', name: 'Superhéroe' },
   // ...and the 80 skins that come out of the pencils (src/sprites/SkinPack.js and SkinPack2.js)
   ...PENCIL_SKINS.map(({ id, name }) => ({ id, name })),
+  // ...and the 7 skins of the PASE BLANCO Y NEGRO (src/sprites/PassSkins.js).
+  // They never come out of the pencils: only the pass gives them.
+  ...PASS_SKINS.map(({ id, name }) => ({ id, name })),
 ];
+
+// The ids of the pass skins, so other places can tell them apart (the pencils skip them)
+export const PASS_SKIN_IDS = PASS_SKINS.map((skin) => skin.id);
 
 // The secret codes of the "Hacks de sala", and which skins each one gives us.
 // They are written WITHOUT spaces, because spaces don't matter: "B Y N" and "byn" are the same code
@@ -46,7 +53,8 @@ export const SKIN_CODES = {
   sc: ['super'],
   // The best secret: "T" (for "Todas") gives us EVERY skin at once!
   // We take them from SKIN_LIST, so new skins are added here by themselves
-  t: SKIN_LIST.map((skin) => skin.id).filter((id) => id !== 'heroe'),
+  // (but NOT the skins of the PASE BLANCO Y NEGRO: those are only won in the pass)
+  t: SKIN_LIST.map((skin) => skin.id).filter((id) => id !== 'heroe' && !PASS_SKIN_IDS.includes(id)),
 };
 
 // Which skins did we win, and which one are we wearing?
