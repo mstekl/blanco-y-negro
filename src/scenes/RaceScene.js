@@ -21,6 +21,7 @@ import { RaceBot, SearchBot } from '../online/Bot.js';
 import { loadProfile } from '../data/profile.js';
 import { addCoins, makeCoinTexture } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
+import { playSound } from '../audio/Sound.js';
 
 // We win when we finish this many levels (3 levels done = we got to level 4)
 const LEVELS_TO_WIN = 3;
@@ -511,6 +512,7 @@ class RaceScene extends Phaser.Scene {
     const words = ['3', '2', '1', '¡YA!'];
     words.forEach((word, i) => {
       this.time.delayedCall(600 + i * 800, () => {
+        playSound(i === 3 ? 'ya' : 'cuenta');
         const text = this.add.text(400, 300, word, {
           fontFamily: 'Arial', fontSize: '96px', fontStyle: 'bold',
           color: i === 3 ? '#66ee88' : '#ffffff',
@@ -567,6 +569,7 @@ class RaceScene extends Phaser.Scene {
       .setStrokeStyle(8, color);
 
     this.showResult(`¡GANÓ EL JUGADOR ${player}!`, winner.color, reason);
+    playSound('ganar');
     this.throwConfetti(winner.side * 400 + 200);
   }
 
@@ -591,6 +594,7 @@ class RaceScene extends Phaser.Scene {
       reportMission(this.bot ? `maquina-${this.level}` : 'online');
     }
     this.showResult(title, weWon ? '#66ee88' : '#ff9933', reason, { coins });
+    playSound(weWon ? 'ganar' : 'perder');
     if (weWon) this.throwConfetti(400);
   }
 

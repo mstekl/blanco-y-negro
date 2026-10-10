@@ -12,6 +12,9 @@
 // Everything is saved in the browser (localStorage).
 
 import { addCoins } from './coins.js';
+import { playSound } from '../audio/Sound.js';
+import { showToast } from '../ui/toast.js';
+import { addStars, starsFor, MISSION_STARS } from './pass.js';
 
 const SAVE_KEY = 'blancoYNegro.misiones';
 
@@ -102,8 +105,12 @@ export function missionStatus() {
 //   reportMission('villanos')         → we defeated 1 villain
 //   reportMission('supervivencia', 45) → we survived 45 seconds
 export function reportMission(event, amount = 1) {
+  // Everything we do gives ⭐ stars for the PASE BLANCO Y NEGRO (see pass.js)
+  addStars(starsFor(event, amount));
+
   const state = load();
   let changed = false;
+  let completed = 0;
   todaysMissions().forEach((m) => {
     if (m.event !== event || state.done[m.id]) return;
     const before = state.progress[m.id] || 0;
@@ -113,24 +120,12 @@ export function reportMission(event, amount = 1) {
       // Mission complete! The coins are ours right away
       state.done[m.id] = true;
       addCoins(m.reward);
+      playSound('mision');
       showToast(`✅ ¡Misión completada! ${m.text}  +${m.reward} 🪙`);
+      completed += 1;
     }
   });
   if (changed) save(state);
-}
-
-// A message that slides in at the top of the page for a few seconds.
-// It is made with the page (HTML), not with Phaser, so it shows over ANY scene.
-function showToast(message) {
-  const toast = document.createElement('div');
-  toast.textContent = message;
-  toast.style.cssText = `position: fixed; top: 12px; left: 50%; transform: translate(-50%, -80px);
-    z-index: 20; background: #1d3b24; color: #fff; border: 3px solid #66ee88; border-radius: 12px;
-    padding: 10px 18px; font: bold 16px Arial, sans-serif; max-width: 90vw; text-align: center;
-    transition: transform 0.4s; pointer-events: none;`;
-  document.body.appendChild(toast);
-  // Slide down, wait, slide up, and remove it
-  requestAnimationFrame(() => { toast.style.transform = 'translate(-50%, 0)'; });
-  setTimeout(() => { toast.style.transform = 'translate(-50%, -80px)'; }, 3500);
-  setTimeout(() => toast.remove(), 4000);
+  // A finished mission gives many stars too
+  if (completed) addStars(completed * MISSION_STARS);
 }

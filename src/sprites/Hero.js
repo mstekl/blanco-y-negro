@@ -13,7 +13,9 @@ import {
   DinoSkin, HeroCapeSkin,
 } from './MoreSkins.js';
 import { PENCIL_SKINS } from './PencilSkins.js';
+import { PASS_SKINS } from './PassSkins.js';
 import { makeSkinTexture } from './SkinParts.js';
+import { playSound } from '../audio/Sound.js';
 
 // The secret skins! They are won with the "Hacks de sala" on the title screen
 // ("B Y N" = MR.1 and MR.2, "lebron" = crazy dog, "goma" = MR.3 on his eraser tank)
@@ -42,9 +44,10 @@ export const SKINS = {
   super: { texture: 'skin-super', make: HeroCapeSkin, body: [24, 40, 4, 8] }, // picture is 32x48
 };
 
-// The 80 skins of the pencils (SkinPack.js and SkinPack2.js) are added to the list here.
+// The 80 skins of the pencils (SkinPack.js and SkinPack2.js) and the 7 skins of the
+// PASE BLANCO Y NEGRO (PassSkins.js) are added to the list here.
 // They are all 32x48, so they all use the same hitbox.
-for (const skin of PENCIL_SKINS) {
+for (const skin of [...PENCIL_SKINS, ...PASS_SKINS]) {
   SKINS[skin.id] = {
     texture: `skin-${skin.id}`,
     make: { createTexture: (scene) => makeSkinTexture(scene, skin) },
@@ -172,6 +175,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
         : HERO.JUMP_VELOCITY * 0.75;
       this.setVelocityY(jumpPower);
       this.jumpCount += 1;
+      playSound('saltar');
     }
 
     // --- Shooting ---
@@ -180,6 +184,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
 
     if (shootPressed && this.hasColorGun) {
       this.shoot();
+      playSound('disparo');
     }
 
     // --- The pencil-case shield follows the hero ---
@@ -293,7 +298,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // Lose a life
+    // Lose a life (ouch!)
+    playSound('golpe');
     this.lives -= 1;
 
     // Become invincible for a short time (so we don't lose all lives at once)

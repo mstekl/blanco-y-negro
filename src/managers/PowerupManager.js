@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import Projectile from '../sprites/Projectile.js';
 import { HERO } from '../utils/constants.js';
+import { playSound } from '../audio/Sound.js';
 
 class PowerupManager {
   constructor(scene) {
@@ -45,6 +46,7 @@ class PowerupManager {
     // Only count it when the hero is really standing on top
     if (!hero.body.touching.down) return;
     platform.used = true;
+    playSound('powerup');
 
     // Give the extra life (up to maximum)
     if (hero.lives < HERO.MAX_LIVES) {
@@ -113,6 +115,7 @@ class PowerupManager {
   // Called when the hero overlaps with a power-up
   collectPowerup(hero, powerup) {
     const type = powerup.powerupType;
+    playSound('powerup');
     const scene = this.scene;
 
     // Apply the power-up effect based on type

@@ -4,7 +4,7 @@
 // From 2 to 4 players can play. Everybody sees who is in the game (name and
 // avatar). When everybody is there, the one who CREATED the game presses
 // EMPEZAR (or ENTER), and the CARRERA (or BÚSQUEDA) starts for everybody.
-// The creator also decides if it is a CARRERA or a BÚSQUEDA.
+// The creator also decides the game: CARRERA, BÚSQUEDA or SUPERVIVENCIA.
 // ESC goes back.
 
 import Phaser from 'phaser';
@@ -15,13 +15,17 @@ import { skinTexture, fitImage } from '../data/skins.js';
 
 const PLAYER_COLORS = ['#44aaff', '#ff9933', '#66ee88', '#ff77cc'];
 
+// The games we can play online
+const MODE_NAMES = { carrera: 'CARRERA', busqueda: 'BÚSQUEDA', supervivencia: 'SUPERVIVENCIA' };
+const validMode = (mode) => (MODE_NAMES[mode] ? mode : 'carrera');
+
 class OnlineScene extends Phaser.Scene {
   constructor() {
     super('OnlineScene');
   }
 
   init(data) {
-    this.mode = data.mode === 'busqueda' ? 'busqueda' : 'carrera';
+    this.mode = validMode(data.mode);
     // 'menu' (choose create or join), 'crear', 'unirse' or 'error'
     this.step = 'menu';
     this.typed = '';
@@ -77,7 +81,7 @@ class OnlineScene extends Phaser.Scene {
   }
 
   showTitle() {
-    this.title.setText(`🌐 ONLINE · ${this.mode === 'busqueda' ? 'BÚSQUEDA' : 'CARRERA'}`);
+    this.title.setText(`🌐 ONLINE · ${MODE_NAMES[this.mode]}`);
   }
 
   menuButton(y, label, explain, onClick) {
@@ -233,7 +237,7 @@ class OnlineScene extends Phaser.Scene {
   // (friend) The center told us who is in the game
   listArrived(msg) {
     this.players = msg.players;
-    this.mode = msg.mode === 'busqueda' ? 'busqueda' : 'carrera';
+    this.mode = validMode(msg.mode);
     this.showTitle();
     this.showPlayers();
   }
@@ -279,7 +283,9 @@ class OnlineScene extends Phaser.Scene {
     if (this.playing || this.leaving) return;
     this.playing = true; // the race keeps the connection, so we don't hang up
     this.leaving = true;
-    this.scene.start('RaceScene', { mode, how: 'online', net: this.net, players });
+    // SUPERVIVENCIA has its own scene; the race and the search use RaceScene
+    if (mode === 'supervivencia') this.scene.start('SurvivalScene', { net: this.net, players });
+    else this.scene.start('RaceScene', { mode, how: 'online', net: this.net, players });
   }
 
   showFull() {

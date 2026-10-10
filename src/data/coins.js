@@ -2,8 +2,9 @@
 // The normal way to win skins is to buy a pencil (lápiz) with coins and open it:
 // it PAINTS a surprise skin! (The secret way is still the codes in the Hacks de sala.)
 
-import { SKIN_LIST } from './skins.js';
+import { SKIN_LIST, PASS_SKIN_IDS } from './skins.js';
 import { PENCIL_SKINS } from '../sprites/PencilSkins.js';
+import { PASS_SKINS } from '../sprites/PassSkins.js';
 
 // The browser remembers our coins, even after closing the page
 const COINS_KEY = 'blancoYNegro.monedas';
@@ -83,11 +84,14 @@ export const SKIN_RARITY = {
 };
 // The skins of the pack say their own rarity
 PENCIL_SKINS.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
+// The skins of the PASE BLANCO Y NEGRO have a rarity too (the skins screen shows it)...
+PASS_SKINS.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
 
 // Open a pencil: pick a skin at random, using the tickets of each rarity.
 // Like putting all the tickets in a hat and taking one out with closed eyes.
 export function pickRandomSkin() {
-  const prizes = SKIN_LIST.filter((skin) => SKIN_RARITY[skin.id]);
+  // ...but they are NOT in the hat: only the pass gives them, never a pencil
+  const prizes = SKIN_LIST.filter((skin) => SKIN_RARITY[skin.id] && !PASS_SKIN_IDS.includes(skin.id));
   const tickets = (skin) => RARITIES[SKIN_RARITY[skin.id]].weight;
   const totalTickets = prizes.reduce((sum, skin) => sum + tickets(skin), 0);
 
