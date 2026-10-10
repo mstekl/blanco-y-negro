@@ -350,7 +350,7 @@ class TitleScene extends Phaser.Scene {
   //   D R     → rainbow dinosaur (he can shoot too!)
   //   S C     → superhero with a cape
   //   T       → ALL the skins at once! (T again, with all of them → only the hero is left)
-  //   10000   → 10000 coins to buy pencils!
+  //   10000   → 10000 coins to buy pencils!     100000 → 100000 coins!
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -443,12 +443,13 @@ class TitleScene extends Phaser.Scene {
 
   submitHack() {
     const code = this.normalizeCode(this.hackText);
-    // "10000" is not a skin: it gives us 10000 coins
-    if (code === '10000') {
-      const total = addCoins(10000);
+    // "10000" and "100000" are not skins: they give us that many coins
+    if (code === '10000' || code === '100000') {
+      const amount = Number(code);
+      const total = addCoins(amount);
       this.coinLabel.setText(String(total));
       this.refreshBarCoins();
-      this.hackMessage.setColor('#ffd700').setText('¡Ganaste 10000 monedas!');
+      this.hackMessage.setColor('#ffd700').setText(`¡Ganaste ${amount.toLocaleString('es')} monedas!`);
       this.closeTimer = this.time.delayedCall(1300, () => this.closeHacks());
       return;
     }
