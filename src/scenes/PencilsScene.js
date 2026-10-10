@@ -22,6 +22,10 @@ const PAPER_SIZE = 230;
 // The pencil paints the skin in this many lines, going left → right, then right → left...
 const PAINT_ROWS = 7;
 const PAINT_TIME = 2600; // milliseconds
+// Secret: pressing ENTER 5 times fast opens 15 pencils at once!
+const FAST_ENTERS = 5;
+const FAST_TIME = 2000; // the 5 presses must fit in this many milliseconds
+const MANY_PENCILS = 15;
 
 class PencilsScene extends Phaser.Scene {
   constructor() {
@@ -50,8 +54,9 @@ class PencilsScene extends Phaser.Scene {
     // Keyboard: ENTER = open a pencil, ESC = back to the sala
     // (holding ENTER down repeats the key: we ignore the repeats, so we
     // don't spend ALL our coins by accident)
+    this.enterTimes = [];
     this.input.keyboard.on('keydown', (event) => {
-      if (event.key === 'Enter' && !event.repeat) this.openPencil();
+      if (event.key === 'Enter' && !event.repeat) this.pressEnter();
       else if (event.key === 'Escape') this.back();
     });
 
@@ -153,7 +158,7 @@ class PencilsScene extends Phaser.Scene {
     this.openLabel.setColor(canBuy ? '#000000' : '#888888');
     const missing = PENCIL_PRICE - coins;
     this.openHint.setText(canBuy
-      ? 'o presiona ENTER'
+      ? `o presiona ENTER  ·  ENTER ${FAST_ENTERS} veces rápido = ${MANY_PENCILS} lápices`
       : `Te ${missing === 1 ? 'falta 1 moneda' : `faltan ${missing} monedas`} · agárralas en los niveles`);
   }
 
@@ -162,6 +167,7 @@ class PencilsScene extends Phaser.Scene {
   // ---------------------------------------------------------------
   openPencil() {
     if (this.leaving || this.state === 'pintando') return;
+    this.clearMany();
 
     if (loadCoins() < PENCIL_PRICE) {
       // Shake the button: "not enough coins!"
@@ -264,6 +270,112 @@ class PencilsScene extends Phaser.Scene {
 
     this.state = 'terminado';
     this.refresh();
+  }
+
+  // ---------------------------------------------------------------
+  // ENTER 5 times fast = 15 pencils at once!
+  // ---------------------------------------------------------------
+  pressEnter() {
+    // We remember WHEN each ENTER was pressed, and forget the old ones
+    const now = this.time.now;
+    this.enterTimes = this.enterTimes.filter((time) => now - time < FAST_TIME);
+    this.enterTimes.push(now);
+
+    if (this.enterTimes.length >= FAST_ENTERS) {
+      this.enterTimes = [];
+      this.openMany();
+    } else {
+      this.openPencil();
+    }
+  }
+
+  openMany() {
+    if (this.leaving) return;
+
+    // The first ENTER already opened a pencil (it is painting now):
+    // that one counts as one of the 15, so we only buy the rest
+    const painting = this.state === 'pintando';
+    const toBuy = painting ? MANY_PENCILS - 1 : MANY_PENCILS;
+
+    if (loadCoins() < toBuy * PENCIL_PRICE) {
+      // Not enough coins for all of them: the normal pencil just keeps painting
+      this.tweens.add({ targets: this.openButton, x: 410, duration: 50, yoyo: true, repeat: 2 });
+      return;
+    }
+    addCoins(-toBuy * PENCIL_PRICE);
+
+    // All the prizes, saved right away (like a single pencil)
+    const prizes = painting ? [{ skin: this.prize, isNew: this.isNew }] : [];
+    for (let i = 0; i < toBuy; i++) {
+      const skin = pickRandomSkin();
+      prizes.push({ skin, isNew: !this.skinsWon.has(skin.id) });
+      this.skinsWon.add(skin.id);
+    }
+    saveSkins(this.registry, this.skinsWon, this.chosenSkin);
+
+    // No time to paint 15 skins one by one: we stop the painting and show them all
+    this.tweens.killAll();
+    this.showMany(prizes);
+  }
+
+  // The 15 skins in little cards: 5 across and 3 down, over the paper
+  showMany(prizes) {
+    this.clearMany();
+    this.maskShape.clear();
+    this.prizeImage.setVisible(false);
+    this.question.setVisible(false);
+    this.rarityText.setText('');
+
+    // The pencil goes back to its place and floats again
+    this.pencil.setPosition(PAPER_X + 120, PAPER_Y + 10).setAngle(30);
+    this.floatTween = this.tweens.add({
+      targets: this.pencil, y: PAPER_Y - 5, duration: 900,
+      yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+
+    this.manyCards = this.add.container(0, 0).setDepth(20);
+    this.manyCards.add(this.add.rectangle(400, 255, 580, 290, 0x111111, 0.92)
+      .setStrokeStyle(3, 0xffffff));
+
+    prizes.forEach(({ skin, isNew }, i) => {
+      const x = 400 + ((i % 5) - 2) * 112;
+      const y = 165 + Math.floor(i / 5) * 90;
+      const rarity = RARITIES[SKIN_RARITY[skin.id]];
+      // The card's border has the color of its rarity
+      const card = this.add.rectangle(x, y, 100, 82, 0xf4f1e8)
+        .setStrokeStyle(4, Phaser.Display.Color.HexStringToColor(rarity.color).color);
+      const image = this.add.image(x, y - 8, skinTexture(this, skin.id));
+      fitImage(image, 56);
+      const label = this.add.text(x, y + 30, rarity.name, {
+        fontFamily: 'Arial', fontSize: '11px', fontStyle: 'bold', color: '#000000',
+      }).setOrigin(0.5);
+      this.manyCards.add([card, image, label]);
+      if (isNew) {
+        this.manyCards.add(this.add.text(x + 48, y - 40, '¡NUEVO!', {
+          fontFamily: 'Arial', fontSize: '12px', fontStyle: 'bold', color: '#ffee33',
+          stroke: '#000000', strokeThickness: 3,
+        }).setOrigin(1, 0));
+      }
+
+      // The cards pop in one after the other
+      [card, image, label].forEach((part) => part.setAlpha(0));
+      this.tweens.add({ targets: [card, image, label], alpha: 1, delay: i * 60, duration: 200 });
+    });
+
+    const newCount = prizes.filter((prize) => prize.isNew).length;
+    this.nameText.setText(`¡${MANY_PENCILS} lápices!  ${newCount} ${newCount === 1 ? 'nueva' : 'nuevas'}`);
+    this.throwSparks(50);
+
+    this.state = 'terminado';
+    this.refresh();
+  }
+
+  // Take away the 15 cards (when we open the next pencil)
+  clearMany() {
+    if (this.manyCards) {
+      this.manyCards.destroy();
+      this.manyCards = null;
+    }
   }
 
   // Little rainbow dots that fly out from the paper and disappear

@@ -82,8 +82,27 @@ class HUDManager {
     gfx.destroy();
   }
 
+  // Race (split screen): each player only has HALF the screen (400 pixels wide),
+  // so we move things to fit. Hearts and points are hidden: in a race the only
+  // thing that matters is who gets there first!
+  useHalfScreen(controlsHelp, shootKey) {
+    this.halfScreen = true;
+    this.shootKey = shootKey;
+    this.hearts.forEach((heart) => heart.setVisible(false));
+    this.scoreText.setVisible(false);
+    this.levelText.setX(380);
+    this.coinText.setX(380);
+    this.helpText.setX(200).setText(controlsHelp);
+  }
+
+  // The search mode (BÚSQUEDA) is also on half the screen, but there the lives DO matter
+  showHearts() {
+    this.heartsInHalf = true;
+  }
+
   // Show/hide hearts based on current lives
   updateLives(currentLives) {
+    if (this.halfScreen && !this.heartsInHalf) return; // no hearts in the race
     for (let i = 0; i < this.hearts.length; i++) {
       // Show heart if we have that many lives, hide if not
       this.hearts[i].setVisible(i < currentLives);
@@ -110,7 +129,10 @@ class HUDManager {
 
   // Show or hide the Color Gun indicator
   showColorGun(hasGun) {
-    if (hasGun) {
+    if (hasGun && this.halfScreen) {
+      // In the race each player has their own shoot key
+      this.colorGunText.setText(`🎨 Lápiz de Color [${this.shootKey}]`);
+    } else if (hasGun) {
       this.colorGunText.setText('🎨 Lápiz de Color [Z/X]');
       // Update help text to include shooting controls
       this.helpText.setText('← → Mover  |  ↑ Saltar  |  Shift Correr  |  Z/X Disparar');
