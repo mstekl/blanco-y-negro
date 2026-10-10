@@ -29,6 +29,7 @@ blanco-y-negro/
 │   │   ├── levels.js          # Level configurations (6 levels)
 │   │   ├── countryLevels.js   # The 3 levels played inside a country (built from normal levels)
 │   │   ├── skins.js           # The skin list, the codes that win them, and saving them
+│   │   ├── profile.js         # Our player (name + avatar), saved in the browser
 │   │   ├── coins.js           # Coins, the pencil price, and how rare each skin is
 │   │   ├── countryThemes.js   # Which landmark each country has in the background
 │   │   └── worldMap.json      # Country shapes for the map (made by tools/build-world-map.mjs)
@@ -36,6 +37,7 @@ blanco-y-negro/
 │   │   ├── BootScene.js       # Initial boot
 │   │   ├── PreloadScene.js    # Asset loading with progress bar
 │   │   ├── TitleScene.js      # The "sala": JUGAR button, Hacks de sala and the SKINS button
+│   │   ├── ProfileScene.js    # "TU JUGADOR": write a name (4 to 13 letters) and pick an avatar
 │   │   ├── SkinsScene.js      # Skins screen (like Paper.io 2): big skin in the middle, arrows, ELEGIR
 │   │   ├── PencilsScene.js    # LÁPICES screen: buy a pencil with coins, it paints a surprise skin
 │   │   ├── LevelIntroScene.js # Level splash ("Nivel X")
@@ -107,6 +109,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - Record: the highest score is saved in the browser (`src/data/record.js`). It shows in the sala, and the Game Over and victory screens say "¡NUEVO RÉCORD!" when it is beaten
 - CARRERA (race) from the sala (button under LÁPICES, or C): the screen is split in two halves and two players play at the same time on the same keyboard, each in their own copy of the levels. After a 3-2-1 countdown, the first one to reach level 4 (finish level 3) wins. In the race there are no hearts, points or game over: losing a life just starts that level again. ESC goes back to the sala. On phones and tablets each half gets its own buttons (see `TouchControls.js`), so two people can play on one iPad
 - BÚSQUEDA (search) from the sala (button just above JUGAR, or B): split screen like the race, both players in the map of level 1 with no villains and no coins. 5 GOOD pencils are hidden all over the map (rojo, azul, verde, violeta, naranja) and 6 BAD ones (2 amarillo, 2 rosa, 2 marrón). The places are shuffled, so they are different in each half and every game. Stand next to a pencil and grab it: player 1 with Z, player 2 with ↓. A bad pencil takes 1 of your 3 lives. The first to find the 5 good ones wins; losing the 3 lives means the other player wins. Falling into a pit only sends you back to the start
+- Our player (TU JUGADOR): the first time the game opens, before the sala, we write a name (more than 3 letters and less than 14) and pick an avatar (ANY of the 94 skins, even ones not won yet; it is only the picture other players see, not the skin we wear). It is saved in the browser (`src/data/profile.js`). It shows in the top-left corner of the sala; touching it (or N) changes it. It is for the online race and search (coming next, with Firebase)
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log

@@ -8,6 +8,7 @@ import PreloadScene from './scenes/PreloadScene.js';
 import TitleScene from './scenes/TitleScene.js';
 import SkinsScene from './scenes/SkinsScene.js';
 import PencilsScene from './scenes/PencilsScene.js';
+import ProfileScene from './scenes/ProfileScene.js';
 import LevelIntroScene from './scenes/LevelIntroScene.js';
 import LevelScene from './scenes/LevelScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
@@ -55,7 +56,7 @@ const config = {
   // Boot → PreloadScene → TitleScene (↔ SkinsScene, PencilsScene) → LevelIntro → Level → GameOver/Celebration → WorldMap → Win
   // The race (from the sala): RaceScene on top, with RaceLeft and RaceRight (one level for each half)
   // The search (BÚSQUEDA) uses RaceScene too, with SearchLeft and SearchRight
-  scene: [BootScene, PreloadScene, TitleScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
+  scene: [BootScene, PreloadScene, TitleScene, ProfileScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
     RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, RaceScene]
 };
 
