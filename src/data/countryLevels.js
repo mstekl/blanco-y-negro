@@ -27,7 +27,8 @@ export function getCountryLevels(country) {
     level.name = country.name;
     level.introTitle = country.name;
     level.introName = `Nivel ${i + 1} de ${BASE_LEVELS.length}`;
-    level.subtitle = theme.place ? `Cerca de ${theme.place}` : 'Devuélvele el color a este país';
+    // ("de el Coliseo" is not good Spanish: it must be "del Coliseo")
+    level.subtitle = theme.place ? `Cerca de ${theme.place}`.replace('de el ', 'del ') : 'Devuélvele el color a este país';
 
     // Scenery of the country instead of the city buildings
     level.backgroundStyle = 'landmark';

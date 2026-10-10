@@ -13,6 +13,18 @@ export const COUNTRY_THEMES = {
   MEX: { landmark: 'chichen', place: 'Chichén Itzá' },
   USA: { landmark: 'libertad', place: 'la Estatua de la Libertad' },
   CAN: { landmark: 'cntower', place: 'la Torre CN y las Montañas Rocosas' },
+  FRA: { landmark: 'eiffel', place: 'la Torre Eiffel' },
+  EGY: { landmark: 'piramides', place: 'las pirámides de Guiza' },
+  CHN: { landmark: 'muralla', place: 'la Gran Muralla' },
+  BRA: { landmark: 'cristo', place: 'el Cristo Redentor' },
+  PER: { landmark: 'machupicchu', place: 'Machu Picchu' },
+  JPN: { landmark: 'fuji', place: 'el Monte Fuji' },
+  GBR: { landmark: 'bigben', place: 'el Big Ben' },
+  AUS: { landmark: 'opera', place: 'la Ópera de Sídney' },
+  ITA: { landmark: 'coliseo', place: 'el Coliseo' },
+  IND: { landmark: 'tajmahal', place: 'el Taj Mahal' },
+  ARG: { landmark: 'obelisco', place: 'el Obelisco de Buenos Aires' },
+  GRC: { landmark: 'partenon', place: 'el Partenón' },
 };
 
 // Theme of a country (or the generic landscape if it has no special scenery yet)

@@ -20,6 +20,7 @@ import LevelScene from './LevelScene.js';
 import { RaceBot, SearchBot } from '../online/Bot.js';
 import { loadProfile } from '../data/profile.js';
 import { addCoins, makeCoinTexture } from '../data/coins.js';
+import { reportMission } from '../data/missions.js';
 
 // We win when we finish this many levels (3 levels done = we got to level 4)
 const LEVELS_TO_WIN = 3;
@@ -102,7 +103,8 @@ class RaceScene extends Phaser.Scene {
   // data.mode  = 'carrera' (the race) or 'busqueda' (the search)
   // data.how   = 'dos' (two on this screen), 'maquina' or 'online'
   // data.level = how good the machine is ('facil', 'normal', 'dificil')
-  // data.net and data.friend = the online connection and our friend (name + avatar)
+  // data.net and data.players = the online connection and everybody in the game
+  //   (2 to 4 players: { id, name, avatar }, we are one of them)
   init(data) {
     this.modeName = MODES[data.mode] ? data.mode : 'carrera';
     this.mode = MODES[this.modeName];
@@ -111,8 +113,10 @@ class RaceScene extends Phaser.Scene {
     this.players = this.solo ? [this.mode.solo] : this.mode.players;
     this.level = data.level;
     this.net = data.net || null;
-    this.friend = data.friend || null;
     this.bot = null;
+    // Alone on the screen, the RIVALS are the machine or our online friends.
+    // For each one we remember how far they are, and if they are out or gone.
+    this.rivals = [];
     // We keep everything, so the REVANCHA can start the same game again
     this.startData = data;
   }
@@ -128,6 +132,12 @@ class RaceScene extends Phaser.Scene {
       this.bot = this.modeName === 'busqueda'
         ? new SearchBot(this.level, SEARCH_LIVES)
         : new RaceBot(this.level, LEVELS_TO_WIN);
+      this.rivals = [this.makeRival({ id: 'bot', name: '🤖 MÁQUINA' })];
+    }
+    if (this.net) {
+      this.rivals = this.startData.players
+        .filter((p) => p.id !== this.net.myId && !this.net.gone.has(p.id))
+        .map((p) => this.makeRival(p));
     }
 
     // Start both halves (or the whole screen), each with its own player data
@@ -143,19 +153,24 @@ class RaceScene extends Phaser.Scene {
       this.createSplitScreen();
     }
 
-    // Online: listen to our friend
+    // Online: listen to our friends
     if (this.net) {
       this.net.onMessage = (msg) => this.onFriendMessage(msg);
-      this.net.onClose = () => this.friendLeft();
+      this.net.onPlayerLeft = (id) => this.friendLeft(id);
+      // The center left: everybody is gone for us (without the center, nobody can talk)
+      this.net.onClose = () => {
+        this.centerGone = true;
+        this.rivals.forEach((r) => this.friendLeft(r.id));
+      };
+      this.centerGone = false;
       this.sendTimer = 0;
       // A fresh start for the "8 seconds of silence" check (after a REVANCHA,
-      // our friend was quiet on the result screen, and that doesn't count)
-      this.net.lastHeard = Date.now();
+      // our friends were quiet on the result screen, and that doesn't count)
+      this.rivals.forEach((r) => this.net.lastHeard.set(r.id, Date.now()));
       this.createEmojiButtons();
     }
-    // REVANCHA: did we ask for it, and did our friend? (online both must want it)
+    // REVANCHA: did we ask for it? (online, everybody must want it)
     this.wantRematch = false;
-    this.friendWantsRematch = false;
 
     this.add.text(400, 598, 'ESC: salir', {
       fontFamily: 'Arial', fontSize: '11px', color: '#888888',
@@ -194,17 +209,30 @@ class RaceScene extends Phaser.Scene {
     });
   }
 
-  // ALONE ON THE SCREEN: two bars at the top, one for us and one for the other player,
+  // A rival: who it is, how far they are, and what happened to them
+  makeRival(player) {
+    return {
+      ...player,
+      frac: 0, label: '',
+      out: false,           // lost all their lives (in the search)
+      gone: false,          // left the game
+      wantsRematch: false,  // pressed REVANCHA
+    };
+  }
+
+  rival(id) {
+    return this.rivals.find((r) => r.id === id);
+  }
+
+  // ALONE ON THE SCREEN: bars at the top, one for us and one for each rival,
   // that fill up as we get closer to winning
   createBars() {
     const me = loadProfile();
-    const rivalName = this.bot ? '🤖 MÁQUINA' : this.friend.name;
-    this.add.rectangle(400, 68, 500, 54, 0x000000, 0.55).setStrokeStyle(1, 0x666666);
-    this.bars = [
-      this.makeBar(56, me ? me.name : 'TÚ', 0x44aaff),
-      this.makeBar(80, rivalName, 0xff9933),
-    ];
-    this.rival = { frac: 0, label: '' };
+    const colors = [0x44aaff, 0xff9933, 0x66ee88, 0xff77cc];
+    const rows = 1 + this.rivals.length;
+    this.add.rectangle(400, 44 + rows * 12, 500, rows * 24 + 6, 0x000000, 0.55).setStrokeStyle(1, 0x666666);
+    this.myBar = this.makeBar(56, me ? me.name : 'TÚ', colors[0]);
+    this.rivals.forEach((r, i) => { r.bar = this.makeBar(80 + i * 24, r.name, colors[i + 1]); });
   }
 
   makeBar(y, name, color) {
@@ -232,18 +260,18 @@ class RaceScene extends Phaser.Scene {
     const mine = this.myProgress();
     if (this.bot && this.started) {
       const result = this.bot.update(delta / 1000);
-      if (result === 'won') this.finish(false, `La máquina ${this.mode.theyWon}`);
+      if (result === 'won') this.finish(false, `La máquina ${this.mode.theyWon}`, 'LA MÁQUINA');
       else if (result === 'out') this.finish(true, `La máquina perdió sus ${SEARCH_LIVES} vidas`);
-      this.rival = { frac: this.bot.progress(), label: this.bot.label() };
+      Object.assign(this.rivals[0], { frac: this.bot.progress(), label: this.bot.label() });
     }
 
-    // Online: we tell our friend how we go, about 6 times per second (not 60: too many messages)
+    // Online: we tell our friends how we go, about 6 times per second (not 60: too many messages)
     if (this.net) {
-      // Our friend sends news all the time: 8 seconds of silence means they are gone
-      if (Date.now() - this.net.lastHeard > 8000) {
-        this.friendLeft();
-        return;
-      }
+      // Our friends send news all the time: 8 seconds of silence means they are gone
+      this.rivals.forEach((r) => {
+        if (!r.gone && Date.now() - this.net.lastHeard.get(r.id) > 8000) this.net.dropped(r.id);
+      });
+      if (this.finished) return; // (a friend leaving can end the game)
       this.sendTimer -= delta;
       if (this.sendTimer <= 0) {
         this.sendTimer = 150;
@@ -251,8 +279,13 @@ class RaceScene extends Phaser.Scene {
       }
     }
 
-    this.showBar(this.bars[0], mine);
-    this.showBar(this.bars[1], this.rival);
+    this.showBar(this.myBar, mine);
+    this.rivals.forEach((r) => {
+      let label = r.label;
+      if (r.gone) label = 'se fue';
+      else if (r.out) label = '❌ fuera';
+      this.showBar(r.bar, { frac: r.frac, label });
+    });
   }
 
   showBar(bar, progress) {
@@ -283,36 +316,72 @@ class RaceScene extends Phaser.Scene {
     return this.lastMine;
   }
 
-  // A message from our friend's device
+  // A message from a friend's device ("from" says who sent it)
   onFriendMessage(msg) {
+    const r = this.rival(msg.from);
+    if (!r || r.gone) return;
     if (msg.t === 'progreso') {
-      this.rival = { frac: msg.frac, label: msg.label };
+      r.frac = msg.frac;
+      r.label = msg.label;
     } else if (msg.t === 'gane') {
-      this.finish(false, `${this.friend.name} ${this.mode.theyWon}`);
+      this.finish(false, `${r.name} ${this.mode.theyWon}`, r.name);
     } else if (msg.t === 'perdi') {
-      this.finish(true, `${this.friend.name} perdió sus ${SEARCH_LIVES} vidas`);
+      r.out = true;
+      this.checkLastOneStanding();
     } else if (msg.t === 'emoji') {
-      this.showFriendEmoji(msg.i);
+      this.showFriendEmoji(msg.i, r.name);
     } else if (msg.t === 'revancha') {
-      this.friendWantsRematch = true;
-      if (this.rematchStatus && !this.wantRematch) {
-        this.rematchStatus.setText(`¡${this.friend.name} quiere la revancha! Presiona R`);
-      }
+      r.wantsRematch = true;
+      this.updateRematchStatus();
       this.checkRematch();
     }
   }
 
-  // Our friend closed the game or lost the internet
-  friendLeft() {
-    if (this.leaving) return;
+  // The rivals who are still playing (not out of lives, not gone)
+  playingRivals() {
+    return this.rivals.filter((r) => !r.out && !r.gone);
+  }
+
+  // In the search: if every rival lost their lives, WE win!
+  checkLastOneStanding() {
+    if (this.finished || this.playingRivals().length > 0) return;
+    if (!this.rivals.some((r) => r.out)) return; // they all LEFT: that's not winning
+    const reason = this.rivals.length === 1
+      ? `${this.rivals[0].name} perdió sus ${SEARCH_LIVES} vidas`
+      : `Los demás perdieron sus ${SEARCH_LIVES} vidas`;
+    this.finish(true, reason);
+  }
+
+  // A friend closed the game or lost the internet
+  friendLeft(id) {
+    const r = this.rival(id);
+    if (!r || r.gone || this.leaving) return;
+    r.gone = true;
+    // Is anybody still here to play with? (if the center left, nobody is)
+    if (this.centerGone) this.rivals.forEach((other) => { other.gone = true; });
+    const someoneLeft = this.rivals.some((other) => !other.gone);
+
     if (this.finished) {
-      // We were already on the result screen: there can't be a REVANCHA anymore
-      this.noRematch(`${this.friend.name} se fue`);
+      // We were already on the result screen: the REVANCHA is only with the ones who stayed
+      if (!someoneLeft) this.noRematch(this.centerGone ? 'El creador de la partida se fue' : `${r.name} se fue`);
+      else {
+        this.updateRematchStatus();
+        this.checkRematch();
+      }
       return;
     }
+    if (someoneLeft) {
+      // The game goes on with the others
+      this.popEmoji(`${r.name} se fue`, 400, 170, '26px', '');
+      this.checkLastOneStanding();
+      return;
+    }
+    // Everybody left: nobody to play with
     this.finished = true;
     this.players.forEach((p) => this.scene.pause(p.scene));
-    this.showResult('SE DESCONECTÓ', '#bbbbbb', `${this.friend.name} salió del juego`, { rematch: false });
+    let reason = this.rivals.length === 1 ? `${r.name} salió del juego` : 'Todos salieron del juego';
+    if (this.centerGone && this.rivals.length > 1) reason = 'El creador de la partida se fue';
+    this.showResult('SE DESCONECTÓ', '#bbbbbb', reason, { rematch: false });
   }
 
   // ---------------------------------------------------------------
@@ -346,10 +415,10 @@ class RaceScene extends Phaser.Scene {
     this.popEmoji(EMOJIS[i], 690, 160 + i * 52, '22px', '');
   }
 
-  // Our friend sent us one: it shows BIG at the top, with their name
-  showFriendEmoji(i) {
+  // A friend sent us one: it shows BIG at the top, with their name
+  showFriendEmoji(i, name) {
     if (!EMOJIS[i]) return;
-    this.popEmoji(EMOJIS[i], 400, 170, '56px', this.friend.name);
+    this.popEmoji(EMOJIS[i], 400, 170, '56px', name);
   }
 
   // A face (or message) that pops up, floats a little, and disappears
@@ -379,17 +448,40 @@ class RaceScene extends Phaser.Scene {
     if (!this.canRematch || this.wantRematch) return;
     this.wantRematch = true;
     if (this.net) {
-      // Online, BOTH must want it: we tell our friend and wait
+      // Online, EVERYBODY must want it: we tell our friends and wait
       this.net.send({ t: 'revancha' });
-      this.rematchStatus.setText(`Esperando a ${this.friend.name}...`);
+      this.updateRematchStatus();
       this.checkRematch();
     } else {
       this.restartRace();
     }
   }
 
+  // The friends who are still here (they didn't leave)
+  presentRivals() {
+    return this.rivals.filter((r) => !r.gone);
+  }
+
+  // The line under the buttons: who wants the REVANCHA, or who we are waiting for
+  updateRematchStatus() {
+    if (!this.rematchStatus || !this.canRematch) return;
+    const names = (list) => list.map((r) => r.name).join(', ');
+    if (this.wantRematch) {
+      const waiting = this.presentRivals().filter((r) => !r.wantsRematch);
+      this.rematchStatus.setText(waiting.length ? `Esperando a ${names(waiting)}...` : '');
+    } else {
+      const wanting = this.presentRivals().filter((r) => r.wantsRematch);
+      if (wanting.length) {
+        const verb = wanting.length === 1 ? 'quiere' : 'quieren';
+        this.rematchStatus.setText(`¡${names(wanting)} ${verb} la revancha! Presiona R`);
+      }
+    }
+  }
+
   checkRematch() {
-    if (this.wantRematch && this.friendWantsRematch && this.canRematch) this.restartRace();
+    const present = this.presentRivals();
+    const everybody = present.length > 0 && present.every((r) => r.wantsRematch);
+    if (this.wantRematch && everybody && this.canRematch) this.restartRace();
   }
 
   noRematch(why) {
@@ -404,7 +496,9 @@ class RaceScene extends Phaser.Scene {
     // We close the levels, and start everything again with the same data
     // (online, we keep the same connection: no new secret word needed!)
     this.players.forEach((p) => this.scene.stop(p.scene));
-    this.scene.restart(this.startData);
+    // (online, the friends who left don't play the REVANCHA)
+    const players = this.net ? this.startData.players.filter((p) => !this.net.gone.has(p.id)) : undefined;
+    this.scene.restart({ ...this.startData, players });
   }
 
   // 3... 2... 1... ¡YA! (so both players start at the same time)
@@ -440,7 +534,9 @@ class RaceScene extends Phaser.Scene {
     if (this.solo) {
       // Alone on the screen, the one who lost is US
       if (this.net) this.net.send({ t: 'perdi' });
-      this.finish(false, `Perdiste tus ${SEARCH_LIVES} vidas`);
+      // With only one rival left playing, that one wins. With more, they keep playing
+      const left = this.playingRivals();
+      this.finish(false, `Perdiste tus ${SEARCH_LIVES} vidas`, left.length === 1 ? left[0].name : null);
       return;
     }
     const other = player === 1 ? 2 : 1;
@@ -474,18 +570,26 @@ class RaceScene extends Phaser.Scene {
     this.throwConfetti(winner.side * 400 + 200);
   }
 
-  // Alone on the screen: we won, or the other one (the machine or our friend) won
-  finish(weWon, reason) {
+  // Alone on the screen: we won, or somebody else (the machine or a friend) won.
+  // "winner" = the name of who won (when it wasn't us), or null if we just lost
+  finish(weWon, reason, winner = null) {
     // Only the FIRST one to get there wins
     if (this.finished) return;
     this.finished = true;
     this.players.forEach((p) => this.scene.pause(p.scene));
 
     let title = '¡GANASTE!';
-    if (!weWon) title = this.bot ? '¡GANÓ LA MÁQUINA!' : `¡GANÓ ${this.friend.name.toUpperCase()}!`;
-    // A prize for winning: coins to buy pencils! (more for a harder machine)
-    const coins = weWon ? COIN_PRIZES[this.bot ? this.level : 'online'] || 0 : 0;
+    if (!weWon) title = winner ? `¡GANÓ ${winner.toUpperCase()}!` : '¡QUEDASTE FUERA!';
+    // A prize for winning: coins to buy pencils! (more for a harder machine,
+    // and online more when there were more friends to beat)
+    let coins = 0;
+    if (weWon) coins = this.bot ? COIN_PRIZES[this.level] : COIN_PRIZES.online + 5 * (this.rivals.length - 1);
     if (coins) addCoins(coins);
+    // Winning counts for the MISIONES DEL DÍA
+    if (weWon) {
+      reportMission('ganar');
+      reportMission(this.bot ? `maquina-${this.level}` : 'online');
+    }
     this.showResult(title, weWon ? '#66ee88' : '#ff9933', reason, { coins });
     if (weWon) this.throwConfetti(400);
   }
@@ -522,8 +626,8 @@ class RaceScene extends Phaser.Scene {
       fontFamily: 'Arial', fontSize: '15px', color: '#ffdd33',
     }).setOrigin(0.5);
     if (!rematch) this.noRematch('');
-    // Our friend asked for the REVANCHA before we got here? Tell us!
-    else if (this.friendWantsRematch) this.rematchStatus.setText(`¡${this.friend.name} quiere la revancha! Presiona R`);
+    // A friend asked for the REVANCHA before we got here? Tell us!
+    else this.updateRematchStatus();
   }
 
   resultButton(x, label, color, onClick) {

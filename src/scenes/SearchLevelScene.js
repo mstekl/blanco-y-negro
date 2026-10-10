@@ -14,6 +14,7 @@
 import Phaser from 'phaser';
 import LevelScene from './LevelScene.js';
 import { isGodMode } from '../utils/constants.js';
+import { reportMission } from '../data/missions.js';
 
 // The 5 pencils we must find, and the 3 that trick us
 export const GOOD_PENCILS = [
@@ -114,6 +115,7 @@ class SearchLevelScene extends LevelScene {
   // A good pencil! It goes to its slot at the top
   foundGood(pencil) {
     this.foundCount += 1;
+    reportMission('lapices');
     this.slots[GOOD_PENCILS.findIndex((p) => p.name === pencil.name)].setVisible(true);
     this.showFloatingText(pencil.image.x, pencil.image.y - 20, `¡${pencil.name}!`);
     this.powerupManager.spawnCollectParticles(pencil.image.x, pencil.image.y);

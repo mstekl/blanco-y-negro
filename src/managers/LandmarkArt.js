@@ -1,6 +1,11 @@
 // LandmarkArt.js — Draws the scenery behind the levels of a country!
 // Chichén Itzá for México, the Statue of Liberty for the USA, the CN Tower
-// for Canada... everything is drawn with simple shapes (no image files).
+// for Canada, the Eiffel Tower for France, the pyramids for Egypt, the Great
+// Wall for China, Christ the Redeemer for Brazil, Machu Picchu for Peru,
+// Mount Fuji for Japan, Big Ben for the UK, the Opera House for Australia,
+// the Colosseum for Italy, the Taj Mahal for India, the Obelisk for Argentina
+// and the Parthenon for Greece... everything is drawn with simple shapes
+// (no image files).
 //
 // Every scene is drawn TWICE (just like the city buildings):
 //   - in gray, for the dark world at the start of the level
@@ -284,6 +289,481 @@ function drawCnTower(g, tone, cx, y, s) {
 }
 
 // ------------------------------------------------------------------
+// Helpers shared by several countries
+// ------------------------------------------------------------------
+
+// Is x too close to one of the landmark spots? (so the background leaves a gap)
+const nearSpot = (spots, x, gap) => spots.some((spot) => Math.abs(x - spot) < gap);
+
+// A strip of blue sea along the bottom, with light little waves
+function drawSea(g, tone, span) {
+  g.fillStyle(tone(0x3f8fd0), 1);
+  g.fillRect(0, GROUND - 40, span + 200, 80);
+  g.fillStyle(tone(0x8cc8f0), 1);
+  for (let x = 10, i = 0; x < span + 200; x += 70, i++) {
+    g.fillRect(x, GROUND - 30 + pseudoRandom(i + 3) * 25, 28, 3);
+  }
+}
+
+// ------------------------------------------------------------------
+// FRANCIA — the Eiffel Tower
+// ------------------------------------------------------------------
+function drawEiffel(g, tone, cx, y, s) {
+  const iron = tone(0x8a6e4b);
+  const shade = tone(0x6e5638);
+
+  // The four legs (we only see two from the front), wide apart at the bottom
+  polygon(g, iron, [[cx - 85 * s, y], [cx - 55 * s, y], [cx - 24 * s, y - 110 * s], [cx - 46 * s, y - 110 * s]]);
+  polygon(g, shade, [[cx + 85 * s, y], [cx + 55 * s, y], [cx + 24 * s, y - 110 * s], [cx + 46 * s, y - 110 * s]]);
+  // The big arch between the legs
+  polygon(g, iron, [
+    [cx - 52 * s, y - 70 * s], [cx - 25 * s, y - 92 * s], [cx, y - 96 * s],
+    [cx + 25 * s, y - 92 * s], [cx + 52 * s, y - 70 * s], [cx + 46 * s, y - 100 * s], [cx - 46 * s, y - 100 * s],
+  ]);
+
+  // The first floor (a wide platform)
+  g.fillStyle(iron, 1);
+  g.fillRect(cx - 54 * s, y - 116 * s, 108 * s, 12 * s);
+
+  // The middle part, getting thinner, with crossed bars
+  polygon(g, iron, [[cx - 38 * s, y - 116 * s], [cx + 38 * s, y - 116 * s], [cx + 16 * s, y - 228 * s], [cx - 16 * s, y - 228 * s]]);
+  polygon(g, shade, [[cx, y - 116 * s], [cx + 38 * s, y - 116 * s], [cx + 16 * s, y - 228 * s], [cx, y - 228 * s]]);
+  g.fillStyle(tone(0x5a4630), 1);
+  for (let k = 1; k < 4; k++) {
+    const by = y - 116 * s - k * 28 * s;
+    const half = (38 - k * 5.5) * s;
+    g.fillRect(cx - half, by, half * 2, 3 * s);
+  }
+
+  // The second floor
+  g.fillStyle(iron, 1);
+  g.fillRect(cx - 24 * s, y - 236 * s, 48 * s, 9 * s);
+
+  // The tall thin top and the little flag pole
+  polygon(g, iron, [[cx - 14 * s, y - 236 * s], [cx + 14 * s, y - 236 * s], [cx + 3 * s, y - 350 * s], [cx - 3 * s, y - 350 * s]]);
+  polygon(g, shade, [[cx, y - 236 * s], [cx + 14 * s, y - 236 * s], [cx + 3 * s, y - 350 * s], [cx, y - 350 * s]]);
+  g.fillRect(cx - 6 * s, y - 358 * s, 12 * s, 8 * s); // the top floor
+  g.fillRect(cx - 1.5 * s, y - 388 * s, 3 * s, 30 * s); // the antenna
+}
+
+// ------------------------------------------------------------------
+// EGIPTO — the pyramids of Giza in the desert, with palm trees
+// ------------------------------------------------------------------
+function drawDesert(g, tone, span, spots) {
+  // Sand dunes that cover the green hills
+  for (let x = -100, i = 0; x < span + 200; x += 260, i++) {
+    g.fillStyle(tone(0xe8c77a), 1);
+    g.fillEllipse(x, 610, 560, 200 + pseudoRandom(i + 2) * 80);
+    g.fillStyle(tone(0xd9b25e), 1);
+    g.fillEllipse(x + 130, 625, 480, 140 + pseudoRandom(i + 6) * 50);
+  }
+
+  // Palm trees (but not in front of the pyramids)
+  for (let x = 40, i = 0; x < span + 100; x += 150, i++) {
+    if (nearSpot(spots, x, 230)) continue;
+    const h = 70 + pseudoRandom(i + 4) * 40;
+    // The trunk
+    g.fillStyle(tone(0x8a6238), 1);
+    g.fillRect(x - 4, GROUND - h, 8, h);
+    // The leaves: thin green triangles hanging all around the top
+    g.fillStyle(tone(0x3c9a46), 1);
+    for (let k = -2; k <= 2; k++) {
+      g.fillTriangle(x - 4, GROUND - h, x + 4, GROUND - h, x + k * 22, GROUND - h + 18 - Math.abs(k) * 4);
+      g.fillTriangle(x - 3, GROUND - h - 4, x + 3, GROUND - h + 4, x + k * 14, GROUND - h - 22 + Math.abs(k) * 6);
+    }
+  }
+}
+
+// One pyramid: a sunny left side and a shaded right side
+function pyramid(g, tone, cx, y, half, h) {
+  polygon(g, tone(0xe2bf72), [[cx - half, y], [cx, y - h], [cx + half, y]]);
+  polygon(g, tone(0xb8924a), [[cx, y - h], [cx + half, y], [cx + half * 0.25, y]]);
+}
+
+function drawPyramids(g, tone, cx, y, s) {
+  // The middle-sized one at the back, the giant one, and the little one in front
+  pyramid(g, tone, cx + 120 * s, y, 85 * s, 125 * s);
+  pyramid(g, tone, cx, y, 135 * s, 200 * s);
+  pyramid(g, tone, cx - 125 * s, y, 55 * s, 75 * s);
+}
+
+// ------------------------------------------------------------------
+// CHINA — the Great Wall going up and down the mountains
+// ------------------------------------------------------------------
+function drawGreatWall(g, tone, cx, y, s) {
+  // The top line of the mountains (the wall walks on it)
+  const ridge = [
+    [cx - 170 * s, y - 20 * s], [cx - 80 * s, y - 160 * s], [cx + 10 * s, y - 85 * s],
+    [cx + 95 * s, y - 210 * s], [cx + 170 * s, y - 30 * s],
+  ];
+
+  // The rocky mountains (with the right half of each one in the shade)
+  polygon(g, tone(0x8c9a80), [[cx - 190 * s, y], ...ridge, [cx + 190 * s, y]]);
+  polygon(g, tone(0x6e7c64), [[cx - 80 * s, y - 160 * s], [cx + 10 * s, y - 85 * s], [cx - 20 * s, y]]);
+  polygon(g, tone(0x6e7c64), [[cx + 95 * s, y - 210 * s], [cx + 170 * s, y - 30 * s], [cx + 190 * s, y], [cx + 70 * s, y]]);
+
+  // The wall: a thick stone band on top of the ridge, with little teeth
+  const stone = tone(0xc4a87c);
+  for (let i = 0; i < ridge.length - 1; i++) {
+    const [x1, y1] = ridge[i];
+    const [x2, y2] = ridge[i + 1];
+    polygon(g, stone, [[x1, y1 - 6 * s], [x2, y2 - 6 * s], [x2, y2 + 10 * s], [x1, y1 + 10 * s]]);
+    // The teeth on top (called "battlements")
+    g.fillStyle(stone, 1);
+    for (let t = 0; t < 1; t += 0.12) {
+      g.fillRect(x1 + (x2 - x1) * t - 2 * s, y1 + (y2 - y1) * t - 12 * s, 5 * s, 7 * s);
+    }
+  }
+
+  // Watchtowers on the high points
+  [ridge[1], ridge[3]].forEach(([tx, ty]) => {
+    g.fillStyle(tone(0xb0946a), 1);
+    g.fillRect(tx - 15 * s, ty - 40 * s, 30 * s, 44 * s);
+    g.fillStyle(tone(0x4a3a28), 1);
+    g.fillRect(tx - 4 * s, ty - 28 * s, 8 * s, 12 * s); // a dark window
+    g.fillStyle(tone(0xb0946a), 1);
+    for (let k = -1; k <= 1; k++) g.fillRect(tx + k * 11 * s - 3 * s, ty - 47 * s, 6 * s, 7 * s);
+  });
+}
+
+// ------------------------------------------------------------------
+// BRASIL — Christ the Redeemer on his mountain, and the Sugarloaf by the sea
+// ------------------------------------------------------------------
+function drawRioBay(g, tone, span, spots) {
+  // The round "Sugarloaf" mountains (Pan de Azúcar), away from the statue
+  for (let x = 60, i = 0; x < span + 100; x += 280, i++) {
+    if (nearSpot(spots, x, 230)) continue;
+    g.fillStyle(tone(0x5f7f5a), 1);
+    g.fillEllipse(x, GROUND - 30, 110, 250 + pseudoRandom(i + 1) * 40);
+    g.fillStyle(tone(0x6e9068), 1);
+    g.fillEllipse(x + 95, GROUND - 20, 100, 140);
+  }
+  drawSea(g, tone, span);
+}
+
+function drawCristo(g, tone, cx, y, s) {
+  const white = tone(0xe8e4d8);
+  const shade = tone(0xc4bfae);
+
+  // The mountain (Corcovado) with its shaded right side
+  polygon(g, tone(0x4f8f4a), [[cx - 160 * s, y], [cx - 50 * s, y - 165 * s], [cx - 15 * s, y - 185 * s], [cx + 20 * s, y - 180 * s], [cx + 160 * s, y]]);
+  polygon(g, tone(0x3c7238), [[cx + 20 * s, y - 180 * s], [cx + 160 * s, y], [cx + 30 * s, y]]);
+
+  // The pedestal on the top
+  g.fillStyle(shade, 1);
+  g.fillRect(cx - 12 * s, y - 208 * s, 24 * s, 26 * s);
+
+  // The long robe
+  polygon(g, white, [[cx - 15 * s, y - 208 * s], [cx + 15 * s, y - 208 * s], [cx + 9 * s, y - 290 * s], [cx - 9 * s, y - 290 * s]]);
+  polygon(g, shade, [[cx + 3 * s, y - 208 * s], [cx + 15 * s, y - 208 * s], [cx + 9 * s, y - 290 * s], [cx + 3 * s, y - 290 * s]]);
+
+  // The open arms (a big cross shape) and the hands
+  g.fillStyle(white, 1);
+  g.fillRect(cx - 62 * s, y - 292 * s, 124 * s, 11 * s);
+  g.fillCircle(cx - 62 * s, y - 286 * s, 5 * s);
+  g.fillCircle(cx + 62 * s, y - 286 * s, 5 * s);
+
+  // The head
+  g.fillCircle(cx, y - 302 * s, 9 * s);
+}
+
+// ------------------------------------------------------------------
+// PERÚ — Machu Picchu: stone ruins, green terraces and a pointy mountain
+// ------------------------------------------------------------------
+function drawMachuPicchu(g, tone, cx, y, s) {
+  // Huayna Picchu, the tall pointy mountain at the back
+  polygon(g, tone(0x3f7a45), [[cx + 10 * s, y - 100 * s], [cx + 75 * s, y - 310 * s], [cx + 100 * s, y - 330 * s], [cx + 120 * s, y - 305 * s], [cx + 185 * s, y - 100 * s]]);
+  polygon(g, tone(0x2f5f35), [[cx + 100 * s, y - 330 * s], [cx + 120 * s, y - 305 * s], [cx + 185 * s, y - 100 * s], [cx + 110 * s, y - 100 * s]]);
+
+  // The flat mountain where the city was built
+  polygon(g, tone(0x7f8f5a), [[cx - 175 * s, y], [cx - 150 * s, y - 110 * s], [cx + 185 * s, y - 110 * s], [cx + 190 * s, y]]);
+
+  // The terraces: steps of grass held up by stone walls (for farming!)
+  for (let i = 0; i < 5; i++) {
+    const top = y - 22 * s * (i + 1);
+    const left = cx - 165 * s + i * 16 * s;
+    g.fillStyle(tone(0x7cc06a), 1);
+    g.fillRect(left, top, cx - 30 * s - left, 22 * s);
+    g.fillStyle(tone(0x9c9584), 1);
+    g.fillRect(left, top, cx - 30 * s - left, 4 * s);
+  }
+
+  // The stone houses (their roofs fell down long ago, only the walls are left)
+  for (let k = 0; k < 5; k++) {
+    const hx = cx - 20 * s + k * 38 * s;
+    const hTop = y - 110 * s - (20 + (k % 2) * 8) * s;
+    g.fillStyle(tone(0xa8a294), 1);
+    g.fillRect(hx, hTop, 28 * s, y - 110 * s - hTop);
+    g.fillTriangle(hx, hTop, hx + 28 * s, hTop, hx + 14 * s, hTop - 12 * s); // the pointy wall
+    g.fillStyle(tone(0x4a453c), 1);
+    g.fillRect(hx + 10 * s, hTop + 6 * s, 8 * s, y - 110 * s - hTop - 6 * s); // a door
+  }
+}
+
+// ------------------------------------------------------------------
+// JAPÓN — Mount Fuji with a red torii gate
+// ------------------------------------------------------------------
+function drawFuji(g, tone, cx, y, s) {
+  // The volcano: flat top, sunny left side and shaded right side
+  polygon(g, tone(0x6f7fa8), [[cx - 160 * s, y], [cx - 35 * s, y - 230 * s], [cx + 35 * s, y - 230 * s], [cx + 160 * s, y]]);
+  polygon(g, tone(0x56658c), [[cx, y - 230 * s], [cx + 35 * s, y - 230 * s], [cx + 160 * s, y], [cx + 20 * s, y]]);
+
+  // The snow on top, with a wavy bottom edge
+  polygon(g, tone(0xffffff), [
+    [cx - 35 * s, y - 230 * s], [cx + 35 * s, y - 230 * s], [cx + 75 * s, y - 160 * s],
+    [cx + 50 * s, y - 172 * s], [cx + 30 * s, y - 155 * s], [cx + 8 * s, y - 175 * s],
+    [cx - 15 * s, y - 158 * s], [cx - 38 * s, y - 175 * s], [cx - 58 * s, y - 158 * s], [cx - 75 * s, y - 160 * s],
+  ]);
+
+  // The red torii gate in front: two posts and two beams
+  const red = tone(0xd8322a);
+  const gx = cx - 100 * s;
+  g.fillStyle(red, 1);
+  g.fillRect(gx - 28 * s, y - 85 * s, 8 * s, 85 * s);
+  g.fillRect(gx + 20 * s, y - 85 * s, 8 * s, 85 * s);
+  g.fillRect(gx - 36 * s, y - 72 * s, 72 * s, 7 * s);
+  // The top beam curves up at the ends
+  polygon(g, tone(0x2b2b2b), [[gx - 48 * s, y - 100 * s], [gx + 48 * s, y - 100 * s], [gx + 40 * s, y - 92 * s], [gx - 40 * s, y - 92 * s]]);
+  g.fillStyle(red, 1);
+  g.fillRect(gx - 40 * s, y - 92 * s, 80 * s, 7 * s);
+}
+
+// ------------------------------------------------------------------
+// REINO UNIDO — Big Ben and the Parliament building
+// ------------------------------------------------------------------
+function drawBigBen(g, tone, cx, y, s) {
+  const stone = tone(0xc9a86a);
+  const shade = tone(0xa5884f);
+  const dark = tone(0x3e4a44);
+
+  // The long Parliament building on the left, with windows and little towers
+  g.fillStyle(stone, 1);
+  g.fillRect(cx - 180 * s, y - 90 * s, 160 * s, 90 * s);
+  g.fillStyle(shade, 1);
+  for (let wx = cx - 172 * s; wx < cx - 30 * s; wx += 14 * s) {
+    g.fillRect(wx, y - 78 * s, 5 * s, 60 * s); // tall thin windows
+  }
+  g.fillStyle(stone, 1);
+  for (let k = 0; k < 5; k++) {
+    const tx = cx - 175 * s + k * 36 * s;
+    g.fillRect(tx, y - 106 * s, 6 * s, 16 * s);
+    g.fillTriangle(tx - 1 * s, y - 106 * s, tx + 7 * s, y - 106 * s, tx + 3 * s, y - 118 * s);
+  }
+
+  // The tower: a long body with lines on it
+  g.fillStyle(stone, 1);
+  g.fillRect(cx - 20 * s, y - 232 * s, 40 * s, 232 * s);
+  g.fillStyle(shade, 1);
+  g.fillRect(cx + 6 * s, y - 232 * s, 14 * s, 232 * s);
+  for (let ly = y - 30 * s; ly > y - 230 * s; ly -= 30 * s) g.fillRect(cx - 20 * s, ly, 40 * s, 3 * s);
+
+  // The clock part (a bit wider) and the clock face with its hands
+  g.fillStyle(stone, 1);
+  g.fillRect(cx - 26 * s, y - 284 * s, 52 * s, 52 * s);
+  g.fillStyle(tone(0xfaf6e8), 1);
+  g.fillCircle(cx, y - 258 * s, 19 * s);
+  g.fillStyle(dark, 1);
+  g.fillRect(cx - 1.5 * s, y - 272 * s, 3 * s, 14 * s); // big hand
+  g.fillRect(cx, y - 259.5 * s, 10 * s, 3 * s); // small hand
+
+  // The bell room with its dark arches
+  g.fillStyle(stone, 1);
+  g.fillRect(cx - 22 * s, y - 306 * s, 44 * s, 22 * s);
+  g.fillStyle(dark, 1);
+  for (let k = -1; k <= 1; k++) g.fillRect(cx + k * 12 * s - 3 * s, y - 302 * s, 6 * s, 14 * s);
+
+  // The pointy roof and the tiny spike on top
+  polygon(g, dark, [[cx - 25 * s, y - 306 * s], [cx + 25 * s, y - 306 * s], [cx, y - 372 * s]]);
+  g.fillRect(cx - 1 * s, y - 392 * s, 2 * s, 22 * s);
+}
+
+// ------------------------------------------------------------------
+// AUSTRALIA — the Sydney Opera House by the sea (and the Harbour Bridge)
+// ------------------------------------------------------------------
+function drawHarbour(g, tone, span, spots) {
+  drawSea(g, tone, span);
+
+  // The Harbour Bridge: a big steel arch, right between the two landmarks
+  const bx = (spots[0] + spots[1]) / 2;
+  g.lineStyle(7, tone(0x5b6470), 1);
+  g.beginPath();
+  g.arc(bx, GROUND - 30, 150, Math.PI, Math.PI * 2);
+  g.strokePath();
+  g.fillStyle(tone(0x5b6470), 1);
+  g.fillRect(bx - 190, GROUND - 70, 380, 8); // the road
+  g.fillStyle(tone(0xcfc2a0), 1);
+  g.fillRect(bx - 185, GROUND - 100, 22, 70); // the stone towers at both ends
+  g.fillRect(bx + 163, GROUND - 100, 22, 70);
+}
+
+// One "sail" (shell) of the Opera House: a straight front and a round back
+function sail(g, tone, x, base, w, h) {
+  polygon(g, tone(0xf4f2ea), [[x, base], [x + w, base], [x + w * 0.8, base - h * 0.5], [x + w * 0.45, base - h * 0.88], [x, base - h]]);
+  polygon(g, tone(0xd2cfc4), [[x, base], [x + w * 0.35, base], [x, base - h * 0.75]]); // the shadow inside
+}
+
+function drawOpera(g, tone, cx, y, s) {
+  // The big platform the building stands on
+  g.fillStyle(tone(0xd9b98a), 1);
+  g.fillRect(cx - 140 * s, y - 40 * s, 280 * s, 40 * s);
+  g.fillStyle(tone(0xb89a6c), 1);
+  g.fillRect(cx - 140 * s, y - 14 * s, 280 * s, 14 * s);
+
+  // The shells: a big group on the left and a smaller one on the right
+  const base = y - 40 * s;
+  sail(g, tone, cx - 120 * s, base, 60 * s, 95 * s);
+  sail(g, tone, cx - 80 * s, base, 70 * s, 140 * s);
+  sail(g, tone, cx - 30 * s, base, 55 * s, 105 * s);
+  sail(g, tone, cx + 35 * s, base, 50 * s, 80 * s);
+  sail(g, tone, cx + 70 * s, base, 55 * s, 110 * s);
+}
+
+// ------------------------------------------------------------------
+// ITALIA — the Colosseum (one side is broken, it is almost 2000 years old!)
+// ------------------------------------------------------------------
+function drawColiseo(g, tone, cx, y, s) {
+  const stone = tone(0xd9b98a);
+  const dark = tone(0x7a5c3c);
+
+  // The wall: tall on the left, broken and lower on the right
+  polygon(g, stone, [
+    [cx - 150 * s, y], [cx + 150 * s, y], [cx + 150 * s, y - 95 * s], [cx + 115 * s, y - 105 * s],
+    [cx + 90 * s, y - 140 * s], [cx + 45 * s, y - 150 * s], [cx + 25 * s, y - 175 * s], [cx - 150 * s, y - 175 * s],
+  ]);
+
+  // Three rows of round arches (fewer on the right, where the wall is broken)
+  for (let row = 0; row < 3; row++) {
+    const bottom = y - row * 45 * s;
+    const lastX = cx + (130 - row * 55) * s;
+    g.fillStyle(tone(0xc4a476), 1);
+    g.fillRect(cx - 150 * s, bottom - 45 * s, 300 * s - row * 55 * s, 4 * s); // the ledge
+    g.fillStyle(dark, 1);
+    for (let ax = cx - 140 * s; ax < lastX; ax += 24 * s) {
+      g.fillRect(ax, bottom - 32 * s, 13 * s, 26 * s);
+      g.fillCircle(ax + 6.5 * s, bottom - 32 * s, 6.5 * s);
+    }
+  }
+
+  // The top floor only has small square windows
+  g.fillStyle(dark, 1);
+  for (let wx = cx - 136 * s; wx < cx + 15 * s; wx += 30 * s) {
+    g.fillRect(wx, y - 162 * s, 9 * s, 9 * s);
+  }
+}
+
+// ------------------------------------------------------------------
+// INDIA — the Taj Mahal
+// ------------------------------------------------------------------
+function drawTajMahal(g, tone, cx, y, s) {
+  const white = tone(0xf3efe6);
+  const shade = tone(0xd8d2c4);
+  const arch = tone(0x8a8f9c);
+
+  // The wide platform
+  g.fillStyle(shade, 1);
+  g.fillRect(cx - 150 * s, y - 24 * s, 300 * s, 24 * s);
+
+  // The two thin towers (minarets) at the sides, with little domes
+  [-138, 138].forEach((dx) => {
+    const mx = cx + dx * s;
+    polygon(g, white, [[mx - 7 * s, y - 24 * s], [mx + 7 * s, y - 24 * s], [mx + 5 * s, y - 200 * s], [mx - 5 * s, y - 200 * s]]);
+    g.fillStyle(shade, 1);
+    for (let by = y - 70 * s; by > y - 200 * s; by -= 45 * s) g.fillRect(mx - 8 * s, by, 16 * s, 4 * s);
+    g.fillStyle(white, 1);
+    g.fillEllipse(mx, y - 206 * s, 14 * s, 14 * s);
+  });
+
+  // The main building, with one big arch and smaller ones at the sides
+  g.fillStyle(white, 1);
+  g.fillRect(cx - 80 * s, y - 134 * s, 160 * s, 110 * s);
+  g.fillStyle(arch, 1);
+  g.fillRect(cx - 18 * s, y - 100 * s, 36 * s, 76 * s);
+  g.fillTriangle(cx - 18 * s, y - 100 * s, cx + 18 * s, y - 100 * s, cx, y - 118 * s);
+  [-56, -38, 38, 56].forEach((dx) => {
+    g.fillRect(cx + dx * s - 6 * s, y - 70 * s, 12 * s, 30 * s);
+    g.fillRect(cx + dx * s - 6 * s, y - 120 * s, 12 * s, 30 * s);
+  });
+
+  // The big round "onion" dome, with a golden point on top
+  g.fillStyle(white, 1);
+  g.fillRect(cx - 40 * s, y - 152 * s, 80 * s, 18 * s); // the drum under the dome
+  g.fillEllipse(cx, y - 196 * s, 110 * s, 100 * s);
+  g.fillTriangle(cx - 22 * s, y - 236 * s, cx + 22 * s, y - 236 * s, cx, y - 262 * s);
+  g.fillStyle(shade, 1);
+  g.fillStyle(tone(0xe6b422), 1);
+  g.fillRect(cx - 1.5 * s, y - 282 * s, 3 * s, 22 * s);
+
+  // Small domes on the corners of the roof
+  g.fillStyle(white, 1);
+  [-66, 66].forEach((dx) => g.fillEllipse(cx + dx * s, y - 144 * s, 24 * s, 22 * s));
+}
+
+// ------------------------------------------------------------------
+// ARGENTINA — the Obelisk of Buenos Aires, in the middle of the city
+// ------------------------------------------------------------------
+function drawObelisco(g, tone, cx, y, s) {
+  const white = tone(0xf1efe8);
+  const shade = tone(0xcdc9bd);
+
+  // The little base
+  g.fillStyle(shade, 1);
+  g.fillRect(cx - 32 * s, y - 10 * s, 64 * s, 10 * s);
+
+  // The tall shaft, a little thinner at the top
+  polygon(g, white, [[cx - 19 * s, y - 10 * s], [cx + 19 * s, y - 10 * s], [cx + 12 * s, y - 330 * s], [cx - 12 * s, y - 330 * s]]);
+  polygon(g, shade, [[cx + 3 * s, y - 10 * s], [cx + 19 * s, y - 10 * s], [cx + 12 * s, y - 330 * s], [cx + 3 * s, y - 330 * s]]);
+
+  // The pointy tip and its little window
+  polygon(g, white, [[cx - 12 * s, y - 330 * s], [cx + 12 * s, y - 330 * s], [cx, y - 362 * s]]);
+  g.fillStyle(tone(0x4a4a55), 1);
+  g.fillRect(cx - 3 * s, y - 318 * s, 6 * s, 8 * s);
+
+  // A small Argentine flag at the bottom: light blue, white, light blue and the sun
+  const fx = cx + 40 * s;
+  g.fillStyle(tone(0x555555), 1);
+  g.fillRect(fx, y - 70 * s, 2 * s, 70 * s);
+  g.fillStyle(tone(0x74acdf), 1);
+  g.fillRect(fx + 2 * s, y - 70 * s, 30 * s, 18 * s);
+  g.fillStyle(tone(0xffffff), 1);
+  g.fillRect(fx + 2 * s, y - 64 * s, 30 * s, 6 * s);
+  g.fillStyle(tone(0xf6b40e), 1);
+  g.fillCircle(fx + 17 * s, y - 61 * s, 2 * s);
+}
+
+// ------------------------------------------------------------------
+// GRECIA — the Parthenon on top of the Acropolis hill
+// ------------------------------------------------------------------
+function drawPartenon(g, tone, cx, y, s) {
+  const marble = tone(0xeee6d2);
+  const shade = tone(0xcfc4ab);
+
+  // The rocky hill
+  polygon(g, tone(0xb59a74), [[cx - 160 * s, y], [cx - 135 * s, y - 60 * s], [cx + 135 * s, y - 60 * s], [cx + 160 * s, y]]);
+  polygon(g, tone(0x977d5a), [[cx + 60 * s, y - 60 * s], [cx + 135 * s, y - 60 * s], [cx + 160 * s, y], [cx + 90 * s, y]]);
+
+  // Three steps
+  const top = y - 60 * s;
+  g.fillStyle(shade, 1);
+  g.fillRect(cx - 120 * s, top - 6 * s, 240 * s, 6 * s);
+  g.fillStyle(marble, 1);
+  g.fillRect(cx - 114 * s, top - 12 * s, 228 * s, 6 * s);
+  g.fillStyle(shade, 1);
+  g.fillRect(cx - 108 * s, top - 18 * s, 216 * s, 6 * s);
+
+  // Eight columns
+  g.fillStyle(marble, 1);
+  for (let k = 0; k < 8; k++) {
+    const colX = cx - 102 * s + k * 28 * s;
+    g.fillRect(colX, top - 108 * s, 14 * s, 90 * s);
+  }
+
+  // The beam on top of the columns, and the triangle roof (the "pediment")
+  g.fillStyle(shade, 1);
+  g.fillRect(cx - 110 * s, top - 126 * s, 220 * s, 18 * s);
+  polygon(g, marble, [[cx - 114 * s, top - 126 * s], [cx + 114 * s, top - 126 * s], [cx, top - 156 * s]]);
+}
+
+// ------------------------------------------------------------------
 // The list of landmarks: name (used in countryThemes.js) → how to draw it
 //   background: things that fill the whole width (behind the landmark)
 //   landmark:   the famous building, drawn two times (near and far)
@@ -292,6 +772,18 @@ const LANDMARKS = {
   chichen: { background: drawJungle, landmark: drawChichen, size: 1.0 },
   libertad: { background: drawSkyline, landmark: drawLibertad, size: 1.0 },
   cntower: { background: drawRockies, landmark: drawCnTower, size: 1.0 },
+  eiffel: { background: null, landmark: drawEiffel, size: 1.0 },
+  piramides: { background: drawDesert, landmark: drawPyramids, size: 1.0 },
+  muralla: { background: null, landmark: drawGreatWall, size: 1.0 },
+  cristo: { background: drawRioBay, landmark: drawCristo, size: 1.0 },
+  machupicchu: { background: null, landmark: drawMachuPicchu, size: 1.0 },
+  fuji: { background: null, landmark: drawFuji, size: 1.25 },
+  bigben: { background: null, landmark: drawBigBen, size: 1.0 },
+  opera: { background: drawHarbour, landmark: drawOpera, size: 1.15 },
+  coliseo: { background: null, landmark: drawColiseo, size: 1.0 },
+  tajmahal: { background: null, landmark: drawTajMahal, size: 1.0 },
+  obelisco: { background: drawSkyline, landmark: drawObelisco, size: 1.0 }, // Buenos Aires is a big city too
+  partenon: { background: null, landmark: drawPartenon, size: 1.25 },
   generic: { background: null, landmark: null, size: 1 }, // countries with no landmark yet
 };
 

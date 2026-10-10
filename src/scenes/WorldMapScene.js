@@ -13,6 +13,7 @@
 import Phaser from 'phaser';
 import worldMap from '../data/worldMap.json';
 import { isGodMode } from '../utils/constants.js';
+import { reportMission } from '../data/missions.js';
 
 // The continents, in the order they unlock.
 // "view" is the piece of the world (longitude / latitude) that fills the screen
@@ -513,6 +514,7 @@ class WorldMapScene extends Phaser.Scene {
     const country = this.countries.find((c) => c.data.id === countryId);
     if (!country) return;
     this.progress.add(countryId);
+    reportMission('paises'); // for the MISIONES DEL DÍA
     this.saveProgress();
 
     const group = GROUPS.find((g) => g.key === country.data.group);

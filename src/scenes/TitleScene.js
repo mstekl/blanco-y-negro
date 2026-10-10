@@ -8,6 +8,8 @@
 //   - press the LÁPICES button (or L) to buy a pencil with coins and open it
 //   - press the CARRERA button (or C) for a race: two players, split screen
 //   - press the BÚSQUEDA button (or B) to look for 5 colored pencils: two players, split screen
+//   - press SUPERVIVENCIA (or V): alone, against waves of villains. How long can you last?
+//   - press MISIONES (or M) to see the 3 missions of the day
 //   - press our player (name + avatar, top left, or N) to change them.
 //     The very first time, we go to make our player before anything else
 
@@ -18,6 +20,7 @@ import { SKIN_LIST, SKIN_CODES, loadSkins, saveSkins, skinTexture, fitImage } fr
 import { loadRecord, formatPoints } from '../data/record.js';
 import { loadCoins, saveCoins, addCoins, makeCoinTexture } from '../data/coins.js';
 import { loadProfile } from '../data/profile.js';
+import { missionStatus } from '../data/missions.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -66,6 +69,7 @@ class TitleScene extends Phaser.Scene {
     this.createHeroPreview();
     this.createLeftButtons();
     this.createPlayButton();
+    this.createRightButtons();
     this.createHackBox();
 
     // --- Credits ---
@@ -266,6 +270,34 @@ class TitleScene extends Phaser.Scene {
     }).setOrigin(0.5);
   }
 
+  // ---------------------------------------------------------------
+  // Right side, next to the big hero: MISIONES and SUPERVIVENCIA
+  // ---------------------------------------------------------------
+  createRightButtons() {
+    // MISIONES: it also says how many of today's 3 missions are done
+    const done = missionStatus().filter((m) => m.done).length;
+    this.sideButton(700, 235, `📋 MISIONES [M]  ${done}/3`, 0x44aaff, () => this.goTo('MissionsScene'));
+    this.sideButton(700, 395, '🛡 SUPERVIVENCIA [V]', 0xff5555, () => this.startSurvival());
+  }
+
+  sideButton(x, y, label, color, onClick) {
+    const button = this.add.rectangle(x, y, 190, 40, 0x222222)
+      .setStrokeStyle(3, color)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(x, y, label, {
+      fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    button.on('pointerover', () => button.setFillStyle(0x444444));
+    button.on('pointerout', () => button.setFillStyle(0x222222));
+    button.on('pointerdown', () => { if (!this.hackOpen) onClick(); });
+  }
+
+  // SUPERVIVENCIA: the hero wears the skin chosen here, like in the levels
+  startSurvival() {
+    this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
+    this.goTo('SurvivalScene');
+  }
+
   startGame() {
     if (this.leaving) return;
     this.leaving = true;
@@ -360,6 +392,8 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyC') this.startRace();
       else if (event.code === 'KeyB') this.startRace('busqueda');
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
+      else if (event.code === 'KeyM') this.goTo('MissionsScene');
+      else if (event.code === 'KeyV') this.startSurvival();
       return;
     }
 
