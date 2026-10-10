@@ -124,19 +124,21 @@ export function playSound(name) {
 // and lasts the same time. The bass plays under the melody.
 // ---------------------------------------------------------------
 const SONGS = {
-  // The sala: calm and happy
+  // Both songs are our OWN invention (the old ones sounded too much like Mario!)
+  // The sala: calm and happy, in G major, like a walk around the city
   sala: {
-    step: 0.22,
-    melody: ['C5', null, 'E5', 'G5', 'A5', null, 'G5', 'E5', 'F5', null, 'D5', 'F5', 'E5', null, 'C5', null,
-      'C5', null, 'E5', 'G5', 'C6', null, 'B5', 'A5', 'G5', null, 'E5', 'D5', 'C5', null, null, null],
-    bass: ['C3', 'C3', 'A2', 'A2', 'F2', 'F2', 'G2', 'G2'],
+    step: 0.24,
+    melody: ['D5', null, 'B4', 'D5', 'G5', null, 'F#5', null, 'E5', null, 'C5', 'E5', 'A5', null, 'G5', null,
+      'F#5', null, 'D5', 'F#5', 'A5', null, 'G5', 'F#5', 'E5', null, 'D5', 'B4', 'G4', null, null, null],
+    bass: ['G2', 'G2', 'C3', 'A2', 'D3', 'D3', 'E3', 'G2'],
   },
-  // While playing: faster, with more energy
+  // While playing: faster and a bit mysterious (A minor), because the villains
+  // took the colors away and we have to get them back
   juego: {
-    step: 0.16,
-    melody: ['E5', 'E5', null, 'E5', null, 'C5', 'E5', null, 'G5', null, null, null, 'G4', null, null, null,
-      'C5', null, 'G4', null, 'E4', null, 'A4', 'B4', 'A#4', 'A4', 'G4', 'E5', 'G5', 'A5', 'F5', 'G5'],
-    bass: ['C3', 'G2', 'C3', 'G2', 'F2', 'C3', 'G2', 'G2'],
+    step: 0.15,
+    melody: ['A4', 'A4', 'C5', null, 'A4', 'E5', null, 'D5', 'C5', null, 'B4', 'C5', 'D5', null, 'E5', null,
+      'F5', null, 'E5', 'D5', 'C5', null, 'D5', 'E5', 'G5', null, 'E5', 'D5', 'E5', null, null, 'A4'],
+    bass: ['A2', 'A2', 'F2', 'G2', 'D3', 'C3', 'G2', 'A2'],
   },
 };
 

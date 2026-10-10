@@ -351,6 +351,7 @@ class TitleScene extends Phaser.Scene {
   //   S C     → superhero with a cape
   //   T       → ALL the skins at once! (T again, with all of them → only the hero is left)
   //   10000   → 10000 coins to buy pencils!     100000 → 100000 coins!
+  //   1000000 → ONE MILLION coins (enough for the PREMIUM pass!)
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -443,8 +444,8 @@ class TitleScene extends Phaser.Scene {
 
   submitHack() {
     const code = this.normalizeCode(this.hackText);
-    // "10000" and "100000" are not skins: they give us that many coins
-    if (code === '10000' || code === '100000') {
+    // "10000", "100000" and "1000000" are not skins: they give us that many coins
+    if (code === '10000' || code === '100000' || code === '1000000') {
       const amount = Number(code);
       const total = addCoins(amount);
       this.coinLabel.setText(String(total));
