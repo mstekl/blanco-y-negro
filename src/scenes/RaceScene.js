@@ -72,7 +72,8 @@ class RaceScene extends Phaser.Scene {
 
   // data.mode = 'carrera' (the race) or 'busqueda' (the search)
   init(data) {
-    this.mode = MODES[data.mode] || MODES.carrera;
+    this.modeName = MODES[data.mode] ? data.mode : 'carrera';
+    this.mode = MODES[this.modeName];
     this.players = this.mode.players;
   }
 
@@ -88,6 +89,11 @@ class RaceScene extends Phaser.Scene {
     });
     // This scene must be drawn ON TOP of the two halves
     this.scene.bringToTop();
+
+    // On an iPad or phone: tell the screen buttons to give each half its own buttons
+    // (and to go back to the normal ones when this scene closes)
+    window.dispatchEvent(new CustomEvent('dos-jugadores', { detail: { mode: this.modeName } }));
+    this.events.once('shutdown', () => window.dispatchEvent(new Event('un-jugador')));
 
     // The line in the middle that splits the screen
     this.add.rectangle(400, 300, 6, 600, 0xffffff);
