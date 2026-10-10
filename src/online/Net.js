@@ -1,20 +1,31 @@
-// Net.js — Playing ONLINE: two phones, iPads or computers talk to each other.
-// We use PeerJS: a free helper on the internet that lets two browsers find
+// Net.js — Playing ONLINE: 2, 3 or 4 phones, iPads or computers talk to each other.
+// We use PeerJS: a free helper on the internet that lets browsers find
 // each other. After that they talk DIRECTLY (no server in the middle).
 //
 // How the secret word works:
 //   - The player who CREATES the game gets a secret word (for example GATO).
 //     PeerJS gives that browser the name "blanco-y-negro-gato".
-//   - The friend who JOINS types GATO, so we look for "blanco-y-negro-gato"
+//   - The friends who JOIN type GATO, so we look for "blanco-y-negro-gato"
 //     on the internet and connect to it. Nobody else knows the word!
 //
-// The messages are small objects, like { t: 'progreso', level: 1, frac: 0.5 }.
-// "t" says what kind of message it is.
+// With more than 2 players, the one who CREATED the game is the CENTER
+// (like a post office): every friend is connected only to the center, and the
+// center passes every message on to all the others.
+//
+//      friend 1 ──┐
+//      friend 2 ──┼── CENTER (the creator)
+//      friend 3 ──┘
+//
+// The messages are small objects, like { t: 'progreso', frac: 0.5, from: 'abc' }.
+// "t" says what kind of message it is, "from" says WHO sent it.
 
 import Peer from 'peerjs';
 
 // Every name starts with this, so we never mix with other games that use PeerJS
 const PREFIX = 'blanco-y-negro-';
+
+// The most players in one game (the creator + 3 friends)
+export const MAX_PLAYERS = 4;
 
 // Easy words to say out loud and type on a phone (no accents, no ñ)
 const WORDS = [
@@ -40,11 +51,19 @@ export function cleanWord(text) {
 class Net {
   constructor() {
     this.peer = null;
-    this.conn = null;
-    // The scenes put their own functions here, to hear the messages
-    this.onMessage = () => {};
-    this.onClose = () => {};
+    this.conns = new Map();    // who we are connected to: their id → the connection
+    this.lastHeard = new Map(); // when we last heard from each player: id → time
+    this.gone = new Set();     // players who left
+    this.isHost = false;       // are we the CENTER (the one who created the game)?
+    this.myId = null;
+    this.hostId = null;
+    this.locked = false;       // true = the game started, nobody else can come in
     this.closed = false;
+    // The scenes put their own functions here, to hear what happens
+    this.onMessage = () => {};     // a message arrived
+    this.onConnected = () => {};   // a new player connected to us
+    this.onPlayerLeft = () => {};  // one player left (the others are still here)
+    this.onClose = () => {};       // EVERYBODY is gone (or the center left)
   }
 
   // CREATE a game with a new secret word. Gives back the word when we are ready.
@@ -54,10 +73,19 @@ class Net {
       const word = randomWord();
       try {
         await this.openPeer(PREFIX + word.toLowerCase());
-        // Now we wait for our friend to connect to us
+        this.isHost = true;
+        this.hostId = this.myId;
+        // Now we wait for our friends to connect to us
         this.peer.on('connection', (conn) => {
-          if (this.conn) { conn.close(); return; } // only ONE friend per game
-          this.useConnection(conn);
+          if (this.locked || this.conns.size >= MAX_PLAYERS - 1) {
+            // Full, or already playing: we say so, and hang up
+            conn.on('open', () => {
+              conn.send({ t: 'llena' });
+              setTimeout(() => conn.close(), 500);
+            });
+            return;
+          }
+          this.addConnection(conn);
         });
         return word;
       } catch (err) {
@@ -73,14 +101,12 @@ class Net {
     await this.openPeer(undefined); // we don't need a special name: PeerJS gives us one
     return new Promise((resolve, reject) => {
       const conn = this.peer.connect(PREFIX + cleanWord(word).toLowerCase(), { reliable: true });
+      this.hostId = conn.peer;
       // "peer-unavailable" = nobody has that word
       this.peer.on('error', reject);
       // If nobody answers in 15 seconds, we give up
       setTimeout(() => reject({ type: 'timeout' }), 15000);
-      conn.on('open', () => {
-        this.useConnection(conn);
-        resolve();
-      });
+      this.addConnection(conn, resolve);
     });
   }
 
@@ -88,46 +114,79 @@ class Net {
   openPeer(id) {
     return new Promise((resolve, reject) => {
       this.peer = new Peer(id);
-      this.peer.once('open', resolve);
+      this.peer.once('open', (myId) => {
+        this.myId = myId;
+        resolve();
+      });
       this.peer.once('error', reject);
     });
   }
 
-  // We have a friend! Listen to what they send us
-  useConnection(conn) {
-    this.conn = conn;
-    // We listen right away, so we never miss the first message.
-    // We also remember WHEN we last heard from our friend: if they go quiet
-    // for too long, the internet probably went away (see RaceScene.js)
-    this.lastHeard = Date.now();
-    conn.on('data', (msg) => {
-      this.lastHeard = Date.now();
-      if (msg.t === 'adios') this.lost();
-      else this.onMessage(msg);
-    });
-    // If the page is closed, we say goodbye so our friend knows right away
-    this.sayBye = () => this.send({ t: 'adios' });
-    window.addEventListener('pagehide', this.sayBye);
+  // A new connection (for the center: a friend; for a friend: the center)
+  addConnection(conn, whenOpen) {
+    const id = conn.peer;
+    this.conns.set(id, conn);
+    this.lastHeard.set(id, Date.now());
+    // We listen right away, so we never miss the first message
+    conn.on('data', (msg) => this.receive(id, msg));
+    // If the page is closed, we say goodbye so the others know right away
+    if (!this.sayBye) {
+      this.sayBye = () => this.send({ t: 'adios' });
+      window.addEventListener('pagehide', this.sayBye);
+    }
     const ready = () => {
-      conn.on('close', () => this.lost());
-      conn.on('error', () => this.lost());
-      this.onConnected();
+      conn.on('close', () => this.dropped(id));
+      conn.on('error', () => this.dropped(id));
+      if (whenOpen) whenOpen();
+      this.onConnected(id);
     };
     if (conn.open) ready(); else conn.on('open', ready);
   }
 
-  // A scene can put a function here to know when the friend arrived
-  onConnected() {}
+  // A message arrived through the connection with "connId"
+  receive(connId, msg) {
+    if (this.isHost) {
+      // We are the center: the message is from that friend (we trust the
+      // connection, not what the message says), and we pass it on to the others
+      msg.from = connId;
+      this.conns.forEach((conn, id) => {
+        if (id !== connId && conn.open) conn.send(msg);
+      });
+    } else if (!msg.from) {
+      msg.from = connId;
+    }
+    this.lastHeard.set(msg.from, Date.now());
 
-  send(msg) {
-    if (this.conn && this.conn.open) this.conn.send(msg);
+    if (msg.t === 'adios') this.dropped(msg.from);
+    else this.onMessage(msg);
   }
 
-  // The friend closed the game, or the internet went away
-  lost() {
-    if (this.closed) return;
-    this.closed = true;
-    this.onClose();
+  // Send a message to EVERYBODY (a friend sends it to the center, who passes it on)
+  send(msg) {
+    const withName = { ...msg, from: this.myId };
+    this.conns.forEach((conn) => {
+      if (conn.open) conn.send(withName);
+    });
+  }
+
+  // One player is gone (they closed the game, or the internet went away)
+  dropped(id) {
+    if (this.closed || this.gone.has(id) || id === this.myId) return;
+    this.gone.add(id);
+    if (this.isHost) {
+      // The center tells everybody else that this friend left
+      this.conns.delete(id);
+      this.conns.forEach((conn) => {
+        if (conn.open) conn.send({ t: 'adios', from: id });
+      });
+      this.onPlayerLeft(id);
+    } else if (id === this.hostId) {
+      // The center left: without the center, nobody can talk anymore
+      this.closed = true;
+      this.onClose();
+    } else {
+      this.onPlayerLeft(id);
+    }
   }
 
   // We are leaving: hang up
@@ -135,7 +194,7 @@ class Net {
     this.send({ t: 'adios' });
     this.closed = true;
     if (this.sayBye) window.removeEventListener('pagehide', this.sayBye);
-    if (this.conn) this.conn.close();
+    this.conns.forEach((conn) => conn.close());
     if (this.peer) this.peer.destroy();
   }
 }

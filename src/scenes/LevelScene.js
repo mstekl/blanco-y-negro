@@ -11,6 +11,7 @@ import HUDManager from '../managers/HUDManager.js';
 import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
 import { addCoins, loadCoins } from '../data/coins.js';
+import { reportMission } from '../data/missions.js';
 import StormCloud from '../sprites/StormCloud.js';
 import { getLevels } from '../data/countryLevels.js';
 import { levels } from '../data/levels.js';
@@ -45,7 +46,7 @@ class LevelScene extends Phaser.Scene {
     // Get the level configuration data
     // (the 6 normal levels, or the 3 levels of the country we are playing in)
     // (the race always uses the normal levels)
-    this.levelData = (this.race ? levels : getLevels(this.registry))[this.levelIndex];
+    this.levelData = this.chooseLevelData();
 
     // Initialize game state in the registry (first time only).
     // The race does NOT use the registry: there are two heroes, and the
@@ -209,6 +210,11 @@ class LevelScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500);
   }
 
+  // Which level do we play? (SUPERVIVENCIA changes this: it has its own arena)
+  chooseLevelData() {
+    return (this.race ? levels : getLevels(this.registry))[this.levelIndex];
+  }
+
   // Secret key combo for the levels:
   //   E then P      → invincible mode on / off
   // (the skins are chosen in the 'sala' before playing, never in the middle of a level)
@@ -296,6 +302,7 @@ class LevelScene extends Phaser.Scene {
     // If the enemy was defeated, add score
     if (enemy.isDefeated) {
       this.hero.addScore(enemy.scoreValue);
+      reportMission('villanos'); // for the MISIONES DEL DÍA
       this.saveState();
       this.hud.updateScore(this.hero.score);
       this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
@@ -354,6 +361,7 @@ class LevelScene extends Phaser.Scene {
       enemy.takeDamage(1);
       hero.setVelocityY(HERO.JUMP_VELOCITY * 0.6);
       hero.addScore(enemy.scoreValue);
+      if (enemy.isDefeated) reportMission('villanos');
       this.saveState();
       this.hud.updateScore(hero.score);
       this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
@@ -410,6 +418,7 @@ class LevelScene extends Phaser.Scene {
   collectCoin(hero, coin) {
     coin.destroy();
     const total = addCoins(1);
+    reportMission('monedas');
     this.hud.updateCoins(total);
     this.showFloatingText(coin.x, coin.y - 10, '+1');
   }
@@ -422,6 +431,9 @@ class LevelScene extends Phaser.Scene {
     // Stop the hero
     this.hero.setVelocity(0, 0);
     this.hero.body.setAllowGravity(false);
+
+    // A level done counts for the MISIONES (only real levels, not the race)
+    if (!this.race) reportMission('niveles');
 
     // Bonus points for completing the level
     this.hero.addScore(500);
