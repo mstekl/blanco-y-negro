@@ -26,6 +26,7 @@ export const SKIN_LIST = [
   { id: 'gato', name: 'Gato pintor' },
   { id: 'dino', name: 'Dinosaurio arcoíris' },
   { id: 'super', name: 'Superhéroe' },
+  { id: 'doblex', name: 'Doble-X' },
   // ...and the 80 skins that come out of the pencils (src/sprites/SkinPack.js and SkinPack2.js)
   ...PENCIL_SKINS.map(({ id, name }) => ({ id, name })),
   // ...and the 7 skins of the PASE BLANCO Y NEGRO (src/sprites/PassSkins.js).
@@ -51,6 +52,7 @@ export const SKIN_CODES = {
   gp: ['gato'],
   dr: ['dino'],
   sc: ['super'],
+  dx: ['doblex'],
   // The best secret: "T" (for "Todas") gives us EVERY skin at once!
   // We take them from SKIN_LIST, so new skins are added here by themselves
   // (but NOT the skins of the PASE BLANCO Y NEGRO: those are only won in the pass)

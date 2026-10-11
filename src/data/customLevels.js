@@ -28,7 +28,7 @@ export const PLATFORM_WIDTH = 128; // a floating platform = 2 tiles
 export const NAME_MAX = 16;
 
 // How tall each villain is, so we can stand it ON the floor (not inside it)
-export const ENEMY_HEIGHT = { mr1: 48, mr2: 54, mr3: 64 };
+export const ENEMY_HEIGHT = { mr1: 48, mr2: 54, mr3: 64, doblex: 72 }; // Doble-X is 48 tall, but starts 1.5 times bigger
 
 // A brand new level: ground everywhere, the hero at the start, the flag at the end
 export function newLevel(slot) {
@@ -120,7 +120,7 @@ export function cleanReceivedLevel(level) {
     ground: Array.from({ length: COLUMNS }, (_, i) => level.ground[i] === true),
     platforms: list(level.platforms, 40).map(point),
     enemies: list(level.enemies, 30)
-      .filter((e) => e && ['mr1', 'mr2', 'mr3'].includes(e.type))
+      .filter((e) => e && ['mr1', 'mr2', 'mr3', 'doblex'].includes(e.type))
       .map((e) => ({ type: e.type, ...point(e) })),
     powerups: list(level.powerups, 10)
       .filter((p) => p && POWERUP_TYPES.includes(p.type))

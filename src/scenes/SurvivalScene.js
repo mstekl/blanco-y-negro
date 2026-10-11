@@ -5,6 +5,7 @@
 //   - waves 1 and 2: only MR.1 walkers
 //   - from wave 3:   MR.2 shooters too
 //   - from wave 5:   MR.3 on his eraser tank too
+//   - from wave 7:   Doble-X too, who splits in two when defeated
 // A new wave comes when all the villains are defeated (or after 25 seconds).
 // ONLINE (2 to 4 players, each on their own device): the same waves for everybody,
 // and the last one still alive wins!
@@ -178,14 +179,16 @@ class SurvivalScene extends LevelScene {
     if (this.ended) return;
     this.spawning -= 1;
     let type = 'mr1';
-    if (this.wave >= 5 && i % 4 === 3) type = 'mr3';
+    // From wave 7, Doble-X too (he splits in two... three times!)
+    if (this.wave >= 7 && i % 5 === 4) type = 'doblex';
+    else if (this.wave >= 5 && i % 4 === 3) type = 'mr3';
     else if (this.wave >= 3 && i % 3 === 2) type = 'mr2';
 
     const fromLeft = i % 2 === 0;
     LevelManager.spawnEnemies(this, this.enemies, [{
       type,
       x: fromLeft ? 60 : ARENA_WIDTH - 60,
-      y: type === 'mr3' ? 500 : 520,
+      y: type === 'mr3' || type === 'doblex' ? 500 : 520,
       // Every wave the villains are a little faster, and shoot more often
       speed: Math.min(200, 90 + this.wave * 8),
       fireRate: Math.max(900, 2200 - this.wave * 150),

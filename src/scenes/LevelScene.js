@@ -472,6 +472,8 @@ class LevelScene extends Phaser.Scene {
     if (enemy.isDefeated) return;
     // A frozen villain is a block of ice: it can't hurt us (we can stand on it)
     if (this.isFrozen(enemy)) return;
+    // A Doble-X that just split out of a bigger one can't hurt us for a moment
+    if (enemy.harmlessUntil && this.time.now < enemy.harmlessUntil) return;
     // 🚀 On the rocket we knock out the villains we crash into!
     // (a short wait between hits, or the big boss would lose all its life at once)
     if (hero.vehicle === 'cohete') {

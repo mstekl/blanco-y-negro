@@ -118,6 +118,7 @@ export const levels = [
       { type: 'mr1', x: 950, y: 520, speed: 130, patrolMin: 800, patrolMax: 1200, direction: 'left' },
       { type: 'mr1', x: 1050, y: 272, speed: 90, patrolMin: 1000, patrolMax: 1180, direction: 'right' },
       { type: 'mr1', x: 1800, y: 520, speed: 125, patrolMin: 1600, patrolMax: 2050, direction: 'right' },
+      { type: 'doblex', x: 1900, y: 480, patrolMin: 1600, patrolMax: 2050, direction: 'left' }, // the first Doble-X: he splits in two!
       { type: 'mr1', x: 2600, y: 520, speed: 140, patrolMin: 2400, patrolMax: 2900, direction: 'left' },
       // Extra walkers, and the first shooter shows up early!
       { type: 'mr1', x: 1250, y: 520, speed: 120, patrolMin: 800, patrolMax: 1350, direction: 'right' },
@@ -196,6 +197,7 @@ export const levels = [
       { type: 'mr1', x: 1000, y: 520, speed: 130, patrolMin: 800, patrolMax: 1300, direction: 'right' },
       { type: 'mr1', x: 1700, y: 520, speed: 140, patrolMin: 1600, patrolMax: 1950, direction: 'left' },
       { type: 'mr1', x: 2500, y: 520, speed: 135, patrolMin: 2300, patrolMax: 2700, direction: 'right' },
+      { type: 'doblex', x: 2600, y: 480, patrolMin: 2300, patrolMax: 2700, direction: 'left' },
       { type: 'mr1', x: 3300, y: 520, speed: 140, patrolMin: 3100, patrolMax: 3500, direction: 'right' },
       // MR.2 shooters! (new in this level) — more of them, and they shoot faster
       { type: 'mr2', x: 1300, y: 250, speed: 60, patrolMin: 1300, patrolMax: 1480, direction: 'left', fireRate: 1600 },
@@ -441,6 +443,7 @@ export const levels = [
       { type: 'mr2', x: 900, y: 520, speed: 75, patrolMin: 780, patrolMax: 1450, direction: 'left', fireRate: 1400 },
       { type: 'mr1', x: 1150, y: 260, speed: 90, patrolMin: 1150, patrolMax: 1330, direction: 'left' },
       { type: 'mr2', x: 1800, y: 520, speed: 80, patrolMin: 1660, patrolMax: 2280, direction: 'right', fireRate: 1400 },
+      { type: 'doblex', x: 2100, y: 480, speed: 80, patrolMin: 1660, patrolMax: 2280, direction: 'left' },
       // Extra enemies (and eraser tanks on the way to the boss)
       { type: 'mr3', x: 1300, y: 500, patrolMin: 820, patrolMax: 1445, direction: 'left', chaseSpeed: 145 },
       { type: 'mr3', x: 2200, y: 500, patrolMin: 1700, patrolMax: 2265, direction: 'right', chaseSpeed: 145 },

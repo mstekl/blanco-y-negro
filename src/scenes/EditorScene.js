@@ -16,6 +16,7 @@ import Phaser from 'phaser';
 import EnemyMR1 from '../sprites/EnemyMR1.js';
 import EnemyMR2 from '../sprites/EnemyMR2.js';
 import EnemyMR3 from '../sprites/EnemyMR3.js';
+import EnemyDobleX from '../sprites/EnemyDobleX.js';
 import Projectile from '../sprites/Projectile.js';
 import { isNameChar } from '../data/profile.js';
 import {
@@ -29,8 +30,13 @@ const TOOLS = [
   { id: 'plataforma', icon: '▬', name: 'PLATAF.', hint: 'Toca para poner una plataforma. Tócala otra vez para quitarla.' },
   { id: 'mr1', icon: '👾', name: 'MR.1', hint: 'MR.1 camina de un lado al otro.' },
   { id: 'mr2', icon: '🔫', name: 'MR.2', hint: 'MR.2 camina y DISPARA.' },
-  { id: 'mr3', icon: '🚜', name: 'MR.3', hint: 'MR.3 en su tanque de gomas: ¡te persigue!' },
-  // These two have VARIANTS: touch the tool again (or press its number again) to change it
+  // These three have VARIANTS: touch the tool again (or press its number again) to change it
+  {
+    id: 'mr3', variants: [
+      { type: 'mr3', icon: '🚜', name: 'MR.3', hint: 'MR.3 en su tanque de gomas: ¡te persigue! (Tócalo otra vez: Doble-X)' },
+      { type: 'doblex', icon: '✖', name: 'DOBLE-X', hint: 'Doble-X: ¡se divide en dos, tres veces! (Tócalo otra vez para cambiar)' },
+    ],
+  },
   {
     id: 'lapiz', variants: [
       { type: 'color-pencil', icon: '🎨', name: 'LÁPIZ', hint: 'El Lápiz de Color: para disparar colores. (Tócalo otra vez: 🔥 ❄️ 🟢)' },
@@ -222,6 +228,7 @@ class EditorScene extends Phaser.Scene {
     if (!this.textures.exists('enemy-mr1')) EnemyMR1.createTexture(this);
     if (!this.textures.exists('enemy-mr2')) EnemyMR2.createTexture(this);
     if (!this.textures.exists('enemy-mr3')) EnemyMR3.createTexture(this);
+    if (!this.textures.exists('enemy-doblex')) EnemyDobleX.createTexture(this);
     Projectile.createPowerupTextures(this);
 
     // The camera only moves left and right, over the 3 screens of the level
@@ -298,7 +305,7 @@ class EditorScene extends Phaser.Scene {
     // The 10 tools
     this.toolButtons = {};
     this.toolLabels = {};
-    this.variant = { lapiz: 0, objeto: 0 }; // which variant each of those two tools is on
+    this.variant = { mr3: 0, lapiz: 0, objeto: 0 }; // which variant each of those tools is on
     TOOLS.forEach((tool, i) => {
       const x = 58 + i * 76;
       const look = tool.variants ? tool.variants[0] : tool;
@@ -427,7 +434,9 @@ class EditorScene extends Phaser.Scene {
     if (this.tool === 'mr1' || this.tool === 'mr2' || this.tool === 'mr3') {
       if (level.enemies.length >= MAX_ENEMIES) return this.showMessage('¡Ya hay muchos villanos!');
       const ex = Phaser.Math.Clamp(snap(x), 32, LEVEL_WIDTH - 32);
-      level.enemies.push({ type: this.tool, x: ex, y: this.standY(ex, y, ENEMY_HEIGHT[this.tool]) });
+      // (the MR.3 tool can also be Doble-X: its variant says which one)
+      const type = this.tool === 'mr3' ? TOOLS.find((t) => t.id === 'mr3').variants[this.variant.mr3].type : this.tool;
+      level.enemies.push({ type, x: ex, y: this.standY(ex, y, ENEMY_HEIGHT[type]) });
       return this.changed();
     }
 
@@ -523,7 +532,9 @@ class EditorScene extends Phaser.Scene {
       add(this.add.image(p.x + 96, p.y + 12, 'platform-tile'));
     });
     level.powerups.forEach((p) => add(this.add.image(p.x, p.y, `powerup-${p.type}`).setDepth(2)));
-    level.enemies.forEach((e) => add(this.add.image(e.x, e.y, `enemy-${e.type}`).setDepth(3)));
+    // (Doble-X starts big: 1.5 times his picture, like in the game)
+    level.enemies.forEach((e) => add(this.add.image(e.x, e.y, `enemy-${e.type}`).setDepth(3)
+      .setScale(e.type === 'doblex' ? 1.5 : 1)));
     add(this.add.image(level.goal.x, level.goal.y, 'goal-flag').setDepth(2));
     add(this.add.image(level.heroStart.x, level.heroStart.y, 'hero').setDepth(4));
 

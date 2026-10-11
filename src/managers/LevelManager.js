@@ -7,6 +7,7 @@
 import EnemyMR1 from '../sprites/EnemyMR1.js';
 import EnemyMR2 from '../sprites/EnemyMR2.js';
 import EnemyMR3 from '../sprites/EnemyMR3.js';
+import EnemyDobleX from '../sprites/EnemyDobleX.js';
 import { drawLandmarkScene } from './LandmarkArt.js';
 import { WORLD } from '../utils/constants.js';
 import { makeCoinTexture } from '../data/coins.js';
@@ -124,7 +125,7 @@ class LevelManager {
 
     // Levels inside a country: the landmark of the country, in full color
     if (levelData.backgroundStyle === 'landmark') {
-      drawLandmarkScene(colorBg, levelData.theme, visibleBackgroundWidth(levelData), true);
+      drawLandmarkScene(colorBg, levelData.theme, visibleBackgroundWidth(levelData), true, 0, levelData.flag);
       colorBg.setScrollFactor(0.3);
       return colorBg;
     }
@@ -195,7 +196,7 @@ class LevelManager {
 
     // Levels inside a country: the landmark of the country, in gray
     if (levelData.backgroundStyle === 'landmark') {
-      drawLandmarkScene(bg, levelData.theme, visibleBackgroundWidth(levelData), false, sat);
+      drawLandmarkScene(bg, levelData.theme, visibleBackgroundWidth(levelData), false, sat, levelData.flag);
       bg.setScrollFactor(0.3);
       return bg;
     }
@@ -280,6 +281,8 @@ class LevelManager {
         enemy = new EnemyMR2(scene, config.x, config.y, config);
       } else if (config.type === 'mr3') {
         enemy = new EnemyMR3(scene, config.x, config.y, config);
+      } else if (config.type === 'doblex') {
+        enemy = new EnemyDobleX(scene, config.x, config.y, config);
       }
 
       if (enemy) {

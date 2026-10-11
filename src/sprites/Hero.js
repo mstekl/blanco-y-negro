@@ -7,6 +7,7 @@ import { HERO, PROJECTILE, isGodMode } from '../utils/constants.js';
 import EnemyMR1 from './EnemyMR1.js';
 import EnemyMR2 from './EnemyMR2.js';
 import EnemyMR3 from './EnemyMR3.js';
+import EnemyDobleX from './EnemyDobleX.js';
 import CrazyDog from './CrazyDog.js';
 import {
   BossSkin, CloudSkin, PencilSkin, NinjaSkin, AstronautSkin, RobotSkin, CatSkin,
@@ -44,6 +45,8 @@ export const SKINS = {
   // The rainbow dinosaur roars color, so he shoots right away!
   dino: { texture: 'skin-dino', make: DinoSkin, body: [24, 40, 4, 8], canShoot: true, gunAt: [14, -14] }, // 32x48
   super: { texture: 'skin-super', make: HeroCapeSkin, body: [24, 40, 4, 8] }, // picture is 32x48
+  // Doble-X, the villain that splits in two (code "D X")
+  doblex: { texture: 'enemy-doblex', make: EnemyDobleX, body: [24, 40, 4, 8] }, // picture is 32x48
 };
 
 // The 80 skins of the pencils (SkinPack.js and SkinPack2.js) and the 7 skins of the

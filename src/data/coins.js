@@ -80,6 +80,7 @@ export const SKIN_RARITY = {
   nube: 'epico',
   dino: 'epico',
   super: 'epico',
+  doblex: 'epico',
   jefe: 'legendario',
 };
 // The skins of the pack say their own rarity
