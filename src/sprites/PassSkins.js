@@ -1,4 +1,4 @@
-// PassSkins.js — The 7 skins of the "PASE BLANCO Y NEGRO".
+// PassSkins.js — The 12 skins of the "PASE BLANCO Y NEGRO".
 // They NEVER come out of the pencils: you only get them with the pass.
 // They are all about our story: a black and white world that is getting
 // its colors back (so they are black and white, with a little bit of rainbow).
@@ -340,6 +340,145 @@ export const PASS_SKINS = [
       });
       gfx.fillStyle(WHITE);
       gfx.fillCircle(27, 8.5, 0.8);
+    },
+  },
+
+  // =============================================================
+  // The 5 skins added when the pass got 100 levels and 10 pages
+  // =============================================================
+  {
+    id: 'pasePinguino', name: 'Pingüino Arcoíris', rarity: 'raro',
+    draw(gfx) {
+      // A penguin is already black and white!
+      animal(gfx, { color: BLACK, belly: WHITE, ears: 'none', snout: false, nose: 0xff8800 });
+      // A white face and an orange beak
+      gfx.fillStyle(WHITE);
+      gfx.fillEllipse(16, 16, 12, 9);
+      gfx.fillStyle(BLACK);
+      gfx.fillCircle(13, 14, 1.5);
+      gfx.fillCircle(19, 14, 1.5);
+      gfx.fillStyle(0xff8800);
+      gfx.fillTriangle(13.5, 17, 18.5, 17, 16, 21);
+      // Orange feet
+      gfx.fillRect(9, 46, 7, 2);
+      gfx.fillRect(16, 46, 7, 2);
+      // A long rainbow scarf around the neck
+      RAINBOW.forEach((color, i) => {
+        gfx.fillStyle(color);
+        gfx.fillRect(8 + i * (16 / 6), 22, 16 / 6, 3);
+      });
+      gfx.fillStyle(RAINBOW[0]);
+      gfx.fillRect(20, 25, 3, 7);
+      gfx.fillStyle(RAINBOW[4]);
+      gfx.fillRect(20, 30, 3, 2);
+    },
+  },
+  {
+    id: 'paseTiburon', name: 'Tiburón de Tinta', rarity: 'epico',
+    draw(gfx) {
+      // The tail of the shark costume, behind the body
+      gfx.fillStyle(0x444444);
+      gfx.fillTriangle(1, 28, 9, 33, 1, 42);
+      // A kid in a gray shark costume
+      person(gfx, { shirt: 0x444444, pants: 0x444444, shoes: BLACK, hands: 0x444444 });
+      // A white tummy
+      gfx.fillStyle(WHITE);
+      gfx.fillRect(12, 25, 8, 12);
+      // The shark hood over the head, with its fin on top
+      gfx.fillStyle(0x444444);
+      gfx.fillRoundedRect(7, 3, 18, 8, { tl: 7, tr: 7, bl: 0, br: 0 });
+      gfx.fillRect(7, 8, 3, 12);
+      gfx.fillRect(22, 8, 3, 12);
+      gfx.fillTriangle(13, 4, 20, 4, 19, 0);
+      // The shark's white teeth all around the face
+      gfx.fillStyle(WHITE);
+      for (let x = 10; x < 22; x += 2.4) gfx.fillTriangle(x, 10, x + 2.4, 10, x + 1.2, 12.5);
+      // Rainbow gills on the side
+      [RAINBOW[0], RAINBOW[2], RAINBOW[4]].forEach((color, i) => {
+        gfx.fillStyle(color);
+        gfx.fillRect(8, 13 + i * 2, 2, 1);
+      });
+    },
+  },
+  {
+    id: 'paseMago', name: 'Mago Gris', rarity: 'epico',
+    draw(gfx) {
+      // A long gray robe that covers the legs
+      person(gfx, { shirt: 0x666666, pants: 0x666666, shoes: BLACK });
+      gfx.fillStyle(0x666666);
+      gfx.fillRect(8, 36, 16, 10);
+      gfx.fillStyle(WHITE);
+      gfx.fillRect(8, 44, 16, 1);
+      // A long white beard
+      gfx.fillStyle(WHITE);
+      gfx.fillTriangle(10, 16, 22, 16, 16, 30);
+      // A tall pointy hat with rainbow stars
+      gfx.fillStyle(0x333333);
+      gfx.fillRect(6, 7, 20, 2);
+      gfx.fillTriangle(9, 8, 23, 8, 19, 0);
+      gfx.fillStyle(RAINBOW[2]);
+      gfx.fillCircle(15, 5, 1);
+      gfx.fillStyle(RAINBOW[4]);
+      gfx.fillCircle(18.5, 3, 0.8);
+      // The magic wand with a rainbow star at the tip
+      gfx.fillStyle(0x8b5a2b);
+      gfx.fillRect(26, 18, 1.5, 16);
+      RAINBOW.forEach((color, i) => {
+        gfx.fillStyle(color);
+        gfx.fillCircle(26.7, 16, 3 - i * 0.45);
+      });
+    },
+  },
+  {
+    id: 'paseSamurai', name: 'Samurái de Tinta', rarity: 'epico',
+    draw(gfx) {
+      // The katana behind the back: a white blade and a rainbow handle
+      gfx.lineStyle(2, WHITE);
+      gfx.lineBetween(4, 44, 28, 14);
+      RAINBOW.forEach((color, i) => {
+        gfx.fillStyle(color);
+        gfx.fillRect(26 + i * 0.6, 10 + i * 0.8, 2, 1.5);
+      });
+      person(gfx, { shirt: BLACK, pants: 0x333333, shoes: BLACK });
+      // White armor plates on the chest and shoulders
+      gfx.fillStyle(WHITE);
+      gfx.fillRect(10, 23, 12, 2);
+      gfx.fillRect(10, 27, 12, 2);
+      gfx.fillRect(10, 31, 12, 2);
+      gfx.fillRect(4, 21, 6, 3);
+      gfx.fillRect(22, 21, 6, 3);
+      // The black helmet with a white moon on the front
+      gfx.fillStyle(BLACK);
+      gfx.fillRoundedRect(7, 4, 18, 7, { tl: 7, tr: 7, bl: 0, br: 0 });
+      gfx.fillRect(6, 9, 4, 6);
+      gfx.fillRect(22, 9, 4, 6);
+      gfx.fillStyle(WHITE);
+      gfx.fillTriangle(10, 4, 16, 6, 12, 0);
+      gfx.fillTriangle(22, 4, 16, 6, 20, 0);
+    },
+  },
+  {
+    id: 'paseDragon', name: 'Dragón Blanco y Negro', rarity: 'legendario', canShoot: true, gunAt: [14, -14],
+    draw(gfx) {
+      // Black wings behind the body (drawn first so they stay behind)
+      gfx.fillStyle(BLACK);
+      gfx.fillTriangle(0, 16, 9, 24, 3, 36);
+      gfx.fillTriangle(32, 16, 23, 24, 29, 36);
+      // A white dragon with black horns
+      animal(gfx, { color: WHITE, belly: 0xcccccc, ears: 'pointy', earColor: BLACK, nose: BLACK });
+      // Black spikes on the head and back
+      gfx.fillStyle(BLACK);
+      gfx.fillTriangle(14, 7, 18, 7, 16, 3);
+      gfx.fillTriangle(14, 24, 18, 24, 16, 21);
+      // Gold eyes, like a real dragon
+      gfx.fillStyle(GOLD);
+      gfx.fillCircle(12.5, 13, 1.5);
+      gfx.fillCircle(19.5, 13, 1.5);
+      // A rainbow belly: the colors are coming back!
+      RAINBOW.forEach((color, i) => {
+        gfx.fillStyle(color);
+        gfx.fillRect(12, 28 + i * 2, 8, 2);
+      });
     },
   },
 ];

@@ -22,6 +22,7 @@ import { loadCoins, saveCoins, addCoins, makeCoinTexture } from '../data/coins.j
 import { loadProfile } from '../data/profile.js';
 import { drawTopBar } from '../ui/TopBar.js';
 import { takeShopItems } from '../data/shop.js';
+import { addStars, medalsLeft, STARS_PER_LEVEL, PASS_LEVELS } from '../data/pass.js';
 import { playMusic, isMuted, toggleSound } from '../audio/Sound.js';
 
 class TitleScene extends Phaser.Scene {
@@ -352,6 +353,7 @@ class TitleScene extends Phaser.Scene {
   //   T       → ALL the skins at once! (T again, with all of them → only the hero is left)
   //   10000   → 10000 coins to buy pencils!     100000 → 100000 coins!
   //   1000000 → ONE MILLION coins (enough for the PREMIUM pass!)
+  //   100 niv p → 100 levels up in the PASE BLANCO Y NEGRO (= 100 🏅 medals to choose prizes)
   // ---------------------------------------------------------------
   createHackBox() {
     this.hackOpen = false;
@@ -452,6 +454,17 @@ class TitleScene extends Phaser.Scene {
       this.refreshBarCoins();
       this.hackMessage.setColor('#ffd700').setText(`¡Ganaste ${amount.toLocaleString('es')} monedas!`);
       this.closeTimer = this.time.delayedCall(1300, () => this.closeHacks());
+      return;
+    }
+
+    // "100 niv p" = go up 100 levels of the PASE BLANCO Y NEGRO (up to level 100,
+    // the top). Each level gives a 🏅 medal to choose a prize in the pass
+    if (code === '100nivp') {
+      const levelsUp = addStars(100 * STARS_PER_LEVEL, true);
+      this.hackMessage.setColor('#ffd700').setText(levelsUp > 0
+        ? `¡Subiste ${levelsUp} niveles del PASE! Tienes ${medalsLeft()} 🏅 para elegir premios`
+        : `Ya estás en el nivel ${PASS_LEVELS} del PASE ⭐`);
+      this.closeTimer = this.time.delayedCall(1800, () => this.closeHacks());
       return;
     }
 
