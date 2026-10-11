@@ -6,6 +6,8 @@
 //     and are used when the next game of JUGAR or SUPERVIVENCIA starts
 //     (see src/data/shop.js).
 // Keys: 1 2 3 4 buy a skin, 5 6 7 buy a power-up, ESC goes back to the sala.
+// The second tab (B): 4 BAILES, MOCHILAS or MASCOTAS of the day (keys 1 to 4),
+// and a PROBADOR to try them on our hero before buying them.
 
 import Phaser from 'phaser';
 import { drawGrayCity } from './TitleScene.js';
@@ -15,6 +17,10 @@ import { loadCoins, addCoins, RARITIES, SKIN_RARITY } from '../data/coins.js';
 import { SKIN_LIST, PASS_SKIN_IDS, loadSkins, saveSkins, skinTexture, fitImage } from '../data/skins.js';
 import Projectile from '../sprites/Projectile.js';
 import { playSound } from '../audio/Sound.js';
+import {
+  COSMETIC_TYPES, COSMETIC_PRICES, cosmeticsOfTheDay, buyCosmetic, loadCosmetics,
+} from '../data/cosmetics.js';
+import { cosmeticTexture, attachCosmetics, playEmote } from '../sprites/Cosmetics.js';
 
 // How much a skin costs, by rarity
 const SKIN_PRICES = { comun: 50, raro: 100, epico: 200, legendario: 400 };
@@ -42,6 +48,11 @@ class ShopScene extends Phaser.Scene {
     super('ShopScene');
   }
 
+  // data.tab = 'mas' opens the second tab: BAILES, MOCHILAS y MASCOTAS
+  init(data = {}) {
+    this.tab = data.tab === 'mas' ? 'mas' : 'skins';
+  }
+
   create() {
     this.leaving = false;
     drawGrayCity(this);
@@ -49,18 +60,33 @@ class ShopScene extends Phaser.Scene {
     Projectile.createPowerupTextures(this);
     this.refreshCoins = drawTopBar(this, 'ShopScene', (scene) => this.goTo(scene));
 
+    // Bottom right: the button to change tabs (or the B key)
+    const other = this.tab === 'skins' ? '💃 BAILES Y MÁS ▶ [B]' : '◀ SKINS Y POWER-UPS [B]';
+    const tabButton = this.add.rectangle(670, 568, 240, 40, 0x222222)
+      .setStrokeStyle(3, 0xff77bb).setInteractive({ useHandCursor: true });
+    this.add.text(670, 568, other, {
+      fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    tabButton.on('pointerdown', () => this.switchTab());
+
+    if (this.tab === 'mas') {
+      this.createCosmeticsTab();
+      return;
+    }
+
     this.sectionTitle(76, '⭐ SKINS DEL DÍA', '¡Cambian todos los días!');
     this.skinCards = skinsOfTheDay().map((skin, i) => this.makeSkinCard(skin, 115 + i * 190, i));
 
     this.sectionTitle(300, '🎒 POWER-UPS', 'Se usan al empezar tu próxima partida de JUGAR o SUPERVIVENCIA');
     this.itemCards = SHOP_ITEMS.map((item, i) => this.makeItemCard(item, 160 + i * 240, i));
 
-    this.message = this.add.text(400, 568, '', {
-      fontFamily: 'Arial', fontSize: '19px', fontStyle: 'bold', color: '#ff8888',
+    this.message = this.add.text(290, 568, '', {
+      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ff8888',
     }).setOrigin(0.5);
 
     this.input.keyboard.on('keydown', (event) => {
       if (event.key === 'Escape') this.goTo('TitleScene');
+      if (event.code === 'KeyB') this.switchTab();
       const number = parseInt(event.key, 10);
       if (this.skinCards[number - 1]) this.buySkin(this.skinCards[number - 1].skin);
       const item = SHOP_ITEMS[number - 1 - SKINS_PER_DAY];
@@ -158,9 +184,107 @@ class ShopScene extends Phaser.Scene {
     if (!good) this.cameras.main.shake(150, 0.004);
   }
 
+  switchTab() {
+    if (this.leaving) return;
+    this.scene.restart({ tab: this.tab === 'skins' ? 'mas' : 'skins' });
+  }
+
+  // ---------------------------------------------------------------
+  // The second tab: 4 BAILES, MOCHILAS or MASCOTAS of the day, and the
+  // PROBADOR (fitting room): touch one to see it on our hero before buying it
+  // ---------------------------------------------------------------
+  createCosmeticsTab() {
+    this.sectionTitle(76, '💃 BAILES, MOCHILAS Y MASCOTAS DEL DÍA', '¡Cambian todos los días!');
+    this.cosmeticCards = cosmeticsOfTheDay().map((c, i) => this.makeCosmeticCard(c, 115 + i * 190, i));
+
+    // The probador: our hero, big, wearing our skin
+    this.add.text(400, 300, '🪞 PROBADOR · toca algo para probártelo', {
+      fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#cccccc',
+    }).setOrigin(0.5);
+    this.add.circle(400, 420, 95, 0x8a8a8a, 0.4);
+    this.tryHero = this.add.image(400, 420, skinTexture(this, loadSkins(this.registry).chosen));
+    fitImage(this.tryHero, 150);
+    this.takeOff = () => {};
+
+    this.message = this.add.text(290, 568, '', {
+      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ff8888',
+    }).setOrigin(0.5);
+
+    this.input.keyboard.on('keydown', (event) => {
+      if (event.key === 'Escape') this.goTo('TitleScene');
+      if (event.code === 'KeyB') this.switchTab();
+      const card = this.cosmeticCards[parseInt(event.key, 10) - 1];
+      if (card) this.buyCosmeticCard(card.cosmetic);
+    });
+
+    this.refresh();
+    this.cameras.main.fadeIn(250);
+  }
+
+  makeCosmeticCard(cosmetic, x, i) {
+    const rarity = RARITIES[cosmetic.rarity];
+    const color = Phaser.Display.Color.HexStringToColor(rarity.color).color;
+    const box = this.add.rectangle(x, 185, 170, 170, 0x222222).setStrokeStyle(3, color)
+      .setInteractive({ useHandCursor: true });
+    box.on('pointerdown', () => this.tryOn(cosmetic));
+    const type = COSMETIC_TYPES[cosmetic.type];
+    this.add.text(x - 74, 108, type.icon, { fontSize: '16px' });
+    fitImage(this.add.image(x, 148, cosmeticTexture(this, cosmetic.id)), 56);
+    this.add.text(x, 198, cosmetic.name, {
+      fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
+      align: 'center', wordWrap: { width: 160 },
+    }).setOrigin(0.5);
+    this.add.text(x, 220, `${rarity.name} · ${type.name.slice(0, -1)}`, {
+      fontFamily: 'Arial', fontSize: '12px', fontStyle: 'bold', color: rarity.color,
+    }).setOrigin(0.5);
+    const button = this.add.rectangle(x, 252, 140, 30, 0x1d3b24)
+      .setStrokeStyle(2, 0x66ee88).setInteractive({ useHandCursor: true });
+    const label = this.add.text(x, 252, '', {
+      fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    button.on('pointerdown', () => this.buyCosmeticCard(cosmetic));
+    return { cosmetic, label, button, key: i + 1 };
+  }
+
+  // Show it on the hero of the probador: a dance dances, a mochila or mascota goes on
+  tryOn(cosmetic) {
+    if (this.trying) return;
+    this.takeOff();
+    if (cosmetic.type === 'baile') {
+      this.trying = true;
+      playEmote(this, this.tryHero, cosmetic.id, () => { this.trying = false; });
+    } else {
+      this.takeOff = attachCosmetics(this, this.tryHero, { [cosmetic.type]: cosmetic.id });
+    }
+  }
+
+  buyCosmeticCard(cosmetic) {
+    const problem = buyCosmetic(cosmetic.id);
+    if (problem) this.say(problem, false);
+    else {
+      playSound('comprar');
+      const where = cosmetic.type === 'baile' ? 'Elígelo en el CASILLERO y baila con Q' : 'Ya lo llevas puesto (cámbialo en el CASILLERO)';
+      this.say(`¡Compraste ${cosmetic.name}! ${where}`, true);
+      this.tryOn(cosmetic);
+    }
+    this.refresh();
+  }
+
   // Show our coins, the skins we already have, and the backpack
   refresh() {
     this.refreshCoins();
+    if (this.tab === 'mas') {
+      const { owned } = loadCosmetics();
+      this.cosmeticCards.forEach((card) => {
+        if (owned.includes(card.cosmetic.id)) {
+          card.label.setText('✅ YA ES TUYO');
+          card.button.setFillStyle(0x333333);
+        } else {
+          card.label.setText(`🪙 ${COSMETIC_PRICES[card.cosmetic.rarity]}  [${card.key}]`);
+        }
+      });
+      return;
+    }
     const { won } = loadSkins(this.registry);
     this.skinCards.forEach((card) => {
       if (won.has(card.skin.id)) {

@@ -10,6 +10,7 @@
 
 import LevelScene from './LevelScene.js';
 import { loadLevel, newLevel, toLevelData } from '../data/customLevels.js';
+import { forgetWeather } from '../managers/WeatherManager.js';
 
 class CustomLevelScene extends LevelScene {
   constructor() {
@@ -37,6 +38,8 @@ class CustomLevelScene extends LevelScene {
     if (!this.isRetry) {
       this.registry.set('lives', 3);
       this.registry.set('score', 0);
+      // A new weather every time (but the same one after losing a life)
+      forgetWeather(this.registry, this.scene.key);
     }
     super.create();
 

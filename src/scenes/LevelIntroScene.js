@@ -5,6 +5,7 @@
 
 import Phaser from 'phaser';
 import { getLevels } from '../data/countryLevels.js';
+import { WEATHERS, weatherFor, forgetWeather } from '../managers/WeatherManager.js';
 
 class LevelIntroScene extends Phaser.Scene {
   constructor() {
@@ -52,6 +53,16 @@ class LevelIntroScene extends Phaser.Scene {
         fontStyle: 'italic',
       }).setOrigin(0.5);
     }
+
+    // The weather of this level: a NEW one every time we arrive at a level
+    // (if we lose a heart and try again, it stays the same — see WeatherManager.js)
+    const key = `LevelScene:${this.levelIndex}`;
+    forgetWeather(this.registry, key);
+    const weather = WEATHERS[weatherFor(this.registry, key)];
+    this.add.text(400, 400, `${weather.icon} ${weather.name}`, {
+      fontFamily: 'Arial', fontSize: '22px', fontStyle: 'bold', color: '#88ccff',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5);
 
     // "Get ready" text that pulses
     const readyText = this.add.text(400, 450, '¡Prepárate!', {

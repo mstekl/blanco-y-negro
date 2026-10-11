@@ -37,7 +37,8 @@ class EnemyMR3 extends Enemy {
   update() {
     if (this.isDefeated) return;
 
-    const hero = this.scene.hero;
+    // (with JUNTOS there are two heroes: we look at the closest one)
+    const hero = this.scene.closestHero ? this.scene.closestHero(this.x) : this.scene.hero;
     const dx = hero ? hero.x - this.x : 9999;
     const dy = hero ? hero.y - this.y : 9999;
 

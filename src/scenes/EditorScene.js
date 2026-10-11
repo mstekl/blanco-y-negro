@@ -30,8 +30,23 @@ const TOOLS = [
   { id: 'mr1', icon: '👾', name: 'MR.1', hint: 'MR.1 camina de un lado al otro.' },
   { id: 'mr2', icon: '🔫', name: 'MR.2', hint: 'MR.2 camina y DISPARA.' },
   { id: 'mr3', icon: '🚜', name: 'MR.3', hint: 'MR.3 en su tanque de gomas: ¡te persigue!' },
-  { id: 'color-pencil', icon: '🎨', name: 'LÁPIZ', hint: 'El Lápiz de Color: para disparar colores.' },
-  { id: 'shield', icon: '🛡', name: 'ESCUDO', hint: 'El escudo te protege de un golpe.' },
+  // These two have VARIANTS: touch the tool again (or press its number again) to change it
+  {
+    id: 'lapiz', variants: [
+      { type: 'color-pencil', icon: '🎨', name: 'LÁPIZ', hint: 'El Lápiz de Color: para disparar colores. (Tócalo otra vez: 🔥 ❄️ 🟢)' },
+      { type: 'lapiz-rojo', icon: '🔥', name: 'FUEGO', hint: 'Lápiz de fuego: atraviesa a los villanos. (Tócalo otra vez para cambiar)' },
+      { type: 'lapiz-azul', icon: '❄️', name: 'HIELO', hint: 'Lápiz de hielo: congela a los villanos. (Tócalo otra vez para cambiar)' },
+      { type: 'lapiz-verde', icon: '🟢', name: 'REBOTE', hint: 'Lápiz rebotador: los tiros rebotan. (Tócalo otra vez para cambiar)' },
+    ],
+  },
+  {
+    id: 'objeto', variants: [
+      { type: 'shield', icon: '🛡', name: 'ESCUDO', hint: 'El escudo te protege de un golpe. (Tócalo otra vez: 🛹 🚀 🧰)' },
+      { type: 'patineta', icon: '🛹', name: 'PATIN.', hint: 'Patineta: ¡muy rápido! (Tócalo otra vez para cambiar)' },
+      { type: 'cohete', icon: '🚀', name: 'COHETE', hint: 'Cohete: TURBO sin frenar. (Tócalo otra vez para cambiar)' },
+      { type: 'cofre', icon: '🧰', name: 'COFRE', hint: 'Cofre con una sorpresa. (Tócalo otra vez para cambiar)' },
+    ],
+  },
   { id: 'meta', icon: '🏁', name: 'META', hint: 'Toca donde quieres la bandera de la meta.' },
   { id: 'inicio', icon: '🦸', name: 'INICIO', hint: 'Toca donde empieza el héroe (¡necesita suelo debajo!).' },
   { id: 'borrar', icon: '🧽', name: 'BORRAR', hint: 'Toca algo para borrarlo.' },
@@ -114,7 +129,10 @@ class EditorScene extends Phaser.Scene {
     this.editButton = this.makeButton(200, 350, 180, '', 0xffdd00, () => this.editSlot());
     this.playButton = this.makeButton(400, 350, 180, '▶ JUGAR [J]', 0x66ee88, () => this.playSlot());
     this.deleteButton = this.makeButton(600, 350, 180, '🗑 BORRAR [B]', 0xff5555, () => this.deleteSlot());
-    this.makeButton(400, 430, 200, '🏠 SALA [ESC]', 0xffffff, () => this.goTo('TitleScene'));
+    this.makeButton(400, 430, 180, '🏠 SALA [ESC]', 0xffffff, () => this.goTo('TitleScene'));
+    // Share levels with a friend, with a secret word (see ShareLevelScene.js)
+    this.makeButton(180, 430, 200, '📥 RECIBIR [R]', 0x44aaff, () => this.goTo('ShareLevelScene', { mode: 'recibir' }));
+    this.shareButton = this.makeButton(620, 430, 200, '📤 COMPARTIR [C]', 0xff77bb, () => this.shareSlot());
 
     this.pickerMessage = this.add.text(400, 300, '', {
       fontFamily: 'Arial', fontSize: '16px', color: '#ffaaaa',
@@ -127,6 +145,8 @@ class EditorScene extends Phaser.Scene {
       else if (event.key === 'Enter' || event.code === 'KeyE') this.editSlot();
       else if (event.code === 'KeyJ') this.playSlot();
       else if (event.code === 'KeyB' || event.key === 'Delete') this.deleteSlot();
+      else if (event.code === 'KeyC') this.shareSlot();
+      else if (event.code === 'KeyR') this.goTo('ShareLevelScene', { mode: 'recibir' });
       else if (event.key === 'Escape') this.goTo('TitleScene');
     });
 
@@ -144,8 +164,8 @@ class EditorScene extends Phaser.Scene {
     });
     const hasLevel = this.slots[i] !== null;
     this.editButton.label.setText(hasLevel ? '✏ EDITAR [E]' : '✨ CREAR [E]');
-    // An empty slot can't be played or deleted
-    [this.playButton, this.deleteButton].forEach((button) => {
+    // An empty slot can't be played, deleted or shared
+    [this.playButton, this.deleteButton, this.shareButton].forEach((button) => {
       button.setVisible(hasLevel);
       button.label.setVisible(hasLevel);
     });
@@ -164,6 +184,12 @@ class EditorScene extends Phaser.Scene {
       return;
     }
     this.goTo('CustomLevelScene', { slot: this.picked });
+  }
+
+  // 📤 COMPARTIR: send this level to a friend
+  shareSlot() {
+    if (!this.slots[this.picked]) return;
+    this.goTo('ShareLevelScene', { mode: 'enviar', slot: this.picked });
   }
 
   deleteSlot() {
@@ -271,16 +297,21 @@ class EditorScene extends Phaser.Scene {
 
     // The 10 tools
     this.toolButtons = {};
+    this.toolLabels = {};
+    this.variant = { lapiz: 0, objeto: 0 }; // which variant each of those two tools is on
     TOOLS.forEach((tool, i) => {
       const x = 58 + i * 76;
+      const look = tool.variants ? tool.variants[0] : tool;
       const box = this.fixed(this.add.rectangle(x, 70, 70, 44, 0x333333)
         .setStrokeStyle(2, 0x777777).setInteractive({ useHandCursor: true }));
       box.on('pointerdown', () => this.selectTool(tool.id));
-      // A big picture and its name under it
-      this.fixed(this.add.text(x, 62, tool.icon, { fontSize: '20px' }).setOrigin(0.5));
-      this.fixed(this.add.text(x, 83, tool.name, {
-        fontFamily: 'Arial', fontSize: '11px', fontStyle: 'bold', color: '#ffffff',
-      }).setOrigin(0.5));
+      // A big picture and its name under it (we keep them, to change them with the variant)
+      this.toolLabels[tool.id] = {
+        icon: this.fixed(this.add.text(x, 62, look.icon, { fontSize: '20px' }).setOrigin(0.5)),
+        name: this.fixed(this.add.text(x, 83, look.name, {
+          fontFamily: 'Arial', fontSize: '11px', fontStyle: 'bold', color: '#ffffff',
+        }).setOrigin(0.5)),
+      };
       // The number key of the tool, small in the corner
       this.fixed(this.add.text(x - 32, 50, `${(i + 1) % 10}`, {
         fontFamily: 'Arial', fontSize: '10px', color: '#aaaaaa',
@@ -347,13 +378,21 @@ class EditorScene extends Phaser.Scene {
   }
 
   selectTool(id) {
+    const tool = TOOLS.find((t) => t.id === id);
+    // Choosing a tool with variants that is ALREADY chosen changes to its next variant
+    if (tool.variants && this.tool === id) {
+      this.variant[id] = (this.variant[id] + 1) % tool.variants.length;
+      const look = tool.variants[this.variant[id]];
+      this.toolLabels[id].icon.setText(look.icon);
+      this.toolLabels[id].name.setText(look.name);
+    }
     this.tool = id;
     Object.entries(this.toolButtons).forEach(([toolId, box]) => {
       const on = toolId === id;
       box.setStrokeStyle(on ? 4 : 2, on ? 0xffdd00 : 0x777777);
       box.setFillStyle(on ? 0x665500 : 0x333333);
     });
-    this.hintText.setText(TOOLS.find((t) => t.id === id).hint);
+    this.hintText.setText(tool.variants ? tool.variants[this.variant[id]].hint : tool.hint);
   }
 
   // --- Using the tools ---
@@ -392,10 +431,11 @@ class EditorScene extends Phaser.Scene {
       return this.changed();
     }
 
-    if (this.tool === 'color-pencil' || this.tool === 'shield') {
+    if (this.tool === 'lapiz' || this.tool === 'objeto') {
       if (level.powerups.length >= MAX_POWERUPS) return this.showMessage('¡Ya hay muchos poderes!');
+      const variants = TOOLS.find((t) => t.id === this.tool).variants;
       level.powerups.push({
-        type: this.tool,
+        type: variants[this.variant[this.tool]].type,
         x: Phaser.Math.Clamp(snap(x), 32, LEVEL_WIDTH - 32),
         y: Phaser.Math.Clamp(snap(y), PLATFORM_TOP, GROUND_Y - 32),
       });

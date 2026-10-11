@@ -47,7 +47,8 @@ class EnemyMR2 extends Enemy {
 
     // --- Shooting logic ---
     const now = this.scene.time.now;
-    const hero = this.scene.hero;
+    // (with JUNTOS there are two heroes: we look at the closest one)
+    const hero = this.scene.closestHero ? this.scene.closestHero(this.x) : this.scene.hero;
     if (!hero || !hero.active) return;
 
     // Only shoot if enough time has passed since last shot

@@ -138,12 +138,13 @@ class HUDManager {
   }
 
   // Show or hide the Color Gun indicator
-  showColorGun(hasGun) {
+  // gun = one of the colored pencils (COLOR_GUNS in Projectile.js), or nothing = the rainbow one
+  showColorGun(hasGun, gun = { name: 'Lápiz de Color', icon: '🎨' }) {
     if (hasGun && this.halfScreen) {
       // In the race each player has their own shoot key
-      this.colorGunText.setText(`🎨 Lápiz de Color [${this.shootKey}]`);
+      this.colorGunText.setText(`${gun.icon} ${gun.name} [${this.shootKey}]`);
     } else if (hasGun) {
-      this.colorGunText.setText('🎨 Lápiz de Color [Z/X]');
+      this.colorGunText.setText(`${gun.icon} ${gun.name} [Z/X]`);
       // Update help text to include shooting controls
       this.helpText.setText('← → Mover  |  ↑ Saltar  |  Shift Correr  |  Z/X Disparar');
     } else {

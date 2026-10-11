@@ -22,6 +22,10 @@ import { loadProfile } from '../data/profile.js';
 import { addCoins, makeCoinTexture } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
 import { playSound } from '../audio/Sound.js';
+import { skinTexture, fitImage } from '../data/skins.js';
+import { equipped } from '../data/cosmetics.js';
+import { playEmote } from '../sprites/Cosmetics.js';
+import { forgetWeather } from '../managers/WeatherManager.js';
 
 // We win when we finish this many levels (3 levels done = we got to level 4)
 const LEVELS_TO_WIN = 3;
@@ -127,6 +131,8 @@ class RaceScene extends Phaser.Scene {
     this.started = false;
     this.finished = false;
     this.leaving = false;
+    // A new race = new weather in every level (both halves share it, see WeatherManager.js)
+    forgetWeather(this.registry, 'carrera:');
 
     // The machine must be ready BEFORE the level starts (the level draws its ghost)
     if (this.how === 'maquina') {
@@ -183,6 +189,8 @@ class RaceScene extends Phaser.Scene {
       else if (event.key === 'Enter' && this.finished) this.leave();
       else if (event.code === 'KeyR' && this.finished) this.askRematch();
       else if (this.net && EMOJIS[parseInt(event.key, 10) - 1]) this.sendEmoji(parseInt(event.key, 10) - 1);
+      // Q = our hero dances (see Hero.js), and online our friends see it too
+      else if (this.net && event.code === 'KeyQ') this.sendDance(false);
     });
 
     this.countdown();
@@ -331,6 +339,8 @@ class RaceScene extends Phaser.Scene {
       this.checkLastOneStanding();
     } else if (msg.t === 'emoji') {
       this.showFriendEmoji(msg.i, r.name);
+    } else if (msg.t === 'baile') {
+      this.showFriendDance(msg, r.name);
     } else if (msg.t === 'revancha') {
       r.wantsRematch = true;
       this.updateRematchStatus();
@@ -404,6 +414,43 @@ class RaceScene extends Phaser.Scene {
         fontFamily: 'Arial', fontSize: '10px', color: '#aaaaaa',
       }).setDepth(51);
       button.on('pointerdown', () => this.sendEmoji(i));
+    });
+
+    // Under them: 💃 = dance! (or Q). Our friends see our hero dancing
+    this.lastDanceTime = 0;
+    const y = 160 + EMOJIS.length * 52;
+    const button = this.add.rectangle(758, y, 70, 44, 0x000000, 0.55)
+      .setStrokeStyle(2, 0xff77bb).setInteractive({ useHandCursor: true }).setDepth(50);
+    this.add.text(758, y, '💃', { fontSize: '26px' }).setOrigin(0.5).setDepth(51);
+    this.add.text(726, y - 16, 'Q', { fontFamily: 'Arial', fontSize: '10px', color: '#aaaaaa' }).setDepth(51);
+    button.on('pointerdown', () => this.sendDance(true));
+  }
+
+  // Send our dance to our friends. "alsoHere" = make our own hero dance too
+  // (with the Q key it already dances by itself, see Hero.js)
+  sendDance(alsoHere) {
+    if (this.time.now - this.lastDanceTime < 1500) return;
+    this.lastDanceTime = this.time.now;
+    this.net.send({ t: 'baile', id: equipped('baile') || 'saludo', skin: this.registry.get('skin') || 'heroe' });
+    if (alsoHere) {
+      const level = this.scene.get(this.players[0].scene);
+      if (level.hero && level.hero.active) level.hero.dance();
+    }
+  }
+
+  // A friend danced: we see their hero dancing in a little window, with their name
+  showFriendDance(msg, name) {
+    const glow = this.add.circle(0, 0, 60, 0x8a8a8a, 0.6).setStrokeStyle(3, 0xff77bb);
+    const hero = this.add.image(0, 0, skinTexture(this, msg.skin));
+    fitImage(hero, 80);
+    const label = this.add.text(0, -78, `${name} 💃`, {
+      fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: '#ff9933',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5);
+    const box = this.add.container(400, 230, [glow, hero, label]).setDepth(200).setScale(0.3);
+    this.tweens.add({ targets: box, scale: 1, duration: 250, ease: 'Back.easeOut' });
+    playEmote(this, hero, msg.id, () => {
+      this.tweens.add({ targets: box, alpha: 0, duration: 400, onComplete: () => box.destroy() });
     });
   }
 

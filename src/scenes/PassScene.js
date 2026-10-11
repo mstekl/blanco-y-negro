@@ -23,6 +23,8 @@ import { SKIN_LIST, skinTexture, fitImage } from '../data/skins.js';
 import { makeCoinTexture, RARITIES, SKIN_RARITY } from '../data/coins.js';
 import Projectile from '../sprites/Projectile.js';
 import { playSound } from '../audio/Sound.js';
+import { findCosmetic, COSMETIC_TYPES } from '../data/cosmetics.js';
+import { cosmeticTexture } from '../sprites/Cosmetics.js';
 
 // Where the 8 prize cards go: 4 columns and 2 rows (GRATIS on top, PREMIUM below)
 const CARD_W = 96;
@@ -213,17 +215,23 @@ class PassScene extends Phaser.Scene {
   prizeName(prize) {
     if (prize.type === 'coins') return `${prize.amount} monedas`;
     if (prize.type === 'item') return SHOP_ITEMS.find((it) => it.id === prize.item).name;
+    if (prize.type === 'cosmetic') {
+      const cosmetic = findCosmetic(prize.cosmetic);
+      return `${COSMETIC_TYPES[cosmetic.type].icon} ${cosmetic.name}`;
+    }
     return SKIN_LIST.find((s) => s.id === prize.skin)?.name || prize.skin;
   }
 
   prizeTexture(prize) {
     if (prize.type === 'coins') return 'coin';
     if (prize.type === 'item') return SHOP_ITEMS.find((it) => it.id === prize.item).texture;
+    if (prize.type === 'cosmetic') return cosmeticTexture(this, prize.cosmetic);
     return skinTexture(this, prize.skin);
   }
 
-  // Coins and power-ups are COMÚN; skins have their own rarity
+  // Coins and power-ups are COMÚN; skins, bailes, mochilas and mascotas have their own rarity
   prizeRarity(prize) {
+    if (prize.type === 'cosmetic') return RARITIES[findCosmetic(prize.cosmetic).rarity];
     return RARITIES[prize.type === 'skin' ? SKIN_RARITY[prize.skin] || 'raro' : 'comun'];
   }
 

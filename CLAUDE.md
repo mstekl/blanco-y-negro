@@ -33,6 +33,9 @@ blanco-y-negro/
 │   │   ├── missions.js        # The MISIONES DEL DÍA: the list, today's 3, progress, prizes (reportMission)
 │   │   ├── pass.js            # PASE BLANCO Y NEGRO: stars, 100 levels, medals, 10 pages of prizes, seasons, PREMIUM
 │   │   ├── shop.js            # TIENDA power-ups and the backpack (mochila)
+│   │   ├── cosmetics.js       # BAILES, MOCHILAS and MASCOTAS: the list, which we have, which we wear, shop of the day
+│   │   ├── achievements.js    # LOGROS: counts everything forever (countStat) and gives trophies with coins
+│   │   ├── chests.js          # What comes out of a COFRE: coins, stars, a surprise skin, or a baile/mochila/mascota
 │   │   ├── customLevels.js    # The 5 levels made in the editor
 │   │   ├── coins.js           # Coins, the pencil price, and how rare each skin is
 │   │   ├── countryThemes.js   # Which landmark each country has in the background
@@ -55,8 +58,11 @@ blanco-y-negro/
 │   │   ├── SurvivalScene.js   # SUPERVIVENCIA: alone in an arena, waves of villains, how long can you last?
 │   │   ├── MissionsScene.js   # MISIONES DEL DÍA: the 3 missions of today and how far we got
 │   │   ├── PassScene.js       # PASE BLANCO Y NEGRO tab: like Fortnite: pages of 8 prizes, the chosen one big and turning
-│   │   ├── ShopScene.js       # TIENDA tab: 4 skins of the day + power-ups for the backpack
-│   │   ├── LockerScene.js     # CASILLERO tab: SKINS, TU JUGADOR and MISIONES
+│   │   ├── ShopScene.js       # TIENDA tab: 4 skins of the day + power-ups; second tab (B): bailes, mochilas, mascotas + PROBADOR
+│   │   ├── LockerScene.js     # CASILLERO tab: SKINS, TU JUGADOR, MISIONES, BAILES, ACCESORIOS and LOGROS
+│   │   ├── CosmeticsScene.js  # CASILLERO: choose the baile, mochila and mascota (tabs 1 2 3)
+│   │   ├── AchievementsScene.js # CASILLERO: the LOGROS (trophies) and how far we are
+│   │   ├── ShareLevelScene.js # Share a level of the editor with a friend (secret word, PeerJS)
 │   │   ├── EditorScene.js     # EDITOR DE NIVELES: 5 slots, draw a level with tools
 │   │   ├── CustomLevelScene.js # Plays a level made in the editor
 │   │   ├── RaceScene.js       # The race: 2 players split screen (RaceLeft + RaceRight are copies of LevelScene), or alone on the whole screen (online / máquina) with progress bars. Also runs BÚSQUEDA
@@ -74,12 +80,14 @@ blanco-y-negro/
 │   │   ├── SkinPack2.js       # 50 more pencil skins (jobs, animals, food, legends)
 │   │   ├── PencilSkins.js     # Joins both packs in one list
 │   │   ├── PassSkins.js       # The 12 skins of the PASE BLANCO Y NEGRO (never from pencils)
+│   │   ├── Cosmetics.js       # How the bailes, mochilas and mascotas look and move: cosmeticTexture, attachCosmetics, playEmote
 │   │   ├── StormCloud.js      # Level 5 cloud that chases you and throws pencils
 │   │   └── Projectile.js      # Bullets (hero & enemy)
 │   ├── managers/
 │   │   ├── LevelManager.js    # Builds levels from data
 │   │   ├── LandmarkArt.js     # Draws the landmarks (Chichén Itzá, Statue of Liberty, CN Tower...)
-│   │   ├── PowerupManager.js  # Power-up effects
+│   │   ├── PowerupManager.js  # Power-up effects (also colored pencils, vehicles and chests)
+│   │   ├── WeatherManager.js  # Random weather: día, noche (flashlight), lluvia, nieve (slippery)
 │   │   └── HUDManager.js      # Score, lives, UI
 │   ├── online/
 │   │   ├── Net.js             # Online connection with PeerJS: the secret word becomes the name to find the creator, who is the CENTER that passes every message on to everybody (up to 4 players)
@@ -106,7 +114,9 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - **Z / X** — Fire Color Gun (after picking up Color Pencil)
 - **Enter** — Start game / Retry
 - **Race (CARRERA)** — player 1 (left half): A D move, W jump, S shoot · player 2 (right half): ← → move, ↑ jump, ↓ shoot. No running in the race, so both go at the same speed
-- **Phones and tablets** — buttons on the screen: ◀ ▶ walk, ▲ jump, 🎨 shoot, CORRER run, OK (= Enter), ESC, and ⌨ for a small keyboard (it opens by itself in the Hacks boxes). The buttons pretend to be keyboard keys, so the rest of the game did not need changes. Add ?tactil to the URL to see them on the computer
+- **Phones and tablets** — buttons on the screen: ◀ ▶ walk, ▲ jump, 🎨 shoot, CORRER run, 💃 dance, OK (= Enter), ESC, and ⌨ for a small keyboard (it opens by itself in the Hacks boxes). The buttons pretend to be keyboard keys, so the rest of the game did not need changes. Add ?tactil to the URL to see them on the computer
+- **Q** — Dance (the baile chosen in the CASILLERO), in the sala and in the levels. In JUNTOS player 2 dances with L
+- **JUNTOS** — player 1: A D move, W jump, S shoot · player 2: ← → move, ↑ jump, ↓ shoot
 
 ## Game Features
 - 6 levels with increasing difficulty (castle entrance at level 4, pipe at level 5, final boss in level 6)
@@ -135,6 +145,14 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - TIENDA: 4 skins of the day (picked from the date, never pass skins; 50 / 100 / 200 / 400 coins by rarity) and the power-ups Escudo (15), Vida extra (20), Lápiz de color (25), up to 5 of each in the backpack. When JUGAR or SUPERVIVENCIA starts, the hero gets one of each thing in the backpack (`takeShopItems` / `useShopItems` in `src/data/shop.js`)
 - SUPERVIVENCIA ONLINE: SUPERVIVENCIA asks ONLINE or SOLO. Online (2 to 4, same secret word) everybody has the same waves, a line per player shows hearts and wave, and the last one still alive wins (coins: survival coins + 10 + 5 per rival). REVANCHA when everybody presses R
 - EDITOR DE NIVELES (E): 5 slots saved in the browser. Tools 1-9 and 0: SUELO (toggle ground columns, makes pits), PLATAFORMA, MR.1, MR.2, MR.3, LÁPIZ, ESCUDO, META, INICIO, BORRAR. ◀ ▶ or the mini-map move along the 2400px level. GUARDAR, PROBAR (plays it in CustomLevelScene), SALIR. Custom levels have no coins (so nobody can farm them) and do not count for missions
+- BAILES, MOCHILAS y MASCOTAS (`src/data/cosmetics.js`, drawn and animated in `src/sprites/Cosmetics.js`), like in Fortnite: they only look cool. 💃 8 bailes (everybody has the Saludo): press Q (or 💃 on touch screens, or 💃 BAILAR in the sala) and the hero dances. 🎒 6 mochilas on the hero's back (alas, cohete...) and 🐾 7 mascotas that follow the hero (perrito, unicornio...). They show in the sala and in every level, survival and race (not on player 2). Won in the TIENDA (second tab "BAILES Y MÁS", 4 of the day, 40/80/150/300 coins by rarity, with a PROBADOR to try them first) or in the PASE (the ones with `pass: true` are only there: GRATIS pages 2, 4, 7 and PREMIUM pages 3, 6, 9). Chosen in CASILLERO → BAILES / ACCESORIOS. ONLINE: the 💃 button (or Q) in the race sends our dance, and our friends see our hero dancing in a little window
+- JUNTOS (sala button, or J): two players in the SAME story on the same screen (`this.coop` in `LevelScene.js`). Player 1 = our skin with W A D + S, player 2 = the normal hero (light blue if player 1 is the hero too) with the arrows + ↓. They share the hearts and the points; the camera looks between them; one that stays 700px behind jumps next to the other; falling in a pit costs a heart but you come back next to your friend. Either one can reach the goal. Shooting villains aim at the closest hero. On touch screens each half gets its own buttons
+- LOGROS (`src/data/achievements.js`, CASILLERO → LOGROS): 23 trophies. Every `reportMission` event is also counted FOREVER (`countStat`), plus `jefe` (CelebrationScene), `baile`, `juntos` and `misiones`. Some look at what we have (skins, bailes/mochilas/mascotas, the pass level, the record). Each logro gives coins and a 🏆 message at the top
+- LÁPICES DE COLORES (`COLOR_GUNS` in `src/sprites/Projectile.js`), found in the levels: 🔥 `lapiz-rojo` = fire (double damage, goes THROUGH the villains), ❄️ `lapiz-azul` = ice (the villain becomes a block of ice for 3.5 s: it can't hurt you and you can STAND on it; flying ones stay in the air), 🟢 `lapiz-verde` = bouncing shots (5 bounces). Picking one gives the gun with that kind of shot (`hero.gunColor`); the normal Lápiz de Color gives the rainbow shot back
+- VEHÍCULOS (in the levels, `Hero.mountVehicle`): 🛹 `patineta` = 10 s much faster, and jumping does a spin TRICK (+50 points); 🚀 `cohete` = 4 s TURBO forward that can't stop or turn, and knocks out the villains it crashes into. They blink before they end
+- COFRES: one hidden chest per level (`cofre`, never in the race). It opens with an animation and gives a surprise (`src/data/chests.js`): coins (60%), ⭐ stars for the pass (25%), a surprise skin (10%) or a baile/mochila/mascota of the shop (5%); something we already have gives coins instead. In levels 1 and 2 the chest shines with gold sparkles; from level 3 on there is no hint
+- CLIMA (`src/managers/WeatherManager.js`): every time we play a level the weather is picked at random (día twice as often): 🌙 noche (dark, with a flashlight around each hero and stars), 🌧 lluvia (rain and lightning), ❄️ nieve (snow, and the floor is SLIPPERY). The "Nivel X" screen says which one came out. Losing a heart keeps the same weather; in every mode (also race, survival and the editor's levels), and in the race both halves get the same one
+- COMPARTIR NIVELES (`src/scenes/ShareLevelScene.js`): in MIS NIVELES, 📤 COMPARTIR (C) gives a secret word; the friend chooses 📥 RECIBIR (R) and types it (both with the game open). The level is cleaned (`cleanReceivedLevel` in `customLevels.js`, never trusted as it comes) and saved in the first empty slot, then JUGAR or EDITAR. The editor tools LÁPIZ and ESCUDO have VARIANTS: touch them again (or press their number again) to switch to 🔥 ❄️ 🟢 and 🛹 🚀 🧰
 - SOUND: retro sounds and music made with code (`src/audio/Sound.js`): jump, coin, shoot, stomp, hit, power-up, pencils, countdown, waves, win, lose, missions, buying. Music in the sala and in the levels. 🔊/🔇 in the sala (remembered)
 - Our player (TU JUGADOR): the first time the game opens, before the sala, we write a name (more than 3 letters and less than 14) and pick an avatar (ANY of the 94 skins, even ones not won yet; it is only the picture other players see, not the skin we wear). It is saved in the browser (`src/data/profile.js`). It shows in the top-left corner of the sala; touching it (or N) changes it. The online race and search show it to the other player
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over

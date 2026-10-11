@@ -55,6 +55,10 @@ export const levels = [
     // Power-ups — collect them for special abilities!
     powerups: [
       { type: 'extra-life', x: 614, y: 260 },   // Hidden platform above the platform at x=550
+      { type: 'patineta', x: 300, y: 545 },        // 🛹 a skateboard right at the start!
+      { type: 'lapiz-verde', x: 1100, y: 535 },    // 🟢 the bouncing pencil
+      { type: 'cohete', x: 1650, y: 545 },         // 🚀 TURBO to the end (no pits here)
+      { type: 'cofre', x: 996, y: 284 },           // 🧰 a chest on the high platform (it shines)
     ],
 
     // Background buildings silhouettes for parallax
@@ -126,6 +130,9 @@ export const levels = [
       { type: 'color-pencil', x: 1000, y: 280 },  // On a high platform — grants shooting!
       { type: 'shield', x: 2200, y: 290 },         // Shield to protect from enemies ahead
       { type: 'extra-life', x: 2664, y: 280 },     // Hidden platform above the platform at x=2600
+      { type: 'lapiz-rojo', x: 2000, y: 535 },     // 🔥 the fire pencil
+      { type: 'patineta', x: 2450, y: 545 },
+      { type: 'cofre', x: 1365, y: 552 },          // 🧰 a chest at the edge of a pit (it shines)
     ],
 
     buildings: [
@@ -204,6 +211,9 @@ export const levels = [
       { type: 'color-pencil', x: 580, y: 300 },   // Get the gun early — you'll need it!
       { type: 'shield', x: 1300, y: 260 },
       { type: 'extra-life', x: 2864, y: 200 },    // Hidden platform above the platform at x=2800
+      { type: 'lapiz-azul', x: 1000, y: 535 },     // ❄️ the ice pencil
+      { type: 'cohete', x: 3150, y: 545 },
+      { type: 'cofre', x: 2105, y: 552 },          // 🧰 hidden at the edge of a pit
       { type: 'shield', x: 3400, y: 340 },
     ],
 
@@ -290,6 +300,9 @@ export const levels = [
       { type: 'extra-life', x: 546, y: 240 },    // Hidden platform above the platform at x=450
       { type: 'shield', x: 1150, y: 260 },
       { type: 'extra-life', x: 1914, y: 320 },   // Hidden platform above the platform at x=1850
+      { type: 'patineta', x: 800, y: 545 },
+      { type: 'lapiz-verde', x: 1500, y: 535 },
+      { type: 'cofre', x: 1910, y: 552 },          // 🧰 hidden at the edge of a pit
       { type: 'shield', x: 2550, y: 260 },         // Shield before boss fight!
       { type: 'extra-life', x: 2764, y: 320 },     // Hidden platform in boss arena
     ],
@@ -361,6 +374,8 @@ export const levels = [
     powerups: [
       { type: 'color-pencil', x: 340, y: 380 },   // Gun right at the start
       { type: 'extra-life', x: 596, y: 240 },     // Hidden platform above the platform at x=500
+      { type: 'lapiz-azul', x: 1000, y: 535 },
+      { type: 'cofre', x: 1490, y: 552 },          // 🧰 hidden at the edge of a pit
       { type: 'shield', x: 1250, y: 280 },
       { type: 'shield', x: 2200, y: 380 },        // Shield before the final boss!
       { type: 'extra-life', x: 2814, y: 220 },    // Hidden platform in boss arena
@@ -441,6 +456,8 @@ export const levels = [
     powerups: [
       { type: 'color-pencil', x: 340, y: 380 },   // Gun right at the start
       { type: 'extra-life', x: 576, y: 240 },     // Hidden platform above the platform at x=480
+      { type: 'lapiz-rojo', x: 900, y: 535 },      // 🔥 fire against the final boss!
+      { type: 'cofre', x: 590, y: 552 },           // 🧰 hidden at the edge of a pit
       { type: 'shield', x: 1250, y: 270 },
       { type: 'shield', x: 2080, y: 290 },        // Shield before the final boss!
       { type: 'extra-life', x: 2914, y: 220 },    // Hidden platform in boss arena

@@ -16,6 +16,8 @@ import { PENCIL_SKINS } from './PencilSkins.js';
 import { PASS_SKINS } from './PassSkins.js';
 import { makeSkinTexture } from './SkinParts.js';
 import { playSound } from '../audio/Sound.js';
+import { attachCosmetics, playEmote } from './Cosmetics.js';
+import { equipped } from '../data/cosmetics.js';
 
 // The secret skins! They are won with the "Hacks de sala" on the title screen
 // ("B Y N" = MR.1 and MR.2, "lebron" = crazy dog, "goma" = MR.3 on his eraser tank)
@@ -62,10 +64,15 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
   //   'normal' = arrows AND WASD both work (one player)
   //   'wasd'   = only W A D (+ S to shoot): player 1 in the race
   //   'arrows' = only the arrows (+ ↓ to shoot): player 2 in the race
-  constructor(scene, x, y, controls = 'normal') {
+  //   'arrows' is also player 2 in JUNTOS (two players in the same story).
+  // "options" can change two things:
+  //   options.skin:      the skin to wear (null = the normal hero) instead of the one chosen in the sala
+  //   options.cosmetics: false = no mochila and no mascota (player 2 doesn't wear OURS)
+  constructor(scene, x, y, controls = 'normal', options = {}) {
     // Which picture do we wear? The normal hero, or a secret skin chosen in the sala
     // (the registry is the memory shared by all scenes)
-    const skin = SKINS[scene.registry.get('skin')];
+    const skinId = options.skin !== undefined ? options.skin : scene.registry.get('skin');
+    const skin = SKINS[skinId];
     if (skin && !scene.textures.exists(skin.texture)) skin.make.createTexture(scene);
 
     // Create the hero sprite using our placeholder texture
@@ -101,13 +108,17 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     // Set up keyboard controls: a list of keys for each action
     const K = Phaser.Input.Keyboard.KeyCodes;
     const key = (code) => scene.input.keyboard.addKey(code);
+    // (Q = dance for player 1, L = dance for player 2)
     if (controls === 'wasd') {
       // Race, player 1 (left half). No run key: both players walk at the same speed
-      this.keys = { left: [key(K.A)], right: [key(K.D)], jump: [key(K.W)], shoot: [key(K.S)], run: [] };
+      this.keys = {
+        left: [key(K.A)], right: [key(K.D)], jump: [key(K.W)], shoot: [key(K.S)], run: [], dance: [key(K.Q)],
+      };
     } else if (controls === 'arrows') {
       // Race, player 2 (right half)
       this.keys = {
         left: [key(K.LEFT)], right: [key(K.RIGHT)], jump: [key(K.UP)], shoot: [key(K.DOWN)], run: [],
+        dance: [key(K.L)],
       };
     } else {
       // One player: arrows or WASD to move, Shift to run,
@@ -118,8 +129,85 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
         jump: [key(K.UP), key(K.W), key(K.SPACE)],
         shoot: [key(K.Z), key(K.X)],
         run: [key(K.SHIFT)],
+        dance: [key(K.Q)],
       };
     }
+
+    // Our mochila and mascota follow us (see Cosmetics.js)
+    this.dancing = false;
+    if (options.cosmetics !== false) attachCosmetics(scene, this);
+
+    // A colored pencil ('rojo', 'azul', 'verde') or null = the normal rainbow shot
+    this.gunColor = null;
+    // Snow makes the floor slippery (WeatherManager turns this on)
+    this.slippery = false;
+    // The vehicle we ride: null, 'patineta' or 'cohete' (picked up in the levels)
+    this.vehicle = null;
+    this.vehicleImage = null;
+    scene.events.on('postupdate', this.moveVehicle, this);
+    this.once('destroy', () => scene.events.off('postupdate', this.moveVehicle, this));
+  }
+
+  // ---------------------------------------------------------------
+  // Vehicles!
+  //   🛹 PATINETA: we go much faster for 10 seconds (we still steer and stop)
+  //   🚀 COHETE:   TURBO forward for 4 seconds: it can't stop or turn,
+  //                and it knocks out the villains it touches!
+  // ---------------------------------------------------------------
+  mountVehicle(type) {
+    this.dismount(true);
+    this.vehicle = type;
+    this.vehicleImage = this.scene.add.image(this.x, this.y, `powerup-${type}`).setDepth(this.depth + 0.2);
+    const seconds = type === 'cohete' ? 4 : 10;
+    // The last 2 seconds it blinks, so we know it is about to end
+    this.vehicleBlink = this.scene.time.delayedCall((seconds - 2) * 1000, () => {
+      if (this.vehicleImage) {
+        this.scene.tweens.add({ targets: this.vehicleImage, alpha: 0.3, duration: 150, yoyo: true, repeat: 6 });
+      }
+    });
+    this.vehicleTimer = this.scene.time.delayedCall(seconds * 1000, () => this.dismount());
+  }
+
+  // Get off the vehicle (quiet = no puff of smoke, like when we enter the castle)
+  dismount(quiet = false) {
+    if (this.vehicleTimer) this.vehicleTimer.remove();
+    if (this.vehicleBlink) this.vehicleBlink.remove();
+    if (this.vehicleImage) {
+      if (!quiet && this.scene.powerupManager) {
+        this.scene.powerupManager.spawnCollectParticles(this.vehicleImage.x, this.vehicleImage.y);
+      }
+      this.vehicleImage.destroy();
+    }
+    this.vehicle = null;
+    this.vehicleImage = null;
+  }
+
+  // After every frame: the skateboard goes under our feet, the rocket on our back
+  moveVehicle() {
+    if (!this.vehicleImage || !this.active) return;
+    const facing = this.facingRight ? 1 : -1;
+    if (this.vehicle === 'patineta') {
+      this.vehicleImage.setPosition(this.x, this.body.bottom + 4);
+    } else {
+      this.vehicleImage.setPosition(this.x - facing * 8, this.y + 2);
+    }
+    this.vehicleImage.setFlipX(!this.facingRight).setVisible(this.visible);
+  }
+
+  // Dance! (only standing on the ground). The scene hears "baile" (for the LOGROS)
+  dance() {
+    const onGround = this.body.touching.down || this.body.blocked.down;
+    if (this.dancing || !onGround) return;
+    this.dancing = true;
+    this.setVelocity(0, 0);
+    // While dancing, the dance moves the hero, not the physics
+    this.body.moves = false;
+    playEmote(this.scene, this, equipped('baile') || 'saludo', () => {
+      if (!this.active) return;
+      this.body.moves = true;
+      this.dancing = false;
+    });
+    this.emit('baile');
   }
 
   // Is any key of this list held down?
@@ -135,28 +223,48 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
   // update() runs every frame (60 times per second!)
   // This is where we read the keyboard and move the hero
   update() {
+    // While dancing we can't move (the dance ends by itself)
+    if (this.dancing) {
+      this.updateShield();
+      return;
+    }
+    if (this.anyJustDown(this.keys.dance)) {
+      this.dance();
+      return;
+    }
+
     const onGround = this.body.touching.down || this.body.blocked.down;
 
     // --- Horizontal movement ---
     const leftPressed = this.anyDown(this.keys.left);
     const rightPressed = this.anyDown(this.keys.right);
     const running = this.anyDown(this.keys.run);
+    let speed = running ? HERO.RUN_SPEED : HERO.WALK_SPEED;
+    // On the skateboard we always go fast!
+    if (this.vehicle === 'patineta') speed = HERO.RUN_SPEED * 1.3;
 
-    if (leftPressed) {
+    // The speed we WANT to go at (negative = left)
+    let wanted = 0;
+    if (this.vehicle === 'cohete') {
+      // The rocket: TURBO forward, and it can't stop or turn around!
+      wanted = (this.facingRight ? 1 : -1) * HERO.RUN_SPEED * 1.8;
+    } else if (leftPressed) {
       // Move left (negative X = left on screen)
-      const speed = running ? HERO.RUN_SPEED : HERO.WALK_SPEED;
-      this.setVelocityX(-speed);
+      wanted = -speed;
       this.facingRight = false;
       this.setFlipX(true); // Mirror the sprite to face left
     } else if (rightPressed) {
       // Move right (positive X = right on screen)
-      const speed = running ? HERO.RUN_SPEED : HERO.WALK_SPEED;
-      this.setVelocityX(speed);
+      wanted = speed;
       this.facingRight = true;
       this.setFlipX(false);
+    }
+    // On snow (slippery = true) we speed up and stop slowly, like on ice.
+    // Otherwise we go at the wanted speed right away (and stop when no key is pressed)
+    if (this.slippery && onGround) {
+      this.setVelocityX(this.body.velocity.x + (wanted - this.body.velocity.x) * 0.05);
     } else {
-      // No key pressed — stop horizontal movement
-      this.setVelocityX(0);
+      this.setVelocityX(wanted);
     }
 
     // --- Jumping (with double jump!) ---
@@ -174,6 +282,14 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
         ? HERO.JUMP_VELOCITY
         : HERO.JUMP_VELOCITY * 0.75;
       this.setVelocityY(jumpPower);
+      // A TRICK on the skateboard: a full spin in the air! (the scene gives the points)
+      if (this.vehicle === 'patineta' && this.jumpCount === 0) {
+        this.scene.tweens.add({
+          targets: this, angle: this.facingRight ? 360 : -360, duration: 550,
+          onComplete: () => this.setAngle(0),
+        });
+        this.emit('truco');
+      }
       this.jumpCount += 1;
       playSound('saltar');
     }
@@ -213,6 +329,7 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
   // Hide all shield pictures (used when the hero walks into a door or pipe)
   hideShields() {
     this.shieldImages.forEach((img) => img.setVisible(false));
+    this.dismount(true); // (and the vehicle goes away too)
   }
 
   // Keep the shields in front of the hero, covering half of the body
@@ -246,7 +363,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     projectile.fire(
       this.x + this.gunAt[0] * direction, this.y + this.gunAt[1],
       direction,
-      PROJECTILE.HERO_SPEED
+      PROJECTILE.HERO_SPEED,
+      this.gunColor || 'normal' // a colored pencil changes the shot (see Projectile.js)
     );
   }
 

@@ -90,6 +90,46 @@ function writeAll(slots) {
   }
 }
 
+// The things the editor can put in a level (besides villains)
+export const POWERUP_TYPES = [
+  'color-pencil', 'lapiz-rojo', 'lapiz-azul', 'lapiz-verde', 'shield', 'patineta', 'cohete', 'cofre',
+];
+
+// The first empty slot (0 to 4), or -1 if all 5 have a level
+export function firstEmptySlot() {
+  return loadAllLevels().findIndex((level) => level === null);
+}
+
+// A level that a FRIEND sent us (see ShareLevelScene.js). It came from another
+// device, so we don't trust it: we build a NEW clean level, keeping only the
+// things that make sense (right types, numbers inside the level, not too many).
+// Gives back null if it doesn't look like a level at all.
+export function cleanReceivedLevel(level) {
+  if (!level || typeof level !== 'object' || !Array.isArray(level.ground)) return null;
+  const num = (value, min, max) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : min;
+  };
+  const point = (p) => ({ x: num(p && p.x, 0, LEVEL_WIDTH), y: num(p && p.y, 0, 600) });
+  const list = (items, max) => (Array.isArray(items) ? items.slice(0, max) : []);
+  const name = typeof level.name === 'string'
+    ? [...level.name].filter((c) => /^[\p{L}\p{N} ]$/u.test(c)).join('').slice(0, NAME_MAX).trim()
+    : '';
+  return {
+    name: name || 'Nivel de un amigo',
+    ground: Array.from({ length: COLUMNS }, (_, i) => level.ground[i] === true),
+    platforms: list(level.platforms, 40).map(point),
+    enemies: list(level.enemies, 30)
+      .filter((e) => e && ['mr1', 'mr2', 'mr3'].includes(e.type))
+      .map((e) => ({ type: e.type, ...point(e) })),
+    powerups: list(level.powerups, 10)
+      .filter((p) => p && POWERUP_TYPES.includes(p.type))
+      .map((p) => ({ type: p.type, ...point(p) })),
+    goal: point(level.goal),
+    heroStart: point(level.heroStart),
+  };
+}
+
 // What is the first floor under the point (x, y)? Gives back the y of its top,
 // or null if there is nothing (a pit!). Floating platforms count too.
 export function surfaceBelow(level, x, y) {

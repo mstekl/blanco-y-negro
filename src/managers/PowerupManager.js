@@ -3,9 +3,11 @@
 // They float with a gentle bob animation and show effects when collected.
 
 import Phaser from 'phaser';
-import Projectile from '../sprites/Projectile.js';
+import Projectile, { COLOR_GUNS } from '../sprites/Projectile.js';
 import { HERO } from '../utils/constants.js';
 import { playSound } from '../audio/Sound.js';
+import { openChest } from '../data/chests.js';
+import { loadCoins } from '../data/coins.js';
 
 class PowerupManager {
   constructor(scene) {
@@ -78,6 +80,9 @@ class PowerupManager {
         continue;
       }
 
+      // No chests in the race: it is a race, not a treasure hunt!
+      if (config.type === 'cofre' && this.scene.race) continue;
+
       const textureKey = `powerup-${config.type}`;
 
       // Make sure we have a texture for this power-up type
@@ -89,6 +94,18 @@ class PowerupManager {
 
       // Refresh the physics body after positioning
       powerup.refreshBody();
+
+      // The chest shines with gold sparkles in levels 1 and 2, so we learn to look
+      // for it. From level 3 on there is no hint: we have to explore!
+      if (config.type === 'cofre' && this.scene.levelData && this.scene.levelData.id < 3) {
+        this.makeParticleTexture();
+        powerup.sparkle = this.scene.add.particles(config.x, config.y, 'color-particle', {
+          x: { min: -22, max: 22 }, y: { min: -20, max: 10 }, speedY: { min: -30, max: -10 },
+          scale: { start: 0.8, end: 0 }, lifespan: 900, frequency: 180, tint: [0xffdd00, 0xffffff],
+        }).setDepth(4);
+      }
+      // (the chest doesn't float: it sits on the floor)
+      if (config.type === 'cofre') continue;
 
       // Bob animation — float up and down gently
       this.scene.tweens.add({
@@ -115,16 +132,40 @@ class PowerupManager {
   // Called when the hero overlaps with a power-up
   collectPowerup(hero, powerup) {
     const type = powerup.powerupType;
+    // The chest opens instead (it has its own animation)
+    if (type === 'cofre') {
+      this.openChest(powerup);
+      return;
+    }
     playSound('powerup');
     const scene = this.scene;
 
     // Apply the power-up effect based on type
     switch (type) {
       case 'color-pencil':
-        // Grant the Color Gun!
+        // Grant the Color Gun! (the normal rainbow one)
         hero.hasColorGun = true;
+        hero.gunColor = null;
         scene.hud.showColorGun(true);
         this.showCollectText(powerup.x, powerup.y, '¡Lápiz de Color!', '#ff44ff');
+        break;
+
+      case 'lapiz-rojo':
+      case 'lapiz-azul':
+      case 'lapiz-verde': {
+        // A colored pencil: we can shoot, and the shots are special (see Projectile.js)
+        const gun = COLOR_GUNS[type.replace('lapiz-', '')];
+        hero.hasColorGun = true;
+        hero.gunColor = type.replace('lapiz-', '');
+        scene.hud.showColorGun(true, gun);
+        this.showCollectText(powerup.x, powerup.y, `${gun.icon} ¡${gun.name}!`, '#ffffff');
+        break;
+      }
+
+      case 'patineta':
+      case 'cohete':
+        hero.mountVehicle(type);
+        this.showCollectText(powerup.x, powerup.y, type === 'patineta' ? '🛹 ¡Patineta! (salta para un truco)' : '🚀 ¡TURBO!', '#66ee88');
         break;
 
       case 'extra-life':
@@ -162,6 +203,32 @@ class PowerupManager {
     powerup.destroy();
   }
 
+  // A treasure chest: the lid opens, colors burst out, and the surprise floats up
+  openChest(chest) {
+    const scene = this.scene;
+    const { x, y } = chest;
+    if (chest.sparkle) chest.sparkle.destroy();
+    chest.destroy();
+    playSound('lapizBueno');
+    const open = scene.add.image(x, y, 'cofre-abierto').setDepth(3);
+    scene.tweens.add({ targets: open, scale: 1.3, duration: 150, yoyo: true });
+    this.spawnCollectParticles(x, y - 10);
+    this.spawnCollectParticles(x, y - 20);
+    const prize = openChest(scene.registry);
+    // The words go a bit higher and stay longer than the normal ones
+    const words = scene.add.text(x, y - 30, prize.text, {
+      fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: prize.color,
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+    scene.tweens.add({
+      targets: words, y: y - 90, alpha: 0, delay: 900, duration: 1400,
+      onComplete: () => words.destroy(),
+    });
+    scene.tweens.add({ targets: open, alpha: 0, delay: 1800, duration: 600, onComplete: () => open.destroy() });
+    // The coins may have changed
+    if (scene.hud && scene.hud.updateCoins) scene.hud.updateCoins(loadCoins());
+  }
+
   // Show floating text when collecting a power-up
   showCollectText(x, y, text, color) {
     const floatingText = this.scene.add.text(x, y - 10, text, {
@@ -183,7 +250,7 @@ class PowerupManager {
   }
 
   // Colorful particle burst when collecting a power-up
-  spawnCollectParticles(x, y) {
+  makeParticleTexture() {
     if (!this.scene.textures.exists('color-particle')) {
       const gfx = this.scene.add.graphics();
       gfx.fillStyle(0xffffff);
@@ -191,6 +258,10 @@ class PowerupManager {
       gfx.generateTexture('color-particle', 6, 6);
       gfx.destroy();
     }
+  }
+
+  spawnCollectParticles(x, y) {
+    this.makeParticleTexture();
 
     const emitter = this.scene.add.particles(x, y, 'color-particle', {
       speed: { min: 40, max: 120 },

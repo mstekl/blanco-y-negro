@@ -18,6 +18,7 @@ import StormCloud from '../sprites/StormCloud.js';
 import { getLevels } from '../data/countryLevels.js';
 import { levels } from '../data/levels.js';
 import { WORLD, HERO, isGodMode } from '../utils/constants.js';
+import WeatherManager, { weatherFor } from '../managers/WeatherManager.js';
 
 class LevelScene extends Phaser.Scene {
   // The race (RaceScene) makes two copies of this scene, one for each half of
@@ -100,12 +101,25 @@ class LevelScene extends Phaser.Scene {
     }
 
     // --- Hero ---
+    // JUNTOS (chosen in the sala): two players in the SAME story, on the same screen.
+    // Player 1 uses W A D (S shoots), player 2 the arrows (↓ shoots). They share the hearts.
+    // (Only in the normal levels: not in the race, the survival or the levels of the editor)
+    this.coop = !this.race && this.scene.key === 'LevelScene' && Boolean(this.registry.get('coop'));
+    let controls = 'normal';
+    if (this.race) controls = this.race.controls;
+    else if (this.coop) controls = 'wasd';
     this.hero = new Hero(
       this,
       this.levelData.heroStart.x,
       this.levelData.heroStart.y,
-      this.race ? this.race.controls : 'normal'
+      controls,
+      // Player 2 of the race doesn't wear OUR mochila and mascota
+      { cosmetics: controls !== 'arrows' }
     );
+    this.heroes = [this.hero];
+    if (this.coop) this.createPlayerTwo();
+    // Every dance counts for the LOGROS
+    this.heroes.forEach((hero) => hero.on('baile', () => reportMission('baile')));
     // Restore lives and score from registry
     // (in the race we always have all our lives: losing one just starts the level again)
     this.hero.lives = this.race ? HERO.INITIAL_LIVES : this.registry.get('lives');
@@ -115,45 +129,61 @@ class LevelScene extends Phaser.Scene {
     if (this.race) this.hero.keys.run = [];
 
     // --- Collisions ---
-    // Hero stands on platforms
-    this.physics.add.collider(this.hero, this.platforms);
-    // Hero can stand on hidden platforms — landing on one gives an extra life
-    this.physics.add.collider(
-      this.hero, this.powerupManager.getHiddenPlatforms(),
-      (hero, platform) => this.powerupManager.heroLandsOnHiddenPlatform(hero, platform),
-      null, this
-    );
+    // (with JUNTOS there are two heroes: each one gets all of these)
+    this.heroes.forEach((player) => {
+      // Hero stands on platforms
+      this.physics.add.collider(player, this.platforms);
+      // Hero can stand on hidden platforms — landing on one gives an extra life
+      this.physics.add.collider(
+        player, this.powerupManager.getHiddenPlatforms(),
+        (hero, platform) => this.powerupManager.heroLandsOnHiddenPlatform(hero, platform),
+        null, this
+      );
+
+      // Hero vs Enemies — stomp or take damage
+      this.physics.add.overlap(player, this.enemies, this.handleHeroEnemyContact, null, this);
+
+      // Hero reaches the goal flag
+      this.physics.add.overlap(player, this.goalFlag, this.reachGoal, null, this);
+
+      // Hero collects power-ups
+      this.physics.add.overlap(
+        player, this.powerupManager.getGroup(),
+        (hero, powerup) => this.powerupManager.collectPowerup(hero, powerup),
+        null, this
+      );
+
+      // Hero picks up coins (to buy pencils in the sala)
+      this.physics.add.overlap(player, this.coins, this.collectCoin, null, this);
+
+      // Enemy projectiles hit hero
+      this.physics.add.overlap(this.enemyProjectiles, player, this.enemyProjectileHitsHero, null, this);
+    });
+
+    // A frozen villain (❄️ ice pencil) is a block of ice: solid, and we can stand on it!
+    this.heroes.forEach((player) => this.physics.add.collider(
+      player, this.enemies, null, (hero, enemy) => this.isFrozen(enemy), this
+    ));
+    // Every dance counts for the LOGROS... and a skateboard trick gives points!
+    this.heroes.forEach((player) => player.on('truco', () => {
+      this.hero.addScore(50);
+      this.saveState();
+      this.hud.updateScore(this.hero.score);
+      this.showFloatingText(player.x, player.y - 40, '¡Truco! +50');
+    }));
+
     // Enemies walk on platforms (the flying bats go right through them)
     this.physics.add.collider(this.enemies, this.platforms, null, (enemy) => !enemy.isFlyer, this);
 
-    // Hero vs Enemies — stomp or take damage
-    this.physics.add.overlap(
-      this.hero, this.enemies, this.handleHeroEnemyContact, null, this
-    );
-
-    // Hero reaches the goal flag
-    this.physics.add.overlap(
-      this.hero, this.goalFlag, this.reachGoal, null, this
-    );
-
-    // Hero collects power-ups
-    this.physics.add.overlap(
-      this.hero, this.powerupManager.getGroup(),
-      (hero, powerup) => this.powerupManager.collectPowerup(hero, powerup),
-      null, this
-    );
-
-    // Hero picks up coins (to buy pencils in the sala)
-    this.physics.add.overlap(this.hero, this.coins, this.collectCoin, null, this);
+    // The 🟢 bouncing shots bounce on the floor and the platforms (5 bounces at most)
+    this.physics.add.collider(this.heroProjectiles, this.platforms, (shot) => {
+      shot.bounces += 1;
+      if (shot.bounces > 5) shot.deactivate();
+    }, (shot) => shot.active && shot.kind === 'verde', this);
 
     // Hero's projectiles hit enemies
     this.physics.add.overlap(
       this.heroProjectiles, this.enemies, this.projectileHitsEnemy, null, this
-    );
-
-    // Enemy projectiles hit hero
-    this.physics.add.overlap(
-      this.enemyProjectiles, this.hero, this.enemyProjectileHitsHero, null, this
     );
 
     // --- Storm cloud (only in levels that have one) ---
@@ -167,14 +197,16 @@ class LevelScene extends Phaser.Scene {
       // A pencil hits the hero — works like an enemy bullet.
       // Careful: when a single sprite (the hero) meets a group, Phaser gives
       // us the SPRITE first and the group member second — so (hero, pencil)!
-      this.physics.add.overlap(
-        this.hero, this.stormCloud.pencils,
+      this.heroes.forEach((player) => this.physics.add.overlap(
+        player, this.stormCloud.pencils,
         (hero, pencil) => this.pencilHitsHero(pencil, hero), null, this
-      );
+      ));
     }
 
     // --- Camera ---
-    this.cameras.main.startFollow(this.hero, true, 0.1, 0.1);
+    // With JUNTOS the camera follows an invisible point in the middle of the two heroes
+    this.camTarget = this.coop ? this.add.zone(this.hero.x, this.hero.y, 1, 1) : this.hero;
+    this.cameras.main.startFollow(this.camTarget, true, 0.1, 0.1);
     this.cameras.main.setBounds(0, 0, this.levelData.worldWidth, WORLD.HEIGHT);
     this.cameras.main.setDeadzone(100, 50);
     // In the race our camera only draws on OUR half of the screen
@@ -186,6 +218,11 @@ class LevelScene extends Phaser.Scene {
     this.hud.setLevelName(this.levelData.id, this.levelData.name);
     if (this.race && this.race.full) this.hud.useFullRace(this.race.help, this.race.shootKey);
     else if (this.race) this.hud.useHalfScreen(this.race.help, this.race.shootKey);
+
+    // The weather: day, night, rain or snow, picked at random (see WeatherManager.js).
+    // In the race both halves share the same one (same name = same weather)
+    const weatherKey = this.race ? `carrera:${this.levelIndex}` : `${this.scene.key}:${this.levelIndex}`;
+    this.weather = new WeatherManager(this, weatherFor(this.registry, weatherKey));
 
     // Against the MÁQUINA, we see it as a see-through "ghost" in our level
     this.createGhost();
@@ -220,6 +257,72 @@ class LevelScene extends Phaser.Scene {
   // Which level do we play? (SUPERVIVENCIA changes this: it has its own arena)
   chooseLevelData() {
     return (this.race ? levels : getLevels(this.registry))[this.levelIndex];
+  }
+
+  // ---------------------------------------------------------------
+  // JUNTOS: player 2
+  // ---------------------------------------------------------------
+  createPlayerTwo() {
+    const start = this.levelData.heroStart;
+    // Player 2 is the normal hero. If player 1 is the normal hero too, player 2
+    // is light blue, so we can tell them apart
+    this.hero2 = new Hero(this, start.x - 40, start.y, 'arrows', { skin: null, cosmetics: false });
+    if (!this.registry.get('skin')) {
+      this.hero2.baseTint = 0x99ddff;
+      this.hero2.setTint(this.hero2.baseTint);
+    }
+    this.hero2.lives = this.hero.lives;
+    this.hero2.score = 0;
+    this.heroes.push(this.hero2);
+    // The two heroes share the hearts: this remembers how many we had
+    this.sharedLives = this.hero.lives;
+
+    // A "1" and a "2" over their heads
+    this.playerTags = this.heroes.map((hero, i) => this.add.text(hero.x, hero.y - 40, `${i + 1}`, {
+      fontFamily: 'Arial', fontSize: '14px', fontStyle: 'bold', color: i === 0 ? '#44aaff' : '#ff9933',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(50));
+
+    // On an iPad or phone: each half of the screen gets its own buttons (like in the race)
+    window.dispatchEvent(new CustomEvent('dos-jugadores', { detail: { mode: 'carrera' } }));
+    this.events.once('shutdown', () => window.dispatchEvent(new Event('un-jugador')));
+  }
+
+  // The hearts are shared: if one hero lost (or won) a heart, the other one gets the same
+  syncLives() {
+    if (!this.coop) return;
+    if (this.hero2.lives !== this.sharedLives) this.hero.lives = this.hero2.lives;
+    else if (this.hero.lives !== this.sharedLives) this.hero2.lives = this.hero.lives;
+    this.sharedLives = this.hero.lives;
+  }
+
+  // The hero that is closest to x (the villains that aim or chase use it)
+  closestHero(x) {
+    if (!this.coop) return this.hero;
+    const visible = this.heroes.filter((h) => h.visible);
+    return visible.reduce((best, h) => (Math.abs(h.x - x) < Math.abs(best.x - x) ? h : best), visible[0] || this.hero);
+  }
+
+  // Every frame with JUNTOS: the camera looks between the two heroes, the "1" and
+  // "2" follow them, and if one stays too far behind, it jumps next to the other one
+  updateCoop() {
+    const [p1, p2] = this.heroes;
+    this.camTarget.setPosition((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+    this.playerTags.forEach((tag, i) => {
+      const hero = this.heroes[i];
+      tag.setPosition(hero.x, hero.y - 40).setVisible(hero.visible);
+    });
+    if (Math.abs(p1.x - p2.x) > 700) {
+      const [behind, ahead] = p1.x < p2.x ? [p1, p2] : [p2, p1];
+      this.bringNextTo(behind, ahead);
+    }
+  }
+
+  // Put a hero right next to the other one, with a puff of color
+  bringNextTo(hero, other) {
+    hero.setPosition(other.x - 30, other.y - 20);
+    hero.setVelocity(0, 0);
+    this.powerupManager.spawnCollectParticles(hero.x, hero.y);
   }
 
   // Secret key combo for the levels:
@@ -300,11 +403,20 @@ class LevelScene extends Phaser.Scene {
     if (enemy.isDefeated) return;
     if (!projectile.active) return;
 
-    // Deactivate the projectile (return to pool)
-    projectile.deactivate();
-
-    // Damage the enemy
-    enemy.takeDamage(1);
+    if (projectile.kind === 'rojo') {
+      // 🔥 FIRE: it keeps going (through all the villains) and hurts twice as much,
+      // but each villain only once
+      if (projectile.hitEnemies.has(enemy)) return;
+      projectile.hitEnemies.add(enemy);
+      enemy.takeDamage(2);
+    } else {
+      // Deactivate the projectile (return to pool)
+      projectile.deactivate();
+      // Damage the enemy
+      enemy.takeDamage(1);
+      // ❄️ ICE: the villain that is still standing gets frozen
+      if (projectile.kind === 'azul' && !enemy.isDefeated) this.freezeEnemy(enemy);
+    }
 
     // If the enemy was defeated, add score
     if (enemy.isDefeated) {
@@ -358,6 +470,24 @@ class LevelScene extends Phaser.Scene {
   // Hero touches an enemy — stomp or damage?
   handleHeroEnemyContact(hero, enemy) {
     if (enemy.isDefeated) return;
+    // A frozen villain is a block of ice: it can't hurt us (we can stand on it)
+    if (this.isFrozen(enemy)) return;
+    // 🚀 On the rocket we knock out the villains we crash into!
+    // (a short wait between hits, or the big boss would lose all its life at once)
+    if (hero.vehicle === 'cohete') {
+      if (this.time.now - (enemy.lastCrash || 0) < 500) return;
+      enemy.lastCrash = this.time.now;
+      enemy.takeDamage(3);
+      playSound('pisar');
+      if (enemy.isDefeated) {
+        reportMission('villanos');
+        this.hero.addScore(enemy.scoreValue);
+        this.saveState();
+        this.hud.updateScore(this.hero.score);
+        this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
+      }
+      return;
+    }
     if (hero.isInvincible) return;
 
     // STOMP: hero falling AND above enemy's head
@@ -368,11 +498,12 @@ class LevelScene extends Phaser.Scene {
       // Stomp the enemy!
       enemy.takeDamage(1);
       hero.setVelocityY(HERO.JUMP_VELOCITY * 0.6);
-      hero.addScore(enemy.scoreValue);
+      // (the points always go to the first hero: with JUNTOS, the points are shared too)
+      this.hero.addScore(enemy.scoreValue);
       if (enemy.isDefeated) reportMission('villanos');
       playSound('pisar');
       this.saveState();
-      this.hud.updateScore(hero.score);
+      this.hud.updateScore(this.hero.score);
       this.showFloatingText(enemy.x, enemy.y - 20, `+${enemy.scoreValue}`);
     } else {
       // Take damage from the enemy
@@ -388,6 +519,32 @@ class LevelScene extends Phaser.Scene {
         this.restartLevel();
       }
     }
+  }
+
+  // ❄️ The ice pencil: the villain becomes a block of ice for 3.5 seconds
+  freezeEnemy(enemy) {
+    enemy.frozenUntil = this.time.now + 3500;
+    enemy.setVelocity(0, 0);
+    enemy.body.setImmovable(true);
+    enemy.body.moves = false; // it doesn't fall either: flying ones stay in the air
+    enemy.setTint(0x88ddff);
+  }
+
+  isFrozen(enemy) {
+    return enemy.frozenUntil > this.time.now;
+  }
+
+  // The ice melts: the villain moves again. A hero standing on top gets a little hop,
+  // so the villain doesn't hurt them right away
+  unfreeze(enemy) {
+    enemy.frozenUntil = 0;
+    if (!enemy.active) return;
+    enemy.body.setImmovable(false);
+    enemy.body.moves = true;
+    enemy.clearTint();
+    this.heroes.forEach((hero) => {
+      if (Math.abs(hero.x - enemy.x) < 34 && hero.body.bottom <= enemy.body.top + 6) hero.setVelocityY(-260);
+    });
   }
 
   // Fade out and restart the same level from the beginning
@@ -434,13 +591,28 @@ class LevelScene extends Phaser.Scene {
   }
 
   // Hero reaches the goal flag — level complete!
-  reachGoal() {
+  // ("hero" = the one that got there: with JUNTOS it can be player 2)
+  reachGoal(hero = this.hero) {
     if (this.levelComplete) return;
     this.levelComplete = true;
+    this.goalHero = hero;
+    // Off the skateboard or the rocket: the level is done
+    this.heroes.forEach((h) => h.dismount(true));
 
     // Stop the hero
-    this.hero.setVelocity(0, 0);
-    this.hero.body.setAllowGravity(false);
+    hero.setVelocity(0, 0);
+    hero.body.setAllowGravity(false);
+
+    // JUNTOS: the other hero disappears in a puff of color (they go on together)
+    if (this.coop) {
+      this.heroes.filter((h) => h !== hero).forEach((other) => {
+        this.powerupManager.spawnCollectParticles(other.x, other.y);
+        other.body.enable = false;
+        other.setVisible(false);
+      });
+      this.playerTags.forEach((tag) => tag.setVisible(false));
+      reportMission('juntos'); // for the LOGROS
+    }
 
     // A level done counts for the MISIONES (only real levels, not the race)
     if (!this.race) reportMission('niveles');
@@ -480,7 +652,7 @@ class LevelScene extends Phaser.Scene {
       strokeThickness: 6,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
 
-    this.showFloatingText(this.hero.x, this.hero.y - 30, '+500');
+    this.showFloatingText(hero.x, hero.y - 30, '+500');
 
     // The camera flies back over the level while the color returns to the world
     this.playColorReturn();
@@ -628,7 +800,7 @@ class LevelScene extends Phaser.Scene {
   // The hero walks to the castle door, the door lights up, and the hero
   // shrinks into the doorway — then the next level starts INSIDE the castle.
   enterCastle() {
-    const hero = this.hero;
+    const hero = this.goalHero || this.hero;
     const goal = this.levelData.goal;
 
     // Turn off physics so the tweens below have full control of the hero
@@ -691,7 +863,7 @@ class LevelScene extends Phaser.Scene {
   // The hero hops on top of the pipe, then sinks down inside it — and comes
   // out in the next level (outside the castle!).
   enterPipe() {
-    const hero = this.hero;
+    const hero = this.goalHero || this.hero;
     const goal = this.levelData.goal;
 
     // Turn off physics so the tweens below have full control of the hero
@@ -788,6 +960,7 @@ class LevelScene extends Phaser.Scene {
   // Save hero state to registry (persists between scenes)
   saveState() {
     if (this.race) return; // the race doesn't use the registry (see create)
+    this.syncLives();
     this.registry.set('lives', this.hero.lives);
     this.registry.set('score', this.hero.score);
   }
@@ -799,14 +972,29 @@ class LevelScene extends Phaser.Scene {
     // In the race nobody moves until the countdown says "¡YA!"
     if (this.race && !this.scene.get('RaceScene').started) return;
 
-    // Update hero (input and movement)
-    this.hero.update();
+    // Update hero (input and movement) — both of them with JUNTOS
+    this.heroes.forEach((hero) => hero.update());
+    if (this.coop) {
+      this.syncLives();
+      this.updateCoop();
+    }
 
     // Update the storm cloud (flies after the hero and throws pencils)
     if (this.stormCloud) this.stormCloud.update(time, delta);
 
+    // Night: the light of the flashlight follows the heroes
+    this.weather.update();
+
     // Update all enemies (patrol movement)
     this.enemies.getChildren().forEach(enemy => {
+      // A frozen villain doesn't move or shoot until the ice melts
+      if (enemy.frozenUntil) {
+        if (this.isFrozen(enemy) && !enemy.isDefeated) {
+          enemy.setTint(0x88ddff);
+          return;
+        }
+        this.unfreeze(enemy);
+      }
       if (enemy.active) enemy.update();
       // Enemies that fall into a pit are removed (no invisible floor anymore)
       if (enemy.active && enemy.y > WORLD.HEIGHT + 100) enemy.destroy();
@@ -816,9 +1004,36 @@ class LevelScene extends Phaser.Scene {
     this.hud.updateLives(this.hero.lives);
 
     // Check if hero fell into a pit
-    if (this.hero.y > WORLD.HEIGHT + 50) {
+    if (this.coop) {
+      this.heroes.forEach((hero) => {
+        if (hero.y > WORLD.HEIGHT + 50) this.coopHeroFell(hero);
+      });
+    } else if (this.hero.y > WORLD.HEIGHT + 50) {
       this.heroFell();
     }
+  }
+
+  // JUNTOS: a hero fell into a pit. It costs a (shared) heart, but the level does
+  // NOT start again: the hero comes back next to the other one
+  coopHeroFell(hero) {
+    if (this.levelComplete) return;
+    const other = this.heroes.find((h) => h !== hero);
+    if (!isGodMode(this.registry)) {
+      hero.lives -= 1;
+      this.saveState();
+      this.hud.updateLives(this.hero.lives);
+      playSound('golpe');
+      if (this.hero.lives <= 0) {
+        this.gameOver();
+        return;
+      }
+    }
+    // (if the other one is falling too, both go back to the start)
+    if (other.y > WORLD.HEIGHT) {
+      other.setPosition(this.levelData.heroStart.x, this.levelData.heroStart.y);
+      other.setVelocity(0, 0);
+    }
+    this.bringNextTo(hero, other);
   }
 
   // Hero fell off the bottom of the screen — lose a life and restart this level

@@ -15,6 +15,7 @@ import { addCoins } from './coins.js';
 import { playSound } from '../audio/Sound.js';
 import { showToast } from '../ui/toast.js';
 import { addStars, starsFor, MISSION_STARS } from './pass.js';
+import { countStat } from './achievements.js';
 
 const SAVE_KEY = 'blancoYNegro.misiones';
 
@@ -128,4 +129,8 @@ export function reportMission(event, amount = 1) {
   if (changed) save(state);
   // A finished mission gives many stars too
   if (completed) addStars(completed * MISSION_STARS);
+
+  // ...and everything counts FOREVER for the LOGROS (see achievements.js)
+  countStat(event, amount);
+  if (completed) countStat('misiones', completed);
 }

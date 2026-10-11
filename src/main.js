@@ -25,6 +25,9 @@ import PassScene from './scenes/PassScene.js';
 import LockerScene from './scenes/LockerScene.js';
 import EditorScene from './scenes/EditorScene.js';
 import CustomLevelScene from './scenes/CustomLevelScene.js';
+import CosmeticsScene from './scenes/CosmeticsScene.js';
+import AchievementsScene from './scenes/AchievementsScene.js';
+import ShareLevelScene from './scenes/ShareLevelScene.js';
 import { SearchLeftScene, SearchRightScene } from './scenes/SearchLevelScene.js';
 import { setupTouchControls } from './touch/TouchControls.js';
 
@@ -67,7 +70,7 @@ const config = {
   // The search (BÚSQUEDA) uses RaceScene too, with SearchLeft and SearchRight
   // Before both, ModeChoiceScene asks ONLINE / OFFLINE / MÁQUINA (and OnlineScene connects with a friend)
   scene: [BootScene, PreloadScene, TitleScene, ProfileScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
-    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, RaceScene]
+    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, RaceScene]
 };
 
 // Create the game!

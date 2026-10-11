@@ -23,6 +23,7 @@ import { addCoins, makeCoinTexture } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
 import { playSound } from '../audio/Sound.js';
 import { takeShopItems } from '../data/shop.js';
+import { forgetWeather } from '../managers/WeatherManager.js';
 
 const RECORD_KEY = 'blancoYNegro.supervivencia';
 const ARENA_WIDTH = 1600;
@@ -97,6 +98,8 @@ class SurvivalScene extends LevelScene {
     this.won = false;
     // One of each thing we bought in the TIENDA (the level gives them to the hero)
     takeShopItems(this.registry);
+    // A new weather every game (see WeatherManager.js)
+    forgetWeather(this.registry, this.scene.key);
     super.create();
 
     this.goalFlag.setVisible(false);

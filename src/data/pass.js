@@ -17,6 +17,7 @@ import { addCoins, loadCoins } from './coins.js';
 import { addToBackpack, SHOP_ITEMS } from './shop.js';
 import { showToast } from '../ui/toast.js';
 import { playSound } from '../audio/Sound.js';
+import { findCosmetic, giveCosmetic } from './cosmetics.js';
 
 const SAVE_KEY = 'blancoYNegro.pase';
 // The same key the skins screen uses to remember the skins we won (src/data/skins.js)
@@ -64,8 +65,10 @@ export function daysLeftInSeason() {
 
 // ---------------------------------------------------------------
 // The 10 pages of prizes. Every page has the same shape:
-//   GRATIS:  coins, a power-up, coins (or a skin on pages 5 and 10), a power-up
-//   PREMIUM: coins, a power-up, more coins, and THE BIG SKIN of the page
+//   GRATIS:  coins, a power-up, coins (or a skin on pages 5 and 10, or a
+//            baile / mochila / mascota on pages 2, 4 and 7), a power-up
+//   PREMIUM: coins, a power-up, more coins (or a baile / mochila / mascota
+//            on pages 3, 6 and 9), and THE BIG SKIN of the page
 // Coins and power-ups cost 1 medal. The big skin costs more on later pages
 // (2, then 3, then 4), so all the 80 prizes cost exactly 100 medals.
 // The skins are drawn in src/sprites/PassSkins.js
@@ -75,6 +78,10 @@ const PAGE_SKINS = [
   'paseMago', 'paseSamurai', 'paseFantasma', 'paseDragon', 'paseRey',
 ];
 const FREE_SKINS = { 5: 'paseExplorador', 10: 'paseCebra' };
+// The BAILES, MOCHILAS and MASCOTAS that only the pass gives (see cosmetics.js).
+// They take the place of some coins, so the prices don't change
+const FREE_COSMETICS = { 2: 'tablero', 4: 'pandita', 7: 'robot' };
+const PREMIUM_COSMETICS = { 3: 'disco', 6: 'alasTinta', 9: 'dragoncito' };
 const ITEM_IDS = SHOP_ITEMS.map((item) => item.id); // escudo, vida, lapiz
 
 // The 8 prizes of a page (page = 1 to 10). Each prize is like
@@ -84,16 +91,20 @@ export function pagePrizes(page) {
   const season = currentSeason();
   const item = (n) => ITEM_IDS[(page + season + n) % ITEM_IDS.length];
   const skinCost = page <= 3 ? 2 : page <= 7 ? 3 : 4;
+  let freeThird = { row: 'gratis', type: 'coins', amount: 30 + page * 5, cost: 1 };
+  if (FREE_SKINS[page]) freeThird = { row: 'gratis', type: 'skin', skin: FREE_SKINS[page], cost: 1 };
+  if (FREE_COSMETICS[page]) freeThird = { row: 'gratis', type: 'cosmetic', cosmetic: FREE_COSMETICS[page], cost: 1 };
+  const premiumThird = PREMIUM_COSMETICS[page]
+    ? { row: 'premium', type: 'cosmetic', cosmetic: PREMIUM_COSMETICS[page], cost: 1 }
+    : { row: 'premium', type: 'coins', amount: 80 + page * 10, cost: 1 };
   const prizes = [
     { row: 'gratis', type: 'coins', amount: 20 + page * 5, cost: 1 },
     { row: 'gratis', type: 'item', item: item(0), cost: 1 },
-    FREE_SKINS[page]
-      ? { row: 'gratis', type: 'skin', skin: FREE_SKINS[page], cost: 1 }
-      : { row: 'gratis', type: 'coins', amount: 30 + page * 5, cost: 1 },
+    freeThird,
     { row: 'gratis', type: 'item', item: item(1), cost: 1 },
     { row: 'premium', type: 'coins', amount: 50 + page * 10, cost: 1 },
     { row: 'premium', type: 'item', item: item(2), cost: 1 },
-    { row: 'premium', type: 'coins', amount: 80 + page * 10, cost: 1 },
+    premiumThird,
     { row: 'premium', type: 'skin', skin: PAGE_SKINS[page - 1], cost: skinCost },
   ];
   // Each prize gets a name like "3-8" (page 3, prize 8), to remember which ones we took
@@ -104,6 +115,7 @@ export function pagePrizes(page) {
 export function prizeText(prize, skinName = null) {
   if (prize.type === 'coins') return `${prize.amount} monedas`;
   if (prize.type === 'item') return SHOP_ITEMS.find((item) => item.id === prize.item).name;
+  if (prize.type === 'cosmetic') return findCosmetic(prize.cosmetic).name;
   return `Skin: ${skinName || prize.skin}`;
 }
 
@@ -221,6 +233,9 @@ function givePrize(prize) {
   } else if (prize.type === 'item') {
     // A full backpack? Then coins instead
     if (!addToBackpack(prize.item)) addCoins(15);
+  } else if (prize.type === 'cosmetic') {
+    // A baile, mochila or mascota (if we already had it: coins instead)
+    if (!giveCosmetic(prize.cosmetic)) addCoins(50);
   } else if (!winSkin(prize.skin)) {
     // We already had that skin (from an older season): coins instead
     addCoins(100);

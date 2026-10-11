@@ -4,11 +4,11 @@
 // "◀", the game thinks you pressed the left arrow. That way the whole game
 // (the hero, the hacks, the "press ENTER" screens...) works without changing it.
 //
-//   - Game pad: ◀ ▶ to walk, ▲ to jump, 🎨 to shoot, CORRER to run
+//   - Game pad: ◀ ▶ to walk, ▲ to jump, 🎨 to shoot, CORRER to run, 💃 to dance
 //   - OK (= ENTER), ESC, and ⌨ to open the small keyboard
 //   - The small keyboard (letters, numbers, space, delete) to type the hack codes.
 //     It opens by itself when a "Hacks" box opens.
-//   - In the CARRERA and the BÚSQUEDA (two players, split screen) the game pad
+//   - In the CARRERA, the BÚSQUEDA and JUNTOS (two players) the game pad
 //     changes: each half of the screen gets its OWN buttons.
 //     Player 1 (left) buttons pretend to be A D W (and S or Z), player 2 (right)
 //     buttons pretend to be the arrows. So two people can play on one iPad!
@@ -150,6 +150,7 @@ export function setupTouchControls() {
   left.appendChild(makeButton('▶', 'tc-big', KEYS.ArrowRight, true));
   const right = document.createElement('div');
   right.className = 'tc-group';
+  right.appendChild(makeButton('💃', 'tc-small', charKey('q'), false)); // dance (Q)
   right.appendChild(makeButton('CORRER', 'tc-small', KEYS.Shift, true));
   right.appendChild(makeButton('🎨', 'tc-big', charKey('z'), true));
   right.appendChild(makeButton('▲', 'tc-big', KEYS.ArrowUp, true));

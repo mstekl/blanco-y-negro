@@ -24,6 +24,9 @@ import { drawTopBar } from '../ui/TopBar.js';
 import { takeShopItems } from '../data/shop.js';
 import { addStars, medalsLeft, STARS_PER_LEVEL, PASS_LEVELS } from '../data/pass.js';
 import { playMusic, isMuted, toggleSound } from '../audio/Sound.js';
+import { attachCosmetics, playEmote } from '../sprites/Cosmetics.js';
+import { equipped } from '../data/cosmetics.js';
+import { reportMission } from '../data/missions.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -141,10 +144,34 @@ class TitleScene extends Phaser.Scene {
     // A gray circle of light behind the hero, so the black skins can be seen
     this.add.circle(500, 325, 105, 0x8a8a8a, 0.45);
     this.heroPreview = this.add.image(500, 330, 'hero');
-    this.tweens.add({
+    this.bobbing = this.tweens.add({
       targets: this.heroPreview, y: 318, duration: 1500,
       yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
+    // Our mochila and mascota, on the big hero too
+    attachCosmetics(this, this.heroPreview);
+
+    // 💃 BAILAR (or Q): the big hero does our dance
+    const danceButton = this.add.rectangle(440, 452, 130, 36, 0x222222)
+      .setStrokeStyle(3, 0xff77bb).setInteractive({ useHandCursor: true });
+    this.add.text(440, 452, '💃 BAILAR [Q]', {
+      fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    danceButton.on('pointerover', () => danceButton.setFillStyle(0x444444));
+    danceButton.on('pointerout', () => danceButton.setFillStyle(0x222222));
+    danceButton.on('pointerdown', () => { if (!this.hackOpen) this.dance(); });
+  }
+
+  dance() {
+    if (this.dancing) return;
+    this.dancing = true;
+    // The up-and-down floating stops while we dance (they would fight)
+    this.bobbing.pause();
+    playEmote(this, this.heroPreview, equipped('baile') || 'saludo', () => {
+      this.dancing = false;
+      this.bobbing.resume();
+    });
+    reportMission('baile');
   }
 
   // ---------------------------------------------------------------
@@ -282,6 +309,7 @@ class TitleScene extends Phaser.Scene {
   // ---------------------------------------------------------------
   createRightButtons() {
     // (MISIONES is in the CASILLERO tab, and the TIENDA has its own tab in the top bar)
+    this.sideButton(700, 287, '👫 JUNTOS [J]', 0x44aaff, () => this.startGame(true));
     this.sideButton(700, 341, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
     this.sideButton(700, 395, '🛡 SUPERVIVENCIA [V]', 0xff5555, () => this.startSurvival());
 
@@ -316,11 +344,14 @@ class TitleScene extends Phaser.Scene {
     this.goTo('EditorScene');
   }
 
-  startGame() {
+  // JUGAR (alone), or JUNTOS (together = true): two players in the same story,
+  // on the same screen. Player 1: W A D and S to shoot. Player 2: the arrows and ↓
+  startGame(together = false) {
     if (this.leaving) return;
     this.leaving = true;
 
     // Reset game state for a fresh start
+    this.registry.set('coop', together);
     this.registry.set('lives', 3);
     this.registry.set('score', 0);
     this.registry.set('currentLevel', 0);
@@ -420,6 +451,8 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyP') this.goTo('PassScene');
       else if (event.code === 'KeyK') this.goTo('LockerScene');
       else if (event.code === 'KeyE') this.openEditor();
+      else if (event.code === 'KeyJ') this.startGame(true);
+      else if (event.code === 'KeyQ') this.dance();
       return;
     }
 
