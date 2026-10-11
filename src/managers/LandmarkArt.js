@@ -17,17 +17,14 @@
 
 import Phaser from 'phaser';
 
-const GROUND = 562; // where things stand (the ground platforms start at y=568)
-
-// A tiny "random" number generator that always gives the same numbers, so the
-// scenery looks the same every time we play (the real random would change it)
-const pseudoRandom = (i) => ((i * 9301 + 49297) % 233280) / 233280;
-
-// Draw a filled polygon from a list of [x, y] pairs
-function polygon(g, color, points) {
-  g.fillStyle(color, 1);
-  g.fillPoints(points.map(([x, y]) => ({ x, y })), true);
-}
+// GROUND, pseudoRandom, polygon and nearSpot are shared with the landmark files
+// of each region (src/managers/landmarks/), so they live in landmarks/helpers.js
+import { GROUND, pseudoRandom, polygon, nearSpot } from './landmarks/helpers.js';
+import { LANDMARKS as AMERICAS } from './landmarks/americas.js';
+import { LANDMARKS as EUROPA } from './landmarks/europa.js';
+import { LANDMARKS as ASIA } from './landmarks/asia.js';
+import { LANDMARKS as AFRICA_OCEANIA } from './landmarks/africaOceania.js';
+import { FLAGS, drawFlagPole } from './landmarks/flags.js';
 
 // The gray version of a color: less color, and darker (like a shadow)
 function makeTone(colored, saturation) {
@@ -47,14 +44,14 @@ function makeTone(colored, saturation) {
 // ------------------------------------------------------------------
 // Things every scene has: sun and hills
 // ------------------------------------------------------------------
-function drawSun(g, tone, x, y) {
+export function drawSun(g, tone, x, y) {
   g.fillStyle(tone(0xfff3a0), 0.5);
   g.fillCircle(x, y, 62);
   g.fillStyle(tone(0xffd93d), 1);
   g.fillCircle(x, y, 40);
 }
 
-function drawHills(g, tone, span) {
+export function drawHills(g, tone, span) {
   // Far hills (light) and near hills (darker) make the world feel deep
   for (let x = -100, i = 0; x < span + 200; x += 240, i++) {
     g.fillStyle(tone(0x8fc9a0), 1);
@@ -69,7 +66,7 @@ function drawHills(g, tone, span) {
 // ------------------------------------------------------------------
 // MÉXICO — Chichén Itzá (the pyramid "El Castillo") in the jungle
 // ------------------------------------------------------------------
-function drawJungle(g, tone, span) {
+export function drawJungle(g, tone, span) {
   for (let x = 20, i = 0; x < span + 100; x += 95, i++) {
     const height = 55 + pseudoRandom(i + 1) * 60;
     const px = x + pseudoRandom(i + 7) * 40;
@@ -125,7 +122,7 @@ function drawChichen(g, tone, cx, y, s) {
 // ------------------------------------------------------------------
 // ESTADOS UNIDOS — the Statue of Liberty with the New York skyline
 // ------------------------------------------------------------------
-function drawSkyline(g, tone, span, spots) {
+export function drawSkyline(g, tone, span, spots) {
   const colors = [0x6f7f9c, 0x8393ad, 0x5e6e8a];
   for (let x = 0, i = 0; x < span + 100; x += 62, i++) {
     // Leave an empty space around the statue, so it can be seen!
@@ -229,7 +226,7 @@ function drawLibertad(g, tone, cx, y, s) {
 // ------------------------------------------------------------------
 // CANADÁ — the CN Tower, the Rocky Mountains and a big maple leaf
 // ------------------------------------------------------------------
-function drawRockies(g, tone, span) { // (the mountains are in the back, no gap needed)
+export function drawRockies(g, tone, span) { // (the mountains are in the back, no gap needed)
   for (let x = -60, i = 0; x < span + 200; x += 170, i++) {
     const h = 150 + pseudoRandom(i + 4) * 110;
     const half = 120 + pseudoRandom(i + 9) * 40;
@@ -293,10 +290,9 @@ function drawCnTower(g, tone, cx, y, s) {
 // ------------------------------------------------------------------
 
 // Is x too close to one of the landmark spots? (so the background leaves a gap)
-const nearSpot = (spots, x, gap) => spots.some((spot) => Math.abs(x - spot) < gap);
 
 // A strip of blue sea along the bottom, with light little waves
-function drawSea(g, tone, span) {
+export function drawSea(g, tone, span) {
   g.fillStyle(tone(0x3f8fd0), 1);
   g.fillRect(0, GROUND - 40, span + 200, 80);
   g.fillStyle(tone(0x8cc8f0), 1);
@@ -349,7 +345,7 @@ function drawEiffel(g, tone, cx, y, s) {
 // ------------------------------------------------------------------
 // EGIPTO — the pyramids of Giza in the desert, with palm trees
 // ------------------------------------------------------------------
-function drawDesert(g, tone, span, spots) {
+export function drawDesert(g, tone, span, spots) {
   // Sand dunes that cover the green hills
   for (let x = -100, i = 0; x < span + 200; x += 260, i++) {
     g.fillStyle(tone(0xe8c77a), 1);
@@ -429,7 +425,7 @@ function drawGreatWall(g, tone, cx, y, s) {
 // ------------------------------------------------------------------
 // BRASIL — Christ the Redeemer on his mountain, and the Sugarloaf by the sea
 // ------------------------------------------------------------------
-function drawRioBay(g, tone, span, spots) {
+export function drawRioBay(g, tone, span, spots) {
   // The round "Sugarloaf" mountains (Pan de Azúcar), away from the statue
   for (let x = 60, i = 0; x < span + 100; x += 280, i++) {
     if (nearSpot(spots, x, 230)) continue;
@@ -580,7 +576,7 @@ function drawBigBen(g, tone, cx, y, s) {
 // ------------------------------------------------------------------
 // AUSTRALIA — the Sydney Opera House by the sea (and the Harbour Bridge)
 // ------------------------------------------------------------------
-function drawHarbour(g, tone, span, spots) {
+export function drawHarbour(g, tone, span, spots) {
   drawSea(g, tone, span);
 
   // The Harbour Bridge: a big steel arch, right between the two landmarks
@@ -785,6 +781,11 @@ const LANDMARKS = {
   obelisco: { background: drawSkyline, landmark: drawObelisco, size: 1.0 }, // Buenos Aires is a big city too
   partenon: { background: null, landmark: drawPartenon, size: 1.25 },
   generic: { background: null, landmark: null, size: 1 }, // countries with no landmark yet
+  // ...and the landmarks of every region, each in its own file (src/managers/landmarks/)
+  ...AMERICAS,
+  ...EUROPA,
+  ...ASIA,
+  ...AFRICA_OCEANIA,
 };
 
 // Draw the whole scenery on a Graphics object.
@@ -792,9 +793,12 @@ const LANDMARKS = {
 //               so it never needs to be as wide as the whole level)
 //   colored:    true = real colors, false = the gray version
 //   saturation: how much color is left in the gray version (0 to 1)
-export function drawLandmarkScene(g, themeKey, span, colored, saturation = 0) {
+//   flagId:     the 3-letter code of the country: its flag waves on a pole
+export function drawLandmarkScene(g, themeKey, span, colored, saturation = 0, flagId = null) {
   const tone = makeTone(colored, saturation);
   const art = LANDMARKS[themeKey] || LANDMARKS.generic;
+  // The flag of the country (drawn at the end, near the start of the level)
+  const flag = flagId && FLAGS[flagId];
 
   drawSun(g, tone, span * 0.86, 110);
   drawHills(g, tone, span);
@@ -806,4 +810,5 @@ export function drawLandmarkScene(g, themeKey, span, colored, saturation = 0) {
     art.landmark(g, tone, spots[0], GROUND, art.size);
     art.landmark(g, tone, spots[1], GROUND, art.size * 0.7);
   }
+  if (flag) drawFlagPole(g, tone, span * 0.07, GROUND, flag, 1.4);
 }

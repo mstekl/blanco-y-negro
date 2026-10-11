@@ -4,12 +4,21 @@
 //   landmark: which scenery to draw (see src/managers/LandmarkArt.js)
 //   place:    the name of the landmark, shown on the "Nivel" intro screen
 //
-// To give a new country its own scenery:
-//   1. Draw the landmark in LandmarkArt.js (a new function + a line in LANDMARKS)
-//   2. Add the country here
-// Countries that are not listed here get a simple generic landscape.
+// The first 15 are drawn in LandmarkArt.js. All the other countries are in the
+// file of their region, in src/managers/landmarks/ (americas.js, europa.js,
+// asia.js, africaOceania.js), with their own landmark or the scenery of their region.
+// Every country also has its flag (src/managers/landmarks/flags.js).
+
+import { THEMES as AMERICAS } from '../managers/landmarks/americas.js';
+import { THEMES as EUROPA } from '../managers/landmarks/europa.js';
+import { THEMES as ASIA } from '../managers/landmarks/asia.js';
+import { THEMES as AFRICA_OCEANIA } from '../managers/landmarks/africaOceania.js';
 
 export const COUNTRY_THEMES = {
+  ...AMERICAS,
+  ...EUROPA,
+  ...ASIA,
+  ...AFRICA_OCEANIA,
   MEX: { landmark: 'chichen', place: 'Chichén Itzá' },
   USA: { landmark: 'libertad', place: 'la Estatua de la Libertad' },
   CAN: { landmark: 'cntower', place: 'la Torre CN y las Montañas Rocosas' },

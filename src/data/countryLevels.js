@@ -33,6 +33,7 @@ export function getCountryLevels(country) {
     // Scenery of the country instead of the city buildings
     level.backgroundStyle = 'landmark';
     level.theme = theme.landmark;
+    level.flag = country.id; // its flag waves next to the landmark (see landmarks/flags.js)
     level.buildings = [];
 
     // Every country level ends at a flag (the normal level 4 ends at a castle)
