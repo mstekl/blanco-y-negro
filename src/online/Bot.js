@@ -7,10 +7,13 @@
 //   - In the BÚSQUEDA it flies from place to place looking for ITS OWN
 //     5 good pencils (its pencils are hidden in other places than ours).
 //     Sometimes it makes a mistake and grabs a bad one, and loses a life!
+//   - In LAVA QUE SUBE it climbs the tower from platform to platform,
+//     with its own lava rising under it.
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
 import { pencilSpots, pencilsToHide } from '../scenes/SearchLevelScene.js';
+import { lavaSpeed, LAVA_START_Y, PIXELS_PER_METER } from '../scenes/LavaLevelScene.js';
 
 // How good the machine is in each level
 //   speed:    pixels per second (our hero walks at 160)
@@ -171,6 +174,99 @@ export class SearchBot {
 
   label() {
     return `${this.found}/${this.goal}  ${'❤'.repeat(Math.max(0, this.lives))}`;
+  }
+}
+
+// --- The machine in LAVA QUE SUBE ---
+// It climbs the SAME tower as us, from platform to platform, and it has its
+// own lava rising under it (at the same speed as ours). If the lava touches it,
+// it loses a life and jumps out onto a higher platform, like us.
+// climb = pixels per second along the way up, for each level
+const CLIMB = { facil: 75, normal: 110, dificil: 145 };
+
+export class LavaBot {
+  constructor(level, lives, tower) {
+    this.cfg = LEVELS[level] || LEVELS.normal;
+    this.speed = CLIMB[level] || CLIMB.normal;
+    this.levelIndex = 0; // the tower is "level 0" (the ghost looks at this)
+    this.lives = lives;
+    this.tower = tower;
+    // The way up: the top of every platform, in order (without the ground)
+    this.steps = tower.platforms.slice(1).map((p) => ({ x: p.x + p.width / 2, y: p.y - 24 }));
+    this.next = 0;
+    this.x = tower.heroStart.x;
+    this.y = GROUND_Y;
+    this.startY = this.y;
+    this.lavaY = LAVA_START_Y;
+    this.lavaTime = 0;
+    this.wait = 0;
+    this.nextStop = 4;
+    this.finished = false;
+  }
+
+  // Gives back 'won' (got to the top) or 'out' (lost its lives)
+  update(seconds) {
+    if (this.finished) return null;
+
+    // Its lava rises like ours
+    this.lavaTime += seconds;
+    this.lavaY -= lavaSpeed(this.lavaTime) * seconds;
+    if (this.y + 24 > this.lavaY + 8) {
+      this.lives -= 1;
+      if (this.lives <= 0) {
+        this.finished = true;
+        return 'out';
+      }
+      // Out of the lava, onto the first safe platform
+      const safe = this.steps.findIndex((s) => s.y < this.lavaY - 120);
+      if (safe >= 0) {
+        this.next = safe;
+        this.x = this.steps[safe].x;
+        this.y = this.steps[safe].y;
+      }
+      this.lavaY += 60;
+    }
+
+    if (this.wait > 0) {
+      this.wait -= seconds;
+      return null;
+    }
+    // From time to time it stops a little (it "makes mistakes", like us)
+    this.nextStop -= seconds;
+    if (this.nextStop <= 0) {
+      this.wait = this.cfg.stops * (0.5 + Math.random());
+      this.nextStop = 3 + Math.random() * 5;
+    }
+
+    // Float towards the next platform (it's a ghost: it can fly a little)
+    const target = this.steps[this.next];
+    const dx = target.x - this.x;
+    const dy = target.y - this.y;
+    const dist = Math.hypot(dx, dy);
+    const step = this.speed * seconds;
+    if (dist <= step) {
+      this.x = target.x;
+      this.y = target.y;
+      this.next += 1;
+      if (this.next >= this.steps.length) {
+        this.finished = true;
+        return 'won';
+      }
+    } else {
+      this.x += (dx / dist) * step;
+      this.y += (dy / dist) * step;
+    }
+    return null;
+  }
+
+  progress() {
+    const top = this.tower.goal.y;
+    return Phaser.Math.Clamp((this.startY - this.y) / (this.startY - top), 0, 1);
+  }
+
+  label() {
+    const meters = Math.max(0, Math.round((568 - (this.y + 24)) / PIXELS_PER_METER));
+    return `${meters} m  ${'❤'.repeat(Math.max(0, this.lives))}`;
   }
 }
 

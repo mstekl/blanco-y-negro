@@ -1,5 +1,6 @@
 // RaceScene.js — The race! (It also runs the BÚSQUEDA mode — see SearchLevelScene.js —
-// where we look for 5 colored pencils instead of running to level 4.)
+// where we look for 5 colored pencils instead of running to level 4, and
+// LAVA QUE SUBE — see LavaLevelScene.js — where we climb a tower before the lava gets us.)
 // There are 3 ways to play (we choose in ModeChoiceScene.js):
 //   - OFFLINE ('dos'): two players on the same screen, split in two halves:
 //       LEFT half:  player 1, plays with W A D (and S to shoot)
@@ -17,7 +18,8 @@
 
 import Phaser from 'phaser';
 import LevelScene from './LevelScene.js';
-import { RaceBot, SearchBot } from '../online/Bot.js';
+import { RaceBot, SearchBot, LavaBot } from '../online/Bot.js';
+import { buildTower, todaysSeed, PIXELS_PER_METER } from './LavaLevelScene.js';
 import { loadProfile } from '../data/profile.js';
 import { addCoins, makeCoinTexture } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
@@ -98,6 +100,27 @@ const MODES = {
     weWon: '¡Encontraste los 5 lápices!',
     theyWon: 'encontró los 5 lápices',
   },
+  // Lava que sube: the first one to climb to the top of the tower wins
+  // (see LavaLevelScene.js). No shooting: there are no villains, only lava!
+  lava: {
+    intro: ['¡La lava sube! Trepa por las plataformas', '¡El primero en llegar arriba gana!'],
+    players: [
+      {
+        player: 1, side: 0, scene: 'LavaLeft', controls: 'wasd', color: '#44aaff',
+        help: 'A D Mover  |  W Saltar (2 veces = doble salto)',
+      },
+      {
+        player: 2, side: 1, scene: 'LavaRight', controls: 'arrows', color: '#ff9933',
+        help: '← → Mover  |  ↑ Saltar (2 veces = doble salto)',
+      },
+    ],
+    solo: {
+      player: 1, scene: 'LavaLeft', controls: 'normal', full: true, color: '#44aaff',
+      help: '← → Mover  |  ↑ Saltar (2 veces = doble salto)',
+    },
+    weWon: '¡Llegaste arriba antes que la lava!',
+    theyWon: 'llegó arriba primero',
+  },
 };
 
 class RaceScene extends Phaser.Scene {
@@ -134,11 +157,14 @@ class RaceScene extends Phaser.Scene {
     // A new race = new weather in every level (both halves share it, see WeatherManager.js)
     forgetWeather(this.registry, 'carrera:');
 
+    // Lava que sube: everybody climbs the same tower (it is built from today's date)
+    this.towerSeed = todaysSeed();
+
     // The machine must be ready BEFORE the level starts (the level draws its ghost)
     if (this.how === 'maquina') {
-      this.bot = this.modeName === 'busqueda'
-        ? new SearchBot(this.level, SEARCH_LIVES)
-        : new RaceBot(this.level, LEVELS_TO_WIN);
+      if (this.modeName === 'busqueda') this.bot = new SearchBot(this.level, SEARCH_LIVES);
+      else if (this.modeName === 'lava') this.bot = new LavaBot(this.level, SEARCH_LIVES, buildTower(this.towerSeed));
+      else this.bot = new RaceBot(this.level, LEVELS_TO_WIN);
       this.rivals = [this.makeRival({ id: 'bot', name: '🤖 MÁQUINA' })];
     }
     if (this.net) {
@@ -209,7 +235,7 @@ class RaceScene extends Phaser.Scene {
 
     // "JUGADOR 1" and "JUGADOR 2" in the top-left corner of each half
     // (in the search it goes a bit lower, under the hearts)
-    const labelY = this.mode === MODES.busqueda ? 40 : 10;
+    const labelY = this.modeName === 'carrera' ? 10 : 40;
     this.players.forEach((p) => {
       this.add.text(p.side * 400 + 12, labelY, `JUGADOR ${p.player}`, {
         fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: p.color,
@@ -313,6 +339,13 @@ class RaceScene extends Phaser.Scene {
       this.lastMine = {
         frac: found / GOOD_PENCILS,
         label: `${found}/${GOOD_PENCILS}  ${'❤'.repeat(Math.max(0, level.hero.lives))}`,
+      };
+    } else if (this.modeName === 'lava') {
+      // How high we climbed (meters) and our hearts
+      const meters = Math.max(0, Math.round((568 - level.hero.body.bottom) / PIXELS_PER_METER));
+      this.lastMine = {
+        frac: level.climbFrac || 0,
+        label: `${meters} m  ${'❤'.repeat(Math.max(0, level.hero.lives))}`,
       };
     } else {
       const start = level.levelData.heroStart.x;

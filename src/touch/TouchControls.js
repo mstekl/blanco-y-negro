@@ -235,9 +235,12 @@ export function setupTouchControls() {
 
   // The race and the search tell us when they start and end, so we switch pads
   window.addEventListener('dos-jugadores', (e) => {
-    const [button1, button2] = actionButtons[e.detail.mode] || actionButtons.carrera;
-    jump1.insertBefore(button1, jump1.firstChild);
-    jump2.insertBefore(button2, jump2.firstChild);
+    // (in LAVA QUE SUBE there is nothing to shoot or grab: only ◀ ▶ and ▲)
+    if (e.detail.mode !== 'lava') {
+      const [button1, button2] = actionButtons[e.detail.mode] || actionButtons.carrera;
+      jump1.insertBefore(button1, jump1.firstChild);
+      jump2.insertBefore(button2, jump2.firstChild);
+    }
     showKeyboard(false);
     pad.classList.add('tc-hidden');
     two.classList.add('tc-open');

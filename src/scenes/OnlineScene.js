@@ -16,7 +16,7 @@ import { skinTexture, fitImage } from '../data/skins.js';
 const PLAYER_COLORS = ['#44aaff', '#ff9933', '#66ee88', '#ff77cc'];
 
 // The games we can play online
-const MODE_NAMES = { carrera: 'CARRERA', busqueda: 'BÚSQUEDA', supervivencia: 'SUPERVIVENCIA' };
+const MODE_NAMES = { carrera: 'CARRERA', busqueda: 'BÚSQUEDA', supervivencia: 'SUPERVIVENCIA', lava: 'LAVA QUE SUBE' };
 const validMode = (mode) => (MODE_NAMES[mode] ? mode : 'carrera');
 
 class OnlineScene extends Phaser.Scene {
@@ -283,7 +283,7 @@ class OnlineScene extends Phaser.Scene {
     if (this.playing || this.leaving) return;
     this.playing = true; // the race keeps the connection, so we don't hang up
     this.leaving = true;
-    // SUPERVIVENCIA has its own scene; the race and the search use RaceScene
+    // SUPERVIVENCIA has its own scene; the race, the search and the lava use RaceScene
     if (mode === 'supervivencia') this.scene.start('SurvivalScene', { net: this.net, players });
     else this.scene.start('RaceScene', { mode, how: 'online', net: this.net, players });
   }

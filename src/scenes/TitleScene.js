@@ -249,7 +249,7 @@ class TitleScene extends Phaser.Scene {
     this.goTo('SkinsScene');
   }
 
-  // Go to the race (mode 'carrera') or the search (mode 'busqueda'),
+  // Go to the race (mode 'carrera'), the search (mode 'busqueda') or the lava (mode 'lava'),
   // first to the screen that asks ONLINE, OFFLINE or MÁQUINA:
   // both heroes wear the skin chosen here
   startRace(mode = 'carrera') {
@@ -304,11 +304,12 @@ class TitleScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------
-  // Right side, next to the big hero: EDITOR and SUPERVIVENCIA
+  // Right side, next to the big hero: LAVA, JUNTOS, EDITOR and SUPERVIVENCIA
   // (and the 🔊 button at the top left, next to our player)
   // ---------------------------------------------------------------
   createRightButtons() {
     // (MISIONES is in the CASILLERO tab, and the TIENDA has its own tab in the top bar)
+    this.sideButton(700, 233, '🌋 LAVA [U]', 0xff7a00, () => this.startRace('lava'));
     this.sideButton(700, 287, '👫 JUNTOS [J]', 0x44aaff, () => this.startGame(true));
     this.sideButton(700, 341, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
     this.sideButton(700, 395, '🛡 SUPERVIVENCIA [V]', 0xff5555, () => this.startSurvival());
@@ -444,6 +445,7 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyL') this.openPencils();
       else if (event.code === 'KeyC') this.startRace();
       else if (event.code === 'KeyB') this.startRace('busqueda');
+      else if (event.code === 'KeyU') this.startRace('lava');
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
       else if (event.code === 'KeyM') this.goTo('MissionsScene');
       else if (event.code === 'KeyV') this.startSurvival();

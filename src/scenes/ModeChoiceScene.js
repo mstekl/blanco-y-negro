@@ -1,4 +1,4 @@
-// ModeChoiceScene.js — Before a CARRERA or a BÚSQUEDA we choose HOW to play:
+// ModeChoiceScene.js — Before a CARRERA, a BÚSQUEDA or LAVA QUE SUBE we choose HOW to play:
 //   🌐 ONLINE  → against a friend on ANOTHER phone, iPad or computer,
 //               connected with a secret word (see OnlineScene.js)
 //   👥 OFFLINE → two players on THIS screen, each one on half (like always)
@@ -12,6 +12,7 @@ const TITLES = {
   carrera: '🏁 CARRERA',
   busqueda: '🔍 BÚSQUEDA',
   supervivencia: '🛡 SUPERVIVENCIA',
+  lava: '🌋 LAVA QUE SUBE',
 };
 
 class ModeChoiceScene extends Phaser.Scene {
@@ -19,9 +20,9 @@ class ModeChoiceScene extends Phaser.Scene {
     super('ModeChoiceScene');
   }
 
-  // data.mode = 'carrera', 'busqueda' or 'supervivencia'
+  // data.mode = 'carrera', 'busqueda', 'supervivencia' or 'lava'
   init(data) {
-    this.mode = ['busqueda', 'supervivencia'].includes(data.mode) ? data.mode : 'carrera';
+    this.mode = TITLES[data.mode] ? data.mode : 'carrera';
     this.leaving = false;
   }
 
