@@ -30,6 +30,7 @@ import AchievementsScene from './scenes/AchievementsScene.js';
 import ShareLevelScene from './scenes/ShareLevelScene.js';
 import { SearchLeftScene, SearchRightScene } from './scenes/SearchLevelScene.js';
 import { LavaLeftScene, LavaRightScene } from './scenes/LavaLevelScene.js';
+import CaptureScene from './scenes/CaptureScene.js';
 import { setupTouchControls } from './touch/TouchControls.js';
 
 // Game configuration — think of this as the "settings" for our game
@@ -69,9 +70,10 @@ const config = {
   // Boot → PreloadScene → TitleScene (↔ SkinsScene, PencilsScene) → LevelIntro → Level → GameOver/Celebration → WorldMap → Win
   // The race (from the sala): RaceScene on top, with RaceLeft and RaceRight (one level for each half)
   // The search (BÚSQUEDA) uses RaceScene too, with SearchLeft and SearchRight, and LAVA QUE SUBE with LavaLeft and LavaRight
+  // CAPTURA LA BANDERA uses RaceScene with ONE CaptureScene for both players (two cameras)
   // Before them, ModeChoiceScene asks ONLINE / OFFLINE / MÁQUINA (and OnlineScene connects with a friend)
   scene: [BootScene, PreloadScene, TitleScene, ProfileScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
-    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, RaceScene]
+    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, CaptureScene, RaceScene]
 };
 
 // Create the game!

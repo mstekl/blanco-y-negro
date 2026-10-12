@@ -9,11 +9,14 @@
 //     Sometimes it makes a mistake and grabs a bad one, and loses a life!
 //   - In LAVA QUE SUBE it climbs the tower from platform to platform,
 //     with its own lava rising under it.
+//   - In CAPTURA LA BANDERA it flies to steal our flag, and chases us
+//     when we steal its flag.
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
 import { pencilSpots, pencilsToHide } from '../scenes/SearchLevelScene.js';
 import { lavaSpeed, LAVA_START_Y, PIXELS_PER_METER } from '../scenes/LavaLevelScene.js';
+import { BASE_X as CAPTURE_BASE_X } from '../scenes/CaptureScene.js';
 
 // How good the machine is in each level
 //   speed:    pixels per second (our hero walks at 160)
@@ -267,6 +270,88 @@ export class LavaBot {
   label() {
     const meters = Math.max(0, Math.round((568 - (this.y + 24)) / PIXELS_PER_METER));
     return `${meters} m  ${'❤'.repeat(Math.max(0, this.lives))}`;
+  }
+}
+
+// --- The machine in CAPTURA LA BANDERA ---
+// It is the ORANGE team (base on the right). The arena (CaptureScene.js) tells
+// it what is going on every moment (think), and it decides where to fly:
+//   - carrying our flag      → home to its base, to score a point
+//   - we carry ITS flag      → it chases us, to touch us and get its flag back
+//   - otherwise              → it goes to steal our flag
+// The arena does the grabbing, the touching and the points, like for a hero.
+const FLY = { facil: 85, normal: 120, dificil: 150 }; // our hero walks at 160
+
+export class CaptureBot {
+  constructor(level, pointsToWin) {
+    this.cfg = LEVELS[level] || LEVELS.normal;
+    this.speed = FLY[level] || FLY.normal;
+    this.goal = pointsToWin;
+    this.levelIndex = 0; // the arena is "level 0" (the ghost looks at this)
+    this.home = { x: CAPTURE_BASE_X[1], y: GROUND_Y };
+    this.x = this.home.x;
+    this.y = this.home.y;
+    this.score = 0;      // the arena counts the points and writes them here
+    this.target = null;
+    this.wait = 0;
+    this.nextStop = 4;
+    this.finished = false;
+  }
+
+  // The arena tells us what is going on, and we choose where to go
+  think(view) {
+    if (view.botCarrying) this.target = this.home;
+    else if (view.heroCarrying) this.target = { x: view.heroX, y: view.heroY };
+    else this.target = { x: view.flagX, y: view.flagY };
+  }
+
+  // We were touched while carrying the flag: back to our base, and a little wait
+  sendHome() {
+    this.x = this.home.x;
+    this.y = this.home.y;
+    this.wait = 1.5;
+  }
+
+  // Gives back 'won' when we have all the points
+  update(seconds) {
+    if (this.finished) return null;
+    if (this.score >= this.goal) {
+      this.finished = true;
+      return 'won';
+    }
+    if (this.wait > 0) {
+      this.wait -= seconds;
+      return null;
+    }
+    // From time to time it stops a little (it "makes mistakes", like us)
+    this.nextStop -= seconds;
+    if (this.nextStop <= 0) {
+      this.wait = this.cfg.stops * (0.5 + Math.random());
+      this.nextStop = 3 + Math.random() * 5;
+    }
+    if (!this.target) return null;
+
+    // Fly towards the target (it's a ghost: it can float over everything)
+    const dx = this.target.x - this.x;
+    const dy = this.target.y - this.y;
+    const dist = Math.hypot(dx, dy);
+    const step = this.speed * seconds;
+    if (dist <= step) {
+      this.x = this.target.x;
+      this.y = this.target.y;
+    } else {
+      this.x += (dx / dist) * step;
+      this.y += (dy / dist) * step;
+    }
+    return null;
+  }
+
+  progress() {
+    return this.score / this.goal;
+  }
+
+  label() {
+    return `🚩 ${this.score}/${this.goal}`;
   }
 }
 

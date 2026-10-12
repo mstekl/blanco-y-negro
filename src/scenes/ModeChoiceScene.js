@@ -1,4 +1,5 @@
-// ModeChoiceScene.js — Before a CARRERA, a BÚSQUEDA or LAVA QUE SUBE we choose HOW to play:
+// ModeChoiceScene.js — Before a CARRERA, a BÚSQUEDA, LAVA QUE SUBE or CAPTURA LA BANDERA
+// we choose HOW to play (the bandera has no ONLINE yet):
 //   🌐 ONLINE  → against a friend on ANOTHER phone, iPad or computer,
 //               connected with a secret word (see OnlineScene.js)
 //   👥 OFFLINE → two players on THIS screen, each one on half (like always)
@@ -13,6 +14,7 @@ const TITLES = {
   busqueda: '🔍 BÚSQUEDA',
   supervivencia: '🛡 SUPERVIVENCIA',
   lava: '🌋 LAVA QUE SUBE',
+  bandera: '🚩 CAPTURA LA BANDERA',
 };
 
 class ModeChoiceScene extends Phaser.Scene {
@@ -20,7 +22,7 @@ class ModeChoiceScene extends Phaser.Scene {
     super('ModeChoiceScene');
   }
 
-  // data.mode = 'carrera', 'busqueda', 'supervivencia' or 'lava'
+  // data.mode = 'carrera', 'busqueda', 'supervivencia', 'lava' or 'bandera'
   init(data) {
     this.mode = TITLES[data.mode] ? data.mode : 'carrera';
     this.leaving = false;
@@ -52,6 +54,12 @@ class ModeChoiceScene extends Phaser.Scene {
         () => this.goTo('OnlineScene', { mode: this.mode }));
       this.makeButton(this.howPage, 380, '2', '🙂 SOLO', '¿Cuánto aguantas tú solo?', 0x66ee88,
         () => this.goTo('SurvivalScene'));
+    } else if (this.mode === 'bandera') {
+      // CAPTURA LA BANDERA has no ONLINE yet: here or against the machine
+      this.makeButton(this.howPage, 260, '1', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
+        () => this.goTo('RaceScene', { mode: this.mode, how: 'dos' }));
+      this.makeButton(this.howPage, 400, '2', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
+        () => this.showPage('levels'));
     } else {
       this.makeButton(this.howPage, 200, '1', '🌐 ONLINE', 'Juega con otra persona con una palabra secreta', 0x44aaff,
         () => this.goTo('OnlineScene', { mode: this.mode }));

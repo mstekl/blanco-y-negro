@@ -1,6 +1,7 @@
 // RaceScene.js — The race! (It also runs the BÚSQUEDA mode — see SearchLevelScene.js —
 // where we look for 5 colored pencils instead of running to level 4, and
-// LAVA QUE SUBE — see LavaLevelScene.js — where we climb a tower before the lava gets us.)
+// LAVA QUE SUBE — see LavaLevelScene.js — where we climb a tower before the lava gets us,
+// and CAPTURA LA BANDERA — see CaptureScene.js — where both players share ONE arena.)
 // There are 3 ways to play (we choose in ModeChoiceScene.js):
 //   - OFFLINE ('dos'): two players on the same screen, split in two halves:
 //       LEFT half:  player 1, plays with W A D (and S to shoot)
@@ -18,8 +19,9 @@
 
 import Phaser from 'phaser';
 import LevelScene from './LevelScene.js';
-import { RaceBot, SearchBot, LavaBot } from '../online/Bot.js';
+import { RaceBot, SearchBot, LavaBot, CaptureBot } from '../online/Bot.js';
 import { buildTower, todaysSeed, PIXELS_PER_METER } from './LavaLevelScene.js';
+import { POINTS_TO_WIN } from './CaptureScene.js';
 import { loadProfile } from '../data/profile.js';
 import { addCoins, makeCoinTexture } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
@@ -121,6 +123,29 @@ const MODES = {
     weWon: '¡Llegaste arriba antes que la lava!',
     theyWon: 'llegó arriba primero',
   },
+  // Captura la bandera: steal the other team's flag and bring it to your base,
+  // 3 times (see CaptureScene.js). Here both players are in the SAME world:
+  // one scene for both halves ("shared"), with two cameras
+  bandera: {
+    shared: true,
+    intro: ['¡Trae la bandera del otro a tu base!', `El primero en hacer ${POINTS_TO_WIN} puntos gana`],
+    players: [
+      {
+        player: 1, side: 0, scene: 'CaptureScene', controls: 'wasd', color: '#44aaff',
+        help: 'A D Mover  |  W Saltar',
+      },
+      {
+        player: 2, side: 1, scene: 'CaptureScene', controls: 'arrows', color: '#ff9933',
+        help: '← → Mover  |  ↑ Saltar',
+      },
+    ],
+    solo: {
+      player: 1, scene: 'CaptureScene', controls: 'normal', full: true, color: '#44aaff',
+      help: '← → Mover  |  ↑ Saltar',
+    },
+    weWon: `¡Capturaste ${POINTS_TO_WIN} banderas!`,
+    theyWon: `capturó ${POINTS_TO_WIN} banderas`,
+  },
 };
 
 class RaceScene extends Phaser.Scene {
@@ -164,6 +189,7 @@ class RaceScene extends Phaser.Scene {
     if (this.how === 'maquina') {
       if (this.modeName === 'busqueda') this.bot = new SearchBot(this.level, SEARCH_LIVES);
       else if (this.modeName === 'lava') this.bot = new LavaBot(this.level, SEARCH_LIVES, buildTower(this.towerSeed));
+      else if (this.modeName === 'bandera') this.bot = new CaptureBot(this.level, POINTS_TO_WIN);
       else this.bot = new RaceBot(this.level, LEVELS_TO_WIN);
       this.rivals = [this.makeRival({ id: 'bot', name: '🤖 MÁQUINA' })];
     }
@@ -174,8 +200,11 @@ class RaceScene extends Phaser.Scene {
     }
 
     // Start both halves (or the whole screen), each with its own player data
-    this.players.forEach((p) => {
-      this.scene.launch(p.scene, { levelIndex: 0, race: { ...p, goalLevel: LEVELS_TO_WIN } });
+    // (in a "shared" mode both players are in ONE scene: we start it only once,
+    // with player 1 as its "race" data and everybody in "players")
+    const toStart = this.mode.shared ? [this.players[0]] : this.players;
+    toStart.forEach((p) => {
+      this.scene.launch(p.scene, { levelIndex: 0, race: { ...p, goalLevel: LEVELS_TO_WIN }, players: this.players });
     });
     // This scene must be drawn ON TOP of the levels
     this.scene.bringToTop();
@@ -235,7 +264,7 @@ class RaceScene extends Phaser.Scene {
 
     // "JUGADOR 1" and "JUGADOR 2" in the top-left corner of each half
     // (in the search it goes a bit lower, under the hearts)
-    const labelY = this.modeName === 'carrera' ? 10 : 40;
+    const labelY = ['carrera', 'bandera'].includes(this.modeName) ? 10 : 40;
     this.players.forEach((p) => {
       this.add.text(p.side * 400 + 12, labelY, `JUGADOR ${p.player}`, {
         fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: p.color,
@@ -340,6 +369,10 @@ class RaceScene extends Phaser.Scene {
         frac: found / GOOD_PENCILS,
         label: `${found}/${GOOD_PENCILS}  ${'❤'.repeat(Math.max(0, level.hero.lives))}`,
       };
+    } else if (this.modeName === 'bandera') {
+      // How many flags we brought home
+      const points = level.scores ? level.scores[0] : 0;
+      this.lastMine = { frac: points / POINTS_TO_WIN, label: `🚩 ${points}/${POINTS_TO_WIN}` };
     } else if (this.modeName === 'lava') {
       // How high we climbed (meters) and our hearts
       const meters = Math.max(0, Math.round((568 - level.hero.body.bottom) / PIXELS_PER_METER));

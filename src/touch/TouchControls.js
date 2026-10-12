@@ -235,8 +235,8 @@ export function setupTouchControls() {
 
   // The race and the search tell us when they start and end, so we switch pads
   window.addEventListener('dos-jugadores', (e) => {
-    // (in LAVA QUE SUBE there is nothing to shoot or grab: only ◀ ▶ and ▲)
-    if (e.detail.mode !== 'lava') {
+    // (in LAVA QUE SUBE and CAPTURA LA BANDERA there is nothing to shoot: only ◀ ▶ and ▲)
+    if (!['lava', 'bandera'].includes(e.detail.mode)) {
       const [button1, button2] = actionButtons[e.detail.mode] || actionButtons.carrera;
       jump1.insertBefore(button1, jump1.firstChild);
       jump2.insertBefore(button2, jump2.firstChild);

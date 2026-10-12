@@ -309,6 +309,7 @@ class TitleScene extends Phaser.Scene {
   // ---------------------------------------------------------------
   createRightButtons() {
     // (MISIONES is in the CASILLERO tab, and the TIENDA has its own tab in the top bar)
+    this.sideButton(700, 179, '🚩 BANDERA [F]', 0x44dd88, () => this.startRace('bandera'));
     this.sideButton(700, 233, '🌋 LAVA [U]', 0xff7a00, () => this.startRace('lava'));
     this.sideButton(700, 287, '👫 JUNTOS [J]', 0x44aaff, () => this.startGame(true));
     this.sideButton(700, 341, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
@@ -446,6 +447,7 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyC') this.startRace();
       else if (event.code === 'KeyB') this.startRace('busqueda');
       else if (event.code === 'KeyU') this.startRace('lava');
+      else if (event.code === 'KeyF') this.startRace('bandera');
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
       else if (event.code === 'KeyM') this.goTo('MissionsScene');
       else if (event.code === 'KeyV') this.startSurvival();
