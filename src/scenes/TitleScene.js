@@ -233,6 +233,17 @@ class TitleScene extends Phaser.Scene {
     raceButton.on('pointerover', () => raceButton.setFillStyle(0x444444));
     raceButton.on('pointerout', () => raceButton.setFillStyle(0x222222));
     raceButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace(); });
+
+    // ESCONDIDAS button, under CARRERA: hide and seek, taking turns
+    const hideButton = this.add.rectangle(150, 552, 180, 40, 0x222222)
+      .setStrokeStyle(3, 0x88dd44)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(150, 552, '🙈 ESCONDIDAS [H]', {
+      fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5);
+    hideButton.on('pointerover', () => hideButton.setFillStyle(0x444444));
+    hideButton.on('pointerout', () => hideButton.setFillStyle(0x222222));
+    hideButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace('escondidas'); });
   }
 
   // Show the chosen skin in the big preview and in the SKINS button
@@ -448,6 +459,7 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyB') this.startRace('busqueda');
       else if (event.code === 'KeyU') this.startRace('lava');
       else if (event.code === 'KeyF') this.startRace('bandera');
+      else if (event.code === 'KeyH') this.startRace('escondidas');
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
       else if (event.code === 'KeyM') this.goTo('MissionsScene');
       else if (event.code === 'KeyV') this.startSurvival();

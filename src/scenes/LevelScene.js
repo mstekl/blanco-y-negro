@@ -353,17 +353,27 @@ class LevelScene extends Phaser.Scene {
   // The machine itself lives in the RaceScene (see Bot.js); here we only draw it.
   createGhost() {
     this.ghost = null;
-    const bot = this.race && this.scene.get('RaceScene').bot;
+    const bot = this.race && this.raceBot();
     if (!bot) return;
     const body = this.add.image(0, 0, 'hero').setTint(0x99ddff);
     const tag = this.add.text(0, -36, '🤖', { fontSize: '18px' }).setOrigin(0.5);
     this.ghost = this.add.container(bot.x, bot.y, [body, tag]).setAlpha(0.5).setDepth(2);
   }
 
+  // The race (the scene on top) says when we can move, and has the machine.
+  // (ESCONDIDAS has its own clock and its own machine, so it changes these two)
+  raceStarted() {
+    return this.scene.get('RaceScene').started;
+  }
+
+  raceBot() {
+    return this.scene.get('RaceScene').bot;
+  }
+
   // The ghost goes where the machine is, but only if it is in OUR level
   moveGhost() {
     if (!this.ghost) return;
-    const bot = this.scene.get('RaceScene').bot;
+    const bot = this.raceBot();
     this.ghost.setVisible(bot.levelIndex === this.levelIndex && !bot.finished);
     // It glides there smoothly (no jumps from one place to another),
     // unless it is very far away (it just started a new level)
@@ -972,7 +982,7 @@ class LevelScene extends Phaser.Scene {
     this.moveGhost();
     if (this.levelComplete) return;
     // In the race nobody moves until the countdown says "¡YA!"
-    if (this.race && !this.scene.get('RaceScene').started) return;
+    if (this.race && !this.raceStarted()) return;
 
     // Update hero (input and movement) — both of them with JUNTOS
     this.heroes.forEach((hero) => hero.update());

@@ -11,6 +11,7 @@
 //     with its own lava rising under it.
 //   - In CAPTURA LA BANDERA it flies to steal our flag, and chases us
 //     when we steal its flag.
+//   - In ESCONDIDAS it looks inside the hiding places, one by one.
 
 import Phaser from 'phaser';
 import { levels } from '../data/levels.js';
@@ -352,6 +353,87 @@ export class CaptureBot {
 
   label() {
     return `🚩 ${this.score}/${this.goal}`;
+  }
+}
+
+// --- The machine in ESCONDIDAS, when it SEEKS ---
+// It flies from hiding place to hiding place (the closest ones first, with a bit
+// of luck) and looks inside each one. When it FLEW past us without seeing us
+// (a "miss"), it comes back later. If we didn't hide, it sees us from far away!
+//   speed: pixels per second · look: seconds looking inside · miss: the chance of not seeing us
+const SEEK = {
+  facil: { speed: 110, look: 1.2, miss: 0.4 },
+  normal: { speed: 150, look: 0.8, miss: 0.15 },
+  dificil: { speed: 190, look: 0.5, miss: 0 },
+};
+
+export class HideBot {
+  constructor(level, places, start) {
+    this.cfg = SEEK[level] || SEEK.normal;
+    this.x = start.x;
+    this.y = start.y;
+    this.toVisit = [...places];
+    this.later = []; // places where it didn't see us (it comes back at the end)
+    this.target = null;
+    this.wait = 0;
+  }
+
+  // "hidingPlace" = where the hider is (null if they didn't hide), "hiderHero" = the hider.
+  // Gives back { looked: place } after looking inside a place, { found: true }, or null
+  update(seconds, hidingPlace, hiderHero) {
+    if (this.wait > 0) {
+      this.wait -= seconds;
+      if (this.wait <= 0 && this.target) return this.look(hidingPlace);
+      return null;
+    }
+    // The hider is standing outside: the machine sees them and goes straight there!
+    if (!hidingPlace && hiderHero && Math.abs(hiderHero.x - this.x) < 350) {
+      this.target = { x: hiderHero.x, y: hiderHero.y, isHero: true };
+    }
+    if (!this.target) this.target = this.choosePlace(hidingPlace);
+    if (!this.target) return null;
+
+    // Fly towards it (it's a ghost: it can float over the pits)
+    const dx = this.target.x - this.x;
+    const dy = this.target.y - this.y;
+    const dist = Math.hypot(dx, dy);
+    const step = this.cfg.speed * seconds;
+    if (dist > step) {
+      this.x += (dx / dist) * step;
+      this.y += (dy / dist) * step;
+      return null;
+    }
+    this.x = this.target.x;
+    this.y = this.target.y;
+    if (this.target.isHero) return { found: true };
+    this.wait = this.cfg.look; // look inside for a moment
+    return null;
+  }
+
+  // One of the 2 closest places we haven't looked into yet
+  choosePlace(hidingPlace) {
+    if (this.toVisit.length === 0) {
+      // We looked everywhere: back to the place where we didn't see them,
+      // and this time we look better
+      this.toVisit = this.later;
+      this.later = [];
+      this.cfg = { ...this.cfg, miss: 0 };
+      if (this.toVisit.length === 0) return null;
+    }
+    const byDistance = [...this.toVisit].sort((a, b) => Math.abs(a.x - this.x) - Math.abs(b.x - this.x));
+    return Phaser.Utils.Array.GetRandom(byDistance.slice(0, 2));
+  }
+
+  look(hidingPlace) {
+    const place = this.target;
+    this.target = null;
+    this.toVisit = this.toVisit.filter((p) => p !== place);
+    if (place === hidingPlace) {
+      if (Math.random() >= this.cfg.miss) return { found: true };
+      // It didn't see us! It will come back when it has looked everywhere else
+      this.later.push(place);
+    }
+    return { looked: place };
   }
 }
 

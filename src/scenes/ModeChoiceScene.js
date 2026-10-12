@@ -1,5 +1,5 @@
-// ModeChoiceScene.js — Before a CARRERA, a BÚSQUEDA, LAVA QUE SUBE or CAPTURA LA BANDERA
-// we choose HOW to play (the bandera has no ONLINE yet):
+// ModeChoiceScene.js — Before a CARRERA, a BÚSQUEDA, LAVA QUE SUBE, CAPTURA LA BANDERA
+// or ESCONDIDAS we choose HOW to play (the bandera and the escondidas have no ONLINE yet):
 //   🌐 ONLINE  → against a friend on ANOTHER phone, iPad or computer,
 //               connected with a secret word (see OnlineScene.js)
 //   👥 OFFLINE → two players on THIS screen, each one on half (like always)
@@ -15,6 +15,7 @@ const TITLES = {
   supervivencia: '🛡 SUPERVIVENCIA',
   lava: '🌋 LAVA QUE SUBE',
   bandera: '🚩 CAPTURA LA BANDERA',
+  escondidas: '🙈 ESCONDIDAS',
 };
 
 class ModeChoiceScene extends Phaser.Scene {
@@ -22,7 +23,7 @@ class ModeChoiceScene extends Phaser.Scene {
     super('ModeChoiceScene');
   }
 
-  // data.mode = 'carrera', 'busqueda', 'supervivencia', 'lava' or 'bandera'
+  // data.mode = 'carrera', 'busqueda', 'supervivencia', 'lava', 'bandera' or 'escondidas'
   init(data) {
     this.mode = TITLES[data.mode] ? data.mode : 'carrera';
     this.leaving = false;
@@ -54,6 +55,12 @@ class ModeChoiceScene extends Phaser.Scene {
         () => this.goTo('OnlineScene', { mode: this.mode }));
       this.makeButton(this.howPage, 380, '2', '🙂 SOLO', '¿Cuánto aguantas tú solo?', 0x66ee88,
         () => this.goTo('SurvivalScene'));
+    } else if (this.mode === 'escondidas') {
+      // ESCONDIDAS: two players taking turns on this screen, or against the machine
+      this.makeButton(this.howPage, 260, '1', '👥 OFFLINE', 'Dos personas por turnos: ¡el que busca cierra los ojos!', 0x66ee88,
+        () => this.goTo('HideSeekScene', { how: 'dos' }));
+      this.makeButton(this.howPage, 400, '2', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
+        () => this.showPage('levels'));
     } else if (this.mode === 'bandera') {
       // CAPTURA LA BANDERA has no ONLINE yet: here or against the machine
       this.makeButton(this.howPage, 260, '1', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
@@ -126,7 +133,9 @@ class ModeChoiceScene extends Phaser.Scene {
   }
 
   playMachine(level) {
-    this.goTo('RaceScene', { mode: this.mode, how: 'maquina', level });
+    // ESCONDIDAS has its own scene; the other games are played inside the race
+    if (this.mode === 'escondidas') this.goTo('HideSeekScene', { how: 'maquina', level });
+    else this.goTo('RaceScene', { mode: this.mode, how: 'maquina', level });
   }
 
   goTo(sceneName, data) {
