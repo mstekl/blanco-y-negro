@@ -61,6 +61,15 @@ export const levels = [
       { type: 'cofre', x: 996, y: 284 },           // 🧰 a chest on the high platform (it shines)
     ],
 
+    // Secret blocks: hit them from below and coins jump out (see BlockManager.js).
+    // The hidden ones can't be seen until we bump into them!
+    blocks: [
+      { x: 450, y: 440, coins: 3 },
+      { x: 1180, y: 440, coins: 5 },
+      { x: 1700, y: 440, coins: 3, hidden: true },
+      { x: 2300, y: 440, coins: 3, hidden: true },
+    ],
+
     // Background buildings silhouettes for parallax
     buildings: [
       { x: 100, y: 350, w: 80, h: 218 },
@@ -134,6 +143,14 @@ export const levels = [
       { type: 'lapiz-rojo', x: 2000, y: 535 },     // 🔥 the fire pencil
       { type: 'patineta', x: 2450, y: 545 },
       { type: 'cofre', x: 1365, y: 552 },          // 🧰 a chest at the edge of a pit (it shines)
+    ],
+
+    // Secret blocks: hit them from below and coins jump out (see BlockManager.js).
+    // The hidden ones can't be seen until we bump into them!
+    blocks: [
+      { x: 500, y: 440, coins: 3 },
+      { x: 1250, y: 440, coins: 5 },
+      { x: 1750, y: 440, coins: 3, hidden: true },
     ],
 
     buildings: [
@@ -217,6 +234,15 @@ export const levels = [
       { type: 'cohete', x: 3150, y: 545 },
       { type: 'cofre', x: 2105, y: 552 },          // 🧰 hidden at the edge of a pit
       { type: 'shield', x: 3400, y: 340 },
+    ],
+
+    // Secret blocks: hit them from below and coins jump out (see BlockManager.js).
+    // The hidden ones can't be seen until we bump into them!
+    blocks: [
+      { x: 450, y: 440, coins: 3 },
+      { x: 1200, y: 440, coins: 5 },
+      { x: 2400, y: 440, coins: 3, hidden: true },
+      { x: 3300, y: 440, coins: 3 },
     ],
 
     buildings: [
@@ -309,6 +335,14 @@ export const levels = [
       { type: 'extra-life', x: 2764, y: 320 },     // Hidden platform in boss arena
     ],
 
+    // Secret blocks: hit them from below and coins jump out (see BlockManager.js).
+    // The hidden ones can't be seen until we bump into them!
+    blocks: [
+      { x: 1100, y: 440, coins: 5 },
+      { x: 1800, y: 440, coins: 3, hidden: true },
+      { x: 2200, y: 440, coins: 3 },
+    ],
+
     buildings: [
       { x: 50, y: 280, w: 130, h: 288 },
       { x: 250, y: 300, w: 110, h: 268 },
@@ -381,6 +415,13 @@ export const levels = [
       { type: 'shield', x: 1250, y: 280 },
       { type: 'shield', x: 2200, y: 380 },        // Shield before the final boss!
       { type: 'extra-life', x: 2814, y: 220 },    // Hidden platform in boss arena
+    ],
+
+    // Secret blocks: hit them from below and coins jump out (see BlockManager.js).
+    // The hidden ones can't be seen until we bump into them!
+    blocks: [
+      { x: 1440, y: 440, coins: 3 },
+      { x: 2000, y: 440, coins: 3, hidden: true },
     ],
 
     // Tall castle pillars
@@ -464,6 +505,14 @@ export const levels = [
       { type: 'shield', x: 1250, y: 270 },
       { type: 'shield', x: 2080, y: 290 },        // Shield before the final boss!
       { type: 'extra-life', x: 2914, y: 220 },    // Hidden platform in boss arena
+    ],
+
+    // Secret blocks: hit them from below and coins jump out (see BlockManager.js).
+    // The hidden ones can't be seen until we bump into them!
+    blocks: [
+      { x: 1250, y: 440, coins: 5 },
+      { x: 2100, y: 440, coins: 3, hidden: true },
+      { x: 2800, y: 440, coins: 3 },
     ],
 
     buildings: [

@@ -92,7 +92,7 @@ class LavaLevelScene extends LevelScene {
 
     // No villains and no coins: the lava is the enemy here!
     this.enemies.clear(true, true);
-    this.coins.clear(true, true);
+    this.removeCoins();
     this.hero.hasColorGun = false;
 
     // The world is TALL: it goes up into the sky (negative y = higher than the screen)

@@ -10,6 +10,7 @@ import Projectile from '../sprites/Projectile.js';
 import HUDManager from '../managers/HUDManager.js';
 import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
+import BlockManager from '../managers/BlockManager.js';
 import { addCoins, loadCoins } from '../data/coins.js';
 import { reportMission } from '../data/missions.js';
 import { playSound, playMusic } from '../audio/Sound.js';
@@ -72,6 +73,9 @@ class LevelScene extends Phaser.Scene {
     this.enemies = enemies;
     this.goalFlag = goalFlag;
 
+    // --- Secret blocks (hit them from below: coins jump out!) ---
+    this.blocks = new BlockManager(this, this.levelData.blocks);
+
     // --- Power-ups ---
     this.powerupManager = new PowerupManager(this);
     this.powerupManager.spawnPowerups(this.levelData.powerups || []);
@@ -133,6 +137,8 @@ class LevelScene extends Phaser.Scene {
     this.heroes.forEach((player) => {
       // Hero stands on platforms
       this.physics.add.collider(player, this.platforms);
+      // Hero bumps into the secret blocks (and hits them with the head)
+      this.blocks.addHero(player);
       // Hero can stand on hidden platforms — landing on one gives an extra life
       this.physics.add.collider(
         player, this.powerupManager.getHiddenPlatforms(),
@@ -590,6 +596,13 @@ class LevelScene extends Phaser.Scene {
       ease: 'Power2',
       onComplete: () => floatingText.destroy(),
     });
+  }
+
+  // The modes with no coins (BÚSQUEDA, LAVA, ESCONDIDAS...) take the coins
+  // AND the secret blocks away (the blocks have coins inside)
+  removeCoins() {
+    this.coins.clear(true, true);
+    this.blocks.clear();
   }
 
   // Pick up a coin: it is saved right away, so we keep it even if we lose

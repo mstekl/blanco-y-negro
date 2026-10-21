@@ -1,0 +1,57 @@
+<!doctype html>
+<!-- galeria.html — See ALL the country landmarks at once, small, to check the drawings.
+     With "npm run dev" running, open http://localhost:5173/tools/galeria.html
+     (?gris shows the gray version, ?solo=fuji,moai only those landmarks). It is only for us: it is not part of the game. -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Galería de monumentos</title>
+  <style>body { margin: 0; background: #222; }</style>
+</head>
+<body>
+  <script type="module">
+    import Phaser from 'phaser';
+    import { drawLandmarkScene } from '../src/managers/LandmarkArt.js';
+    import { COUNTRY_THEMES } from '../src/data/countryThemes.js';
+
+    // One picture per landmark, with the flag of the first country that uses it
+    const byLandmark = {};
+    Object.entries(COUNTRY_THEMES).forEach(([id, theme]) => {
+      (byLandmark[theme.landmark] = byLandmark[theme.landmark] || []).push(id);
+    });
+    // ?solo=fuji,moai shows only those landmarks
+    const only = new URLSearchParams(location.search).get('solo');
+    const entries = Object.entries(byLandmark).filter(([k]) => !only || only.split(',').includes(k));
+    const COLS = 4;
+    const W = 1600;  // the scene is drawn 1600 wide and shown at 1/4
+    const SCALE = 0.25;
+    const CELL_W = W * SCALE;
+    const CELL_H = 600 * SCALE + 18;
+    const colored = !location.search.includes('gris');
+
+    class Gallery extends Phaser.Scene {
+      create() {
+        entries.forEach(([landmark, ids], i) => {
+          const x = (i % COLS) * CELL_W;
+          const y = Math.floor(i / COLS) * CELL_H;
+          const g = this.add.graphics().setScale(SCALE).setPosition(x, y + 18);
+          g.fillStyle(colored ? 0x8ccfff : 0x555555);
+          g.fillRect(0, 0, W, 600);
+          drawLandmarkScene(g, landmark, W, colored, 0.3, ids[0]);
+          g.fillStyle(0x4a4a4a);
+          g.fillRect(0, 568, W, 32);
+          this.add.text(x + 4, y + 2, `${landmark}: ${ids.join(' ')}`, { fontSize: '11px', color: '#ffffff' });
+        });
+      }
+    }
+
+    new Phaser.Game({
+      type: Phaser.AUTO,
+      width: CELL_W * COLS,
+      height: Math.ceil(entries.length / COLS) * CELL_H,
+      backgroundColor: '#222222',
+      scene: Gallery,
+    });
+  </script>
+</body>
+</html>

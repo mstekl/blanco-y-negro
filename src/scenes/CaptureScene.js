@@ -88,7 +88,7 @@ class CaptureScene extends LevelScene {
 
     // No villains, no coins and no goal: this is about the flags!
     this.enemies.clear(true, true);
-    this.coins.clear(true, true);
+    this.removeCoins();
     this.goalFlag.setVisible(false);
     this.goalFlag.body.enable = false;
     // The normal HUD (hearts, points...) is not needed: we show the score instead

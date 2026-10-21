@@ -19,6 +19,7 @@ import EnemyMR3 from '../sprites/EnemyMR3.js';
 import EnemyDobleX from '../sprites/EnemyDobleX.js';
 import Projectile from '../sprites/Projectile.js';
 import { isNameChar } from '../data/profile.js';
+import { makeBlockTextures } from '../managers/BlockManager.js';
 import {
   MAX_SLOTS, LEVEL_WIDTH, TILE, COLUMNS, GROUND_Y, PLATFORM_WIDTH, NAME_MAX, ENEMY_HEIGHT,
   newLevel, loadAllLevels, loadLevel, saveLevel, deleteLevel, surfaceBelow, checkLevel,
@@ -27,10 +28,16 @@ import {
 // The tools of the toolbar. The number key is its place in the list (1, 2... and 0 for the 10th)
 const TOOLS = [
   { id: 'suelo', icon: '🟫', name: 'SUELO', hint: 'Toca una columna para poner o quitar suelo (¡haz hoyos!). Puedes arrastrar.' },
-  { id: 'plataforma', icon: '▬', name: 'PLATAF.', hint: 'Toca para poner una plataforma. Tócala otra vez para quitarla.' },
+  // These tools have VARIANTS: touch the tool again (or press its number again) to change it
+  {
+    id: 'plataforma', variants: [
+      { type: 'plataforma', icon: '▬', name: 'PLATAF.', hint: 'Toca para poner una plataforma. Tócala otra vez para quitarla. (Otra vez: bloques ❓)' },
+      { type: 'bloque', icon: '❓', name: 'BLOQUE', hint: 'Bloque ❓: golpéalo desde abajo y salen monedas (aquí dan puntos). Tócalo para quitarlo.' },
+      { type: 'invisible', icon: '👻', name: 'INVISIBLE', hint: 'Bloque INVISIBLE: no se ve hasta que lo golpeas desde abajo. Tócalo para quitarlo.' },
+    ],
+  },
   { id: 'mr1', icon: '👾', name: 'MR.1', hint: 'MR.1 camina de un lado al otro.' },
   { id: 'mr2', icon: '🔫', name: 'MR.2', hint: 'MR.2 camina y DISPARA.' },
-  // These three have VARIANTS: touch the tool again (or press its number again) to change it
   {
     id: 'mr3', variants: [
       { type: 'mr3', icon: '🚜', name: 'MR.3', hint: 'MR.3 en su tanque de gomas: ¡te persigue! (Tócalo otra vez: Doble-X)' },
@@ -62,6 +69,7 @@ const TOOLS = [
 const MAX_PLATFORMS = 40;
 const MAX_ENEMIES = 30;
 const MAX_POWERUPS = 10;
+const MAX_BLOCKS = 20;
 
 const EDIT_TOP = 140;      // above this line is the toolbar: touching there doesn't draw
 const PLATFORM_TOP = 160;  // the highest a platform can go
@@ -218,7 +226,9 @@ class EditorScene extends Phaser.Scene {
   createEditor() {
     // The saved level, or a new one if the slot is empty
     this.level = loadLevel(this.slot) || newLevel(this.slot);
-    this.dirty = false;        // are there changes that are not saved yet?
+    // (levels saved before the secret blocks existed have no list for them)
+    this.level.blocks = this.level.blocks || [];
+    this.dirty = false;       // are there changes that are not saved yet?
     this.confirmExit = false;  // SALIR asks twice when there are changes
     this.tool = 'suelo';
     this.typing = false;       // are we writing the name of the level?
@@ -230,6 +240,7 @@ class EditorScene extends Phaser.Scene {
     if (!this.textures.exists('enemy-mr3')) EnemyMR3.createTexture(this);
     if (!this.textures.exists('enemy-doblex')) EnemyDobleX.createTexture(this);
     Projectile.createPowerupTextures(this);
+    makeBlockTextures(this);
 
     // The camera only moves left and right, over the 3 screens of the level
     this.cameras.main.setBounds(0, 0, LEVEL_WIDTH, 600);
@@ -305,7 +316,7 @@ class EditorScene extends Phaser.Scene {
     // The 10 tools
     this.toolButtons = {};
     this.toolLabels = {};
-    this.variant = { mr3: 0, lapiz: 0, objeto: 0 }; // which variant each of those tools is on
+    this.variant = { plataforma: 0, mr3: 0, lapiz: 0, objeto: 0 };// which variant each of those tools is on
     TOOLS.forEach((tool, i) => {
       const x = 58 + i * 76;
       const look = tool.variants ? tool.variants[0] : tool;
@@ -416,6 +427,25 @@ class EditorScene extends Phaser.Scene {
       return;
     }
 
+    // The secret blocks (the 2nd and 3rd variants of the platform tool)
+    const platformType = TOOLS.find((t) => t.id === 'plataforma').variants[this.variant.plataforma].type;
+    if (this.tool === 'plataforma' && platformType !== 'plataforma') {
+      // Touching a block takes it away; touching the air puts a new one
+      const touched = this.blockAt(x, y);
+      if (touched) {
+        Phaser.Utils.Array.Remove(level.blocks, touched);
+      } else {
+        if (level.blocks.length >= MAX_BLOCKS) return this.showMessage('¡Ya hay muchos bloques!');
+        // Blocks are 32 big, so their center sits in the middle of a grid square
+        level.blocks.push({
+          x: Phaser.Math.Clamp(snap(x - 16) + 16, 16, LEVEL_WIDTH - 16),
+          y: Phaser.Math.Clamp(snap(y - 16) + 16, PLATFORM_TOP + 16, GROUND_Y - 48),
+          hidden: platformType === 'invisible',
+        });
+      }
+      return this.changed();
+    }
+
     if (this.tool === 'plataforma') {
       // Touching a platform takes it away; touching the air puts a new one
       const touched = this.platformAt(x, y);
@@ -489,17 +519,24 @@ class EditorScene extends Phaser.Scene {
       y >= p.y - 16 && y <= p.y + 40);
   }
 
-  // The eraser: the closest villain or power-up, then a platform, then the ground
+  // The secret block under (x, y), or undefined
+  blockAt(x, y) {
+    return this.level.blocks.find((b) => Math.abs(x - b.x) <= 16 && Math.abs(y - b.y) <= 16);
+  }
+
+  // The eraser: the closest villain or power-up, then a block, then a platform, then the ground
   eraseAt(x, y) {
     const level = this.level;
     const near = (thing) => Phaser.Math.Distance.Between(x, y, thing.x, thing.y) < 40;
     const enemy = level.enemies.find(near);
     const powerup = level.powerups.find(near);
+    const block = this.blockAt(x, y);
     const platform = this.platformAt(x, y);
     const column = Math.floor(x / TILE);
 
     if (enemy) Phaser.Utils.Array.Remove(level.enemies, enemy);
     else if (powerup) Phaser.Utils.Array.Remove(level.powerups, powerup);
+    else if (block) Phaser.Utils.Array.Remove(level.blocks, block);
     else if (platform) Phaser.Utils.Array.Remove(level.platforms, platform);
     else if (y >= GROUND_Y - 8 && level.ground[column]) level.ground[column] = false;
     else if (near(level.goal) || near(level.heroStart)) {
@@ -531,6 +568,11 @@ class EditorScene extends Phaser.Scene {
       add(this.add.image(p.x + 32, p.y + 12, 'platform-tile'));
       add(this.add.image(p.x + 96, p.y + 12, 'platform-tile'));
     });
+    // The invisible blocks are drawn see-through with a 👻, so WE can find them here
+    level.blocks.forEach((b) => {
+      add(this.add.image(b.x, b.y, 'block-question').setDepth(2).setAlpha(b.hidden ? 0.35 : 1));
+      if (b.hidden) add(this.add.text(b.x, b.y, '👻', { fontSize: '16px' }).setOrigin(0.5).setDepth(2));
+    });
     level.powerups.forEach((p) => add(this.add.image(p.x, p.y, `powerup-${p.type}`).setDepth(2)));
     // (Doble-X starts big: 1.5 times his picture, like in the game)
     level.enemies.forEach((e) => add(this.add.image(e.x, e.y, `enemy-${e.type}`).setDepth(3)
@@ -553,6 +595,11 @@ class EditorScene extends Phaser.Scene {
     gfx.fillStyle(0xcccccc);
     this.level.platforms.forEach((p) => {
       gfx.fillRect(this.mapX + p.x * s, 96 + (p.y - 160) / 60, PLATFORM_WIDTH * s, 2);
+    });
+    // Secret blocks (orange)
+    gfx.fillStyle(0xffaa00);
+    this.level.blocks.forEach((b) => {
+      gfx.fillRect(this.mapX + b.x * s - 1, 96 + (b.y - 160) / 60, 2, 2);
     });
     // Villains (red), the hero (green) and the goal (yellow)
     gfx.fillStyle(0xff4444);

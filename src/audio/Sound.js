@@ -113,6 +113,7 @@ const SOUNDS = {
   mision: () => [NOTES.E5, NOTES.G5, NOTES.E6].forEach((f, i) => note(f, i * 0.1, 0.15, 'triangle', 0.3)),
   comprar: () => { note(NOTES.C6, 0, 0.08, 'square', 0.12); note(NOTES.G6, 0.08, 0.15, 'square', 0.12); },
   click: () => note(NOTES.C5, 0, 0.05, 'square', 0.08),
+  bloque: () => note(140, 0, 0.1, 'square', 0.2, 90), // "bonk!" a secret block
 };
 
 export function playSound(name) {

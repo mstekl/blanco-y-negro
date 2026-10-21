@@ -43,7 +43,7 @@ class SearchLevelScene extends LevelScene {
 
     // No villains, no coins and no goal flag: this is about searching!
     this.enemies.clear(true, true);
-    this.coins.clear(true, true);
+    this.removeCoins();
     this.goalFlag.setVisible(false);
     this.goalFlag.body.enable = false;
     // No shooting either (↓ is player 2's grab key, not a shoot key here).

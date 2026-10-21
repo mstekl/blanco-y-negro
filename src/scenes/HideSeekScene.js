@@ -80,7 +80,7 @@ class HideSeekScene extends LevelScene {
 
     // No villains, no coins, no goal and no power-ups: this is about hiding!
     this.enemies.clear(true, true);
-    this.coins.clear(true, true);
+    this.removeCoins();
     this.powerupManager.getGroup().clear(true, true);
     this.goalFlag.setVisible(false);
     this.goalFlag.body.enable = false;

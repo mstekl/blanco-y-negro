@@ -5,6 +5,7 @@
 //     (OTRA VEZ, EDITAR, SALA) instead of going to the next level
 //   - losing all the lives shows a panel too (no Game Over screen)
 //   - no coins here: otherwise we could draw a level FULL of coins and get rich!
+//     (the secret blocks give points instead)
 //
 // We start it with the number of the slot: this.scene.start('CustomLevelScene', { slot: 2 })
 
@@ -41,9 +42,9 @@ class CustomLevelScene extends LevelScene {
       // A new weather every time (but the same one after losing a life)
       forgetWeather(this.registry, this.scene.key);
     }
+    // No coins in our own levels (see the top of this file): the secret blocks give points
+    this.blocksGiveCoins = false;
     super.create();
-
-    // No coins in our own levels (see the top of this file)
     this.coins.clear(true, true);
     this.hud.levelText.setText(`🛠 ${this.levelData.name}`);
 

@@ -9,6 +9,7 @@
 //     platforms: [{ x, y }],              // floating platforms (always 128 wide), x = left edge, y = top
 //     enemies: [{ type: 'mr1', x, y }],   // villains (where they stand)
 //     powerups: [{ type: 'shield', x, y }],
+//     blocks: [{ x, y, hidden }],         // secret blocks (x, y = the center), hidden = invisible
 //     goal: { x, y },                     // the flag
 //     heroStart: { x, y },                // where the hero is born
 //   }
@@ -38,6 +39,7 @@ export function newLevel(slot) {
     platforms: [],
     enemies: [],
     powerups: [],
+    blocks: [],
     goal: { x: 2300, y: GROUND_Y - 36 },
     heroStart: { x: 80, y: GROUND_Y - 24 },
   };
@@ -125,6 +127,7 @@ export function cleanReceivedLevel(level) {
     powerups: list(level.powerups, 10)
       .filter((p) => p && POWERUP_TYPES.includes(p.type))
       .map((p) => ({ type: p.type, ...point(p) })),
+    blocks: list(level.blocks, 20).map((b) => ({ ...point(b), hidden: Boolean(b && b.hidden) })),
     goal: point(level.goal),
     heroStart: point(level.heroStart),
   };
@@ -215,6 +218,8 @@ export function toLevelData(level) {
       ...patrolFor(level, e),
     })),
     powerups: level.powerups.map((p) => ({ ...p })),
+    // (levels saved before the blocks existed have none)
+    blocks: (level.blocks || []).map((b) => ({ x: b.x, y: b.y, hidden: b.hidden })),
     // The same city in the background as level 1
     buildings: levels[0].buildings,
   };
