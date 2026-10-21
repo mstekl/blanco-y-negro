@@ -32,6 +32,11 @@ import { SearchLeftScene, SearchRightScene } from './scenes/SearchLevelScene.js'
 import { LavaLeftScene, LavaRightScene } from './scenes/LavaLevelScene.js';
 import CaptureScene from './scenes/CaptureScene.js';
 import HideSeekScene from './scenes/HideSeekScene.js';
+import FutbolMenuScene from './scenes/FutbolMenuScene.js';
+import SoccerScene from './scenes/SoccerScene.js';
+import TeamPickScene from './scenes/TeamPickScene.js';
+import TemporadaScene from './scenes/TemporadaScene.js';
+import MundialScene from './scenes/MundialScene.js';
 import { setupTouchControls } from './touch/TouchControls.js';
 
 // Game configuration — think of this as the "settings" for our game
@@ -73,9 +78,11 @@ const config = {
   // The search (BÚSQUEDA) uses RaceScene too, with SearchLeft and SearchRight, and LAVA QUE SUBE with LavaLeft and LavaRight
   // CAPTURA LA BANDERA uses RaceScene with ONE CaptureScene for both players (two cameras)
   // ESCONDIDAS (HideSeekScene) runs by itself: turns on the whole screen
+  // FÚTBOL: FutbolMenuScene (4 ways to play) → SoccerScene (one match on the whole screen);
+  // the TEMPORADA (TemporadaScene) and the MUNDIAL (MundialScene) choose their team in TeamPickScene
   // Before them, ModeChoiceScene asks ONLINE / OFFLINE / MÁQUINA (and OnlineScene connects with a friend)
   scene: [BootScene, PreloadScene, TitleScene, ProfileScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
-    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, CaptureScene, HideSeekScene, RaceScene]
+    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, CaptureScene, HideSeekScene, FutbolMenuScene, SoccerScene, TeamPickScene, TemporadaScene, MundialScene, RaceScene]
 };
 
 // Create the game!

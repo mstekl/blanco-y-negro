@@ -205,6 +205,7 @@ export function setupTouchControls() {
   const ACTIONS = {
     carrera: { label: '🎨', p1: charKey('s'), p2: KEYS.ArrowDown },
     busqueda: { label: '✋', p1: charKey('z'), p2: KEYS.ArrowDown },
+    futbol: { label: '⚽', p1: charKey('s'), p2: KEYS.ArrowDown },
   };
   Object.entries(ACTIONS).forEach(([mode, action]) => {
     actionButtons[mode] = [

@@ -4,7 +4,9 @@
 // From 2 to 4 players can play. Everybody sees who is in the game (name and
 // avatar). When everybody is there, the one who CREATED the game presses
 // EMPEZAR (or ENTER), and the CARRERA (or BÚSQUEDA) starts for everybody.
-// The creator also decides the game: CARRERA, BÚSQUEDA or SUPERVIVENCIA.
+// The creator also decides the game: CARRERA, BÚSQUEDA, SUPERVIVENCIA, LAVA QUE SUBE,
+// CAPTURA LA BANDERA (only 2 players), ESCONDIDAS or the FÚTBOL (the final of the
+// MUNDIAL, only 2 players).
 // ESC goes back.
 
 import Phaser from 'phaser';
@@ -12,11 +14,18 @@ import Net, { cleanWord, MAX_PLAYERS } from '../online/Net.js';
 import { drawGrayCity } from './TitleScene.js';
 import { loadProfile } from '../data/profile.js';
 import { skinTexture, fitImage } from '../data/skins.js';
+import { randomCountries } from '../data/soccerTeams.js';
 
 const PLAYER_COLORS = ['#44aaff', '#ff9933', '#66ee88', '#ff77cc'];
 
 // The games we can play online
-const MODE_NAMES = { carrera: 'CARRERA', busqueda: 'BÚSQUEDA', supervivencia: 'SUPERVIVENCIA', lava: 'LAVA QUE SUBE' };
+const MODE_NAMES = {
+  carrera: 'CARRERA', busqueda: 'BÚSQUEDA', supervivencia: 'SUPERVIVENCIA', lava: 'LAVA QUE SUBE',
+  bandera: 'CAPTURA LA BANDERA', escondidas: 'ESCONDIDAS', futbol: 'FÚTBOL',
+};
+// Some games are only for 2 players (one against the other)
+const MAX_IN_MODE = { bandera: 2, futbol: 2 };
+const maxFor = (mode) => MAX_IN_MODE[mode] || MAX_PLAYERS;
 const validMode = (mode) => (MODE_NAMES[mode] ? mode : 'carrera');
 
 class OnlineScene extends Phaser.Scene {
@@ -24,8 +33,15 @@ class OnlineScene extends Phaser.Scene {
     super('OnlineScene');
   }
 
+  // data.mode = the game. For the FÚTBOL also: data.team (our country), data.returnTo
+  // (the scene to go back to), data.tag ('mundial' = the final of OUR Mundial) and
+  // data.start ('crear' or 'unirse': go straight to that step)
   init(data) {
+    this.initData = data;
     this.mode = validMode(data.mode);
+    this.team = data.team || null;
+    this.returnTo = data.returnTo || null;
+    this.tag = data.tag || 'amistoso';
     // 'menu' (choose create or join), 'crear', 'unirse' or 'error'
     this.step = 'menu';
     this.typed = '';
@@ -78,6 +94,9 @@ class OnlineScene extends Phaser.Scene {
       if (this.net && !this.playing) this.net.close();
     });
     this.cameras.main.fadeIn(250);
+    // From the MUNDIAL we already know if we create or join
+    if (this.initData.start === 'crear') this.createGame();
+    else if (this.initData.start === 'unirse') this.startJoin();
   }
 
   showTitle() {
@@ -138,7 +157,11 @@ class OnlineScene extends Phaser.Scene {
   // Our own name and avatar
   me() {
     const profile = loadProfile() || { name: 'Jugador', avatar: 'heroe' };
-    return { id: this.net.myId, name: profile.name, avatar: profile.avatar };
+    // (skin = the skin we wear, and team = our country in the FÚTBOL)
+    return {
+      id: this.net.myId, name: profile.name, avatar: profile.avatar,
+      skin: this.registry.get('skin') || null, team: this.team,
+    };
   }
 
   // [1] We create the game: we get a secret word and wait for our friends
@@ -152,12 +175,18 @@ class OnlineScene extends Phaser.Scene {
       if (this.leaving) return;
       this.info.setText('Tu palabra secreta es:');
       this.big.setText(word);
-      this.message.setText(`Dile a tus amigos que elijan ONLINE → UNIRSE\ny que escriban esta palabra (hasta ${MAX_PLAYERS} jugadores).`);
+      this.message.setText(this.inviteText());
       this.players = [this.me()];
       this.showPlayers();
     } catch (err) {
       this.showProblem(err);
     }
+  }
+
+  // What we tell our friends to do
+  inviteText() {
+    if (this.mode === 'futbol') return 'Tu amigo elige ⚽ FÚTBOL → 🌍 MUNDIAL → 🔑 FINAL DE UN AMIGO\ny escribe esta palabra.';
+    return `Dile a tus amigos que elijan ONLINE → UNIRSE\ny que escriban esta palabra (hasta ${maxFor(this.mode)} jugadores).`;
   }
 
   // [2] We want to join: first we type the word
@@ -195,9 +224,13 @@ class OnlineScene extends Phaser.Scene {
   // The connection, and what we do with the messages it brings
   makeNet() {
     const net = new Net();
+    net.maxPlayers = maxFor(this.mode);
     // A friend who joins says hello to the center: name and avatar
     net.onConnected = () => {
-      if (!net.isHost) net.send({ t: 'hola', name: this.me().name, avatar: this.me().avatar });
+      if (!net.isHost) {
+        const me = this.me();
+        net.send({ t: 'hola', name: me.name, avatar: me.avatar, skin: me.skin, team: me.team });
+      }
     };
     net.onMessage = (msg) => {
       if (msg.t === 'hola' && net.isHost) this.playerArrived(msg);
@@ -225,7 +258,8 @@ class OnlineScene extends Phaser.Scene {
   // (center) A friend said hello: add them and tell everybody who is in the game
   playerArrived(msg) {
     if (this.players.some((p) => p.id === msg.from)) return;
-    this.players.push({ id: msg.from, name: msg.name, avatar: msg.avatar });
+    if (this.players.length >= maxFor(this.mode)) return;
+    this.players.push({ id: msg.from, name: msg.name, avatar: msg.avatar, skin: msg.skin || null, team: msg.team || null });
     this.sendList();
     this.showPlayers();
   }
@@ -266,7 +300,7 @@ class OnlineScene extends Phaser.Scene {
     if (this.net && this.net.isHost && this.step === 'crear') {
       this.message.setText(count >= 2
         ? `${count} jugadores. ¿Están todos? ¡Presiona EMPEZAR!`
-        : `Dile a tus amigos que elijan ONLINE → UNIRSE\ny que escriban esta palabra (hasta ${MAX_PLAYERS} jugadores).`);
+        : this.inviteText());
     }
   }
 
@@ -274,6 +308,12 @@ class OnlineScene extends Phaser.Scene {
   startPlaying() {
     if (!this.net || !this.net.isHost || this.players.length < 2 || this.playing) return;
     this.net.locked = true;
+    // In the FÚTBOL everybody needs a country: who has none gets a random one
+    if (this.mode === 'futbol') {
+      this.players.forEach((player) => {
+        if (!player.team) player.team = { kind: 'pais', id: randomCountries(1)[0].id };
+      });
+    }
     this.net.send({ t: 'empezar', mode: this.mode, players: this.players });
     this.play(this.mode, this.players);
   }
@@ -283,9 +323,16 @@ class OnlineScene extends Phaser.Scene {
     if (this.playing || this.leaving) return;
     this.playing = true; // the race keeps the connection, so we don't hang up
     this.leaving = true;
-    // SUPERVIVENCIA has its own scene; the race, the search and the lava use RaceScene
+    // SUPERVIVENCIA, ESCONDIDAS and the FÚTBOL have their own scenes; the race, the search,
+    // the lava and the flag use RaceScene
     if (mode === 'supervivencia') this.scene.start('SurvivalScene', { net: this.net, players });
-    else this.scene.start('RaceScene', { mode, how: 'online', net: this.net, players });
+    else if (mode === 'escondidas') this.scene.start('HideSeekScene', { how: 'online', net: this.net, players });
+    else if (mode === 'futbol') {
+      this.scene.start('SoccerScene', {
+        how: 'online', net: this.net, players,
+        context: { returnTo: this.returnTo || 'FutbolMenuScene', draws: false, tag: this.tag },
+      });
+    } else this.scene.start('RaceScene', { mode, how: 'online', net: this.net, players });
   }
 
   showFull() {
@@ -304,8 +351,12 @@ class OnlineScene extends Phaser.Scene {
   goBack() {
     if (this.leaving) return;
     this.leaving = true;
-    if (this.step === 'menu') this.scene.start('ModeChoiceScene', { mode: this.mode });
-    else this.scene.restart({ mode: this.mode });
+    // (the FÚTBOL goes back to the MUNDIAL; the others to the screen with the 3 ways to play)
+    const back = () => (this.mode === 'futbol'
+      ? this.scene.start(this.returnTo || 'FutbolMenuScene')
+      : this.scene.start('ModeChoiceScene', { mode: this.mode }));
+    if (this.step === 'menu' || this.initData.start) back();
+    else this.scene.restart(this.initData);
   }
 }
 

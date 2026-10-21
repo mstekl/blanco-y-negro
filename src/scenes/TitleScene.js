@@ -268,6 +268,12 @@ class TitleScene extends Phaser.Scene {
     this.goTo('ModeChoiceScene', { mode });
   }
 
+  // FÚTBOL: our hero plays with the skin chosen here, like in the race
+  openFutbol() {
+    this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
+    this.goTo('FutbolMenuScene');
+  }
+
   // Go to the pencils screen (buy and open pencils)
   openPencils() {
     this.goTo('PencilsScene');
@@ -321,6 +327,8 @@ class TitleScene extends Phaser.Scene {
   createRightButtons() {
     // (MISIONES is in the CASILLERO tab, and the TIENDA has its own tab in the top bar)
     this.sideButton(700, 179, '🚩 BANDERA [F]', 0x44dd88, () => this.startRace('bandera'));
+    // FÚTBOL, between the SKINS button and the big hero (it has its own menu: FutbolMenuScene.js)
+    this.sideButton(292, 330, '⚽ FÚTBOL [G]', 0xffffff, () => this.openFutbol(), 170);
     this.sideButton(700, 233, '🌋 LAVA [U]', 0xff7a00, () => this.startRace('lava'));
     this.sideButton(700, 287, '👫 JUNTOS [J]', 0x44aaff, () => this.startGame(true));
     this.sideButton(700, 341, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
@@ -333,8 +341,8 @@ class TitleScene extends Phaser.Scene {
     soundButton.on('pointerdown', () => soundIcon.setText(toggleSound() ? '🔇' : '🔊'));
   }
 
-  sideButton(x, y, label, color, onClick) {
-    const button = this.add.rectangle(x, y, 190, 40, 0x222222)
+  sideButton(x, y, label, color, onClick, width = 190) {
+    const button = this.add.rectangle(x, y, width, 40, 0x222222)
       .setStrokeStyle(3, color)
       .setInteractive({ useHandCursor: true });
     this.add.text(x, y, label, {
@@ -460,6 +468,7 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyU') this.startRace('lava');
       else if (event.code === 'KeyF') this.startRace('bandera');
       else if (event.code === 'KeyH') this.startRace('escondidas');
+      else if (event.code === 'KeyG') this.openFutbol();
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
       else if (event.code === 'KeyM') this.goTo('MissionsScene');
       else if (event.code === 'KeyV') this.startSurvival();

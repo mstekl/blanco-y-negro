@@ -647,7 +647,7 @@ function unionJack(g, tone, box) {
 }
 
 // Draw the flag inside the box (fx, fy = top-left corner, W x H = size in pixels)
-function drawFlag(g, tone, flag, fx, fy, W, H) {
+export function drawFlag(g, tone, flag, fx, fy, W, H) {
   const box = { x: fx, y: fy, w: W, h: H };
   // px / py change flag coordinates (0..1) into real pixels on the screen
   const px = (u) => fx + u * W;

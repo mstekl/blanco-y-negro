@@ -59,6 +59,7 @@ class Net {
     this.hostId = null;
     this.locked = false;       // true = the game started, nobody else can come in
     this.closed = false;
+    this.maxPlayers = MAX_PLAYERS; // some games are only for 2 (OnlineScene changes it)
     // The scenes put their own functions here, to hear what happens
     this.onMessage = () => {};     // a message arrived
     this.onConnected = () => {};   // a new player connected to us
@@ -77,7 +78,7 @@ class Net {
         this.hostId = this.myId;
         // Now we wait for our friends to connect to us
         this.peer.on('connection', (conn) => {
-          if (this.locked || this.conns.size >= MAX_PLAYERS - 1) {
+          if (this.locked || this.conns.size >= this.maxPlayers - 1) {
             // Full, or already playing: we say so, and hang up
             conn.on('open', () => {
               conn.send({ t: 'llena' });

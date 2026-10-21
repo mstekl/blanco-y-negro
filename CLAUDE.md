@@ -39,6 +39,9 @@ blanco-y-negro/
 │   │   ├── customLevels.js    # The 5 levels made in the editor
 │   │   ├── coins.js           # Coins, the pencil price, and how rare each skin is
 │   │   ├── countryThemes.js   # Which landmark each country has in the background
+│   │   ├── soccerTeams.js     # FÚTBOL teams: the countries (with flag) and 30 invented clubs (6 per division), and their badges
+│   │   ├── temporada.js       # FÚTBOL TEMPORADA: divisions 5 → 1, tables, pretend matches, going up and down
+│   │   ├── mundial.js         # FÚTBOL MUNDIAL: group of 4, cuartos, semifinal and the final
 │   │   └── worldMap.json      # Country shapes for the map (made by tools/build-world-map.mjs)
 │   ├── scenes/
 │   │   ├── BootScene.js       # Initial boot
@@ -69,7 +72,12 @@ blanco-y-negro/
 │   │   ├── SearchLevelScene.js # BÚSQUEDA: one half of the screen, find the 5 colored pencils (SearchLeft + SearchRight)
 │   │   ├── LavaLevelScene.js  # LAVA QUE SUBE: a tall tower, climb before the lava gets you (LavaLeft + LavaRight)
 │   │   ├── CaptureScene.js    # CAPTURA LA BANDERA: ONE arena for both players (two cameras), bases and flags
-│   │   └── HideSeekScene.js   # ESCONDIDAS: hide and seek in turns on the whole screen (bushes, boxes, trash cans)
+│   │   ├── HideSeekScene.js   # ESCONDIDAS: hide and seek in turns on the whole screen (bushes, boxes, trash cans)
+│   │   ├── FutbolMenuScene.js # ⚽ FÚTBOL menu: MÁQUINA, OFFLINE, TEMPORADA, MUNDIAL
+│   │   ├── SoccerScene.js     # One FÚTBOL match (like Head Soccer): 1:30, powers, penalties; also online (the creator is the "referee")
+│   │   ├── TeamPickScene.js   # ELIGE TU EQUIPO: clubs or countries
+│   │   ├── TemporadaScene.js  # The table of the TEMPORADA and the next match
+│   │   └── MundialScene.js    # The road of the MUNDIAL (groups → final) and the online final
 │   ├── sprites/
 │   │   ├── Hero.js            # Player character
 │   │   ├── Enemy.js           # Base enemy class
@@ -97,7 +105,7 @@ blanco-y-negro/
 │   │   └── HUDManager.js      # Score, lives, UI
 │   ├── online/
 │   │   ├── Net.js             # Online connection with PeerJS: the secret word becomes the name to find the creator, who is the CENTER that passes every message on to everybody (up to 4 players)
-│   │   └── Bot.js             # The MÁQUINA: a ghost that runs the race, looks for its own pencils, climbs the lava tower, steals our flag or looks for us in the escondidas
+│   │   └── Bot.js             # The MÁQUINA: a ghost that runs the race, looks for its own pencils, climbs the lava tower, steals our flag or looks for us in the escondidas; in the FÚTBOL a robot that "presses keys" (SoccerBot)
 │   ├── touch/
 │   │   └── TouchControls.js   # On-screen buttons and small keyboard for phones and tablets
 │   └── utils/
@@ -125,6 +133,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - **Phones and tablets** — buttons on the screen: ◀ ▶ walk, ▲ jump, 🎨 shoot, CORRER run, 💃 dance, OK (= Enter), ESC, and ⌨ for a small keyboard (it opens by itself in the Hacks boxes). The buttons pretend to be keyboard keys, so the rest of the game did not need changes. Add ?tactil to the URL to see them on the computer
 - **Q** — Dance (the baile chosen in the CASILLERO), in the sala and in the levels. In JUNTOS player 2 dances with L
 - **JUNTOS** — player 1: A D move, W jump, S shoot · player 2: ← → move, ↑ jump, ↓ shoot
+- **FÚTBOL** — alone: ← → move, ↑ jump, Z kick · OFFLINE: player 1 A D W + S kicks, player 2 ← → ↑ + ↓ kicks. Kicking on the floor = a high shot, in the air = a low one
 
 ## Game Features
 - 6 levels with increasing difficulty (castle entrance at level 4, pipe at level 5, final boss in level 6)
@@ -167,6 +176,7 @@ Complete game with 6 levels (level 4 ends at a castle, level 5 is inside it with
 - COMPARTIR NIVELES (`src/scenes/ShareLevelScene.js`): in MIS NIVELES, 📤 COMPARTIR (C) gives a secret word; the friend chooses 📥 RECIBIR (R) and types it (both with the game open). The level is cleaned (`cleanReceivedLevel` in `customLevels.js`, never trusted as it comes) and saved in the first empty slot, then JUGAR or EDITAR. The editor tools LÁPIZ and ESCUDO have VARIANTS: touch them again (or press their number again) to switch to 🔥 ❄️ 🟢 and 🛹 🚀 🧰
 - SOUND: retro sounds and music made with code (`src/audio/Sound.js`): jump, coin, shoot, stomp, hit, power-up, pencils, countdown, waves, win, lose, missions, buying. Music in the sala and in the levels. 🔊/🔇 in the sala (remembered)
 - Our player (TU JUGADOR): the first time the game opens, before the sala, we write a name (more than 3 letters and less than 14) and pick an avatar (ANY of the 94 skins, even ones not won yet; it is only the picture other players see, not the skin we wear). It is saved in the browser (`src/data/profile.js`). It shows in the top-left corner of the sala; touching it (or N) changes it. The online race and search show it to the other player
+- FÚTBOL (sala button ⚽ FÚTBOL, between SKINS and the big hero, or G): like Head Soccer, ONE field on the whole screen, big players, a goal on each side (blue defends the left one). The ball bounces off heads and bodies; the kick key kicks hard to the other goal. 1:30 per match; a TIE = PENALES (5 each, then one more each until somebody misses; the keeper stands on the goal line, so you have to guess: jump or not). POWERS fall from the sky every 12 s (only in the normal time): 🗿 CABEZA GIGANTE (8 s), 🔥 PELOTA DE FUEGO (the next kick is super fast), 🧊 ARCO CONGELADO (a wall of ice covers YOUR goal for 5 s). 4 ways (FutbolMenuScene): 🤖 MÁQUINA (FÁCIL/NORMAL/DIFÍCIL, coins 5/10/20), 👥 OFFLINE, 🏆 TEMPORADA (choose a club or country; División 5 → 1, 5 matches per season against the other clubs of the division, table with points; 1st and 2nd go up, 5th and 6th go down, 1st of División 1 = CAMPEÓN; ties count; coins: win 10, tie 3, going up 50, champion 200; N = new team) and 🌍 MUNDIAL (choose a country: group of 4 → cuartos → semifinal → FINAL; the final is ONLINE against a friend, who chooses 🔑 FINAL DE UN AMIGO and types the secret word, or against the robot; coins: win 10, next stage 20, champion 300). Both are saved in the browser (`blancoYNegro.temporada`, `blancoYNegro.mundial`). Online the creator's computer moves everything and sends "photos" 20 times per second; the friend only sends their keys
 - Full game flow: Title → Levels → Celebration → World Map → Win/Game Over
 
 ## Session Log
