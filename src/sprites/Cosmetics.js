@@ -102,7 +102,57 @@ const DRAWINGS = {
     },
   },
 
+  // A Halloween bucket shaped like a pumpkin, full of candy 🎃
+  cubetaDulces: {
+    size: [14, 18], at: [-11, 3],
+    draw(g) {
+      // Candy sticking out of the top (drawn first, so the bucket covers it)
+      [0xff3366, 0x44ccff, 0xffdd00, 0x66ee88].forEach((color, i) => {
+        g.fillStyle(color);
+        g.fillCircle(3 + i * 2.7, 6, 2);
+      });
+      // The orange pumpkin bucket with its handle
+      g.lineStyle(1.5, BLACK);
+      g.strokeCircle(7, 6, 5.5);
+      g.fillStyle(0xff7a00);
+      g.fillEllipse(7, 12, 14, 11);
+      g.fillStyle(0xc85a00);
+      g.fillRect(4, 7, 1, 10);
+      g.fillRect(9, 7, 1, 10);
+      // Its happy pumpkin face
+      g.fillStyle(BLACK);
+      g.fillTriangle(3, 11, 6, 11, 4.5, 9);
+      g.fillTriangle(8, 11, 11, 11, 9.5, 9);
+      g.fillRect(4, 13.5, 6, 1.5);
+    },
+  },
+
   // ===== Mascotas =====
+  // A little bat for Halloween 🦇: it flies next to the head
+  murcielago: {
+    flies: true,
+    draw(g) {
+      // Two pointy wings
+      g.fillStyle(0x3a2a4a);
+      g.fillTriangle(8, 7, 0, 3, 2, 12);
+      g.fillTriangle(8, 7, 16, 3, 14, 12);
+      g.fillStyle(0x1a1a24);
+      g.fillTriangle(2, 12, 4, 8, 5, 12);
+      g.fillTriangle(14, 12, 12, 8, 11, 12);
+      // The round body, the ears and red eyes
+      g.fillStyle(0x2a2030);
+      g.fillCircle(8, 9, 4);
+      g.fillTriangle(5, 6, 7, 5, 5.5, 2);
+      g.fillTriangle(11, 6, 9, 5, 10.5, 2);
+      g.fillStyle(0xff4444);
+      g.fillCircle(6.7, 8.5, 0.9);
+      g.fillCircle(9.3, 8.5, 0.9);
+      // Two tiny white fangs
+      g.fillStyle(WHITE);
+      g.fillTriangle(7, 11, 7.8, 11, 7.4, 12.5);
+      g.fillTriangle(8.2, 11, 9, 11, 8.6, 12.5);
+    },
+  },
   perrito: {
     draw(g) {
       g.fillStyle(0xaa7744);
@@ -389,6 +439,15 @@ function danceSteps(id, b, u) {
         { scaleX: b.scaleX * 1.8, scaleY: b.scaleY * 1.8, y: b.y - 20 * u, duration: 400, ease: 'Back.easeOut' },
         { angle: 8, duration: 120, yoyo: true, repeat: 3 },
         { scaleX: b.scaleX, scaleY: b.scaleY, y: b.y, duration: 300 },
+      ];
+    case 'zombiBaile':
+      // The picture can't move its arms, so the whole zombie leans forward
+      // and wobbles slowly from one foot to the other: "uuuuhhh..."
+      return [
+        { angle: 12, duration: 300, ease: 'Sine.easeInOut' },
+        { x: b.x + 6 * u, angle: 6, duration: 400, ease: 'Sine.easeInOut', yoyo: true, repeat: 1 },
+        { x: b.x - 6 * u, angle: 16, duration: 400, ease: 'Sine.easeInOut', yoyo: true, repeat: 1 },
+        { x: b.x, angle: 0, duration: 300 },
       ];
     default: // saludo
       return [

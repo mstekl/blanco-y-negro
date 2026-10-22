@@ -2,6 +2,7 @@
 // Two parts:
 //   - SKINS DEL DÍA: 4 skins to buy with coins. They change every day!
 //     (the price depends on how rare the skin is; the PASE skins are never here)
+//     During the HALLOWEEN EVENT 🎃 they are the 4 Halloween skins (src/data/halloween.js)
 //   - POWER-UPS: Escudo, Vida extra and Lápiz de color. They go to our backpack
 //     and are used when the next game of JUGAR or SUPERVIVENCIA starts
 //     (see src/data/shop.js).
@@ -21,6 +22,7 @@ import {
   COSMETIC_TYPES, COSMETIC_PRICES, cosmeticsOfTheDay, buyCosmetic, loadCosmetics,
 } from '../data/cosmetics.js';
 import { cosmeticTexture, attachCosmetics, playEmote } from '../sprites/Cosmetics.js';
+import { isHalloween, daysLeft, HALLOWEEN_SHOP_SKINS } from '../data/halloween.js';
 
 // How much a skin costs, by rarity
 const SKIN_PRICES = { comun: 50, raro: 100, epico: 200, legendario: 400 };
@@ -28,7 +30,9 @@ const SKINS_PER_DAY = 4;
 
 // The 4 skins of today. They are picked with the date, so they are the
 // same all day long, and change tomorrow.
+// During the HALLOWEEN EVENT 🎃 the 4 skins are the Halloween ones instead.
 function skinsOfTheDay() {
+  if (isHalloween()) return HALLOWEEN_SHOP_SKINS.map((id) => SKIN_LIST.find((s) => s.id === id));
   const d = new Date();
   let seed = d.getFullYear() * 400 + d.getMonth() * 31 + d.getDate();
   const random = () => {
@@ -74,7 +78,12 @@ class ShopScene extends Phaser.Scene {
       return;
     }
 
-    this.sectionTitle(76, '⭐ SKINS DEL DÍA', '¡Cambian todos los días!');
+    if (isHalloween()) {
+      const days = daysLeft();
+      this.sectionTitle(76, '🎃 SKINS DE HALLOWEEN', `¡Solo por el evento! Quedan ${days} ${days === 1 ? 'día' : 'días'}`);
+    } else {
+      this.sectionTitle(76, '⭐ SKINS DEL DÍA', '¡Cambian todos los días!');
+    }
     this.skinCards = skinsOfTheDay().map((skin, i) => this.makeSkinCard(skin, 115 + i * 190, i));
 
     this.sectionTitle(300, '🎒 POWER-UPS', 'Se usan al empezar tu próxima partida de JUGAR o SUPERVIVENCIA');

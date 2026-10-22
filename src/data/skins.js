@@ -5,6 +5,7 @@
 import { SKINS } from '../sprites/Hero.js';
 import { PENCIL_SKINS } from '../sprites/PencilSkins.js';
 import { PASS_SKINS } from '../sprites/PassSkins.js';
+import { HALLOWEEN_SKINS } from '../sprites/HalloweenSkins.js';
 
 // The browser remembers the skins we won and the one we chose, even after closing the page
 const SKINS_WON_KEY = 'blancoYNegro.skinsGanadas';
@@ -32,10 +33,14 @@ export const SKIN_LIST = [
   // ...and the 7 skins of the PASE BLANCO Y NEGRO (src/sprites/PassSkins.js).
   // They never come out of the pencils: only the pass gives them.
   ...PASS_SKINS.map(({ id, name }) => ({ id, name })),
+  // ...and the 5 skins of the HALLOWEEN EVENT 🎃 (src/sprites/HalloweenSkins.js):
+  // only in the TIENDA during the event, or with the pumpkins
+  ...HALLOWEEN_SKINS.map(({ id, name }) => ({ id, name })),
 ];
 
-// The ids of the pass skins, so other places can tell them apart (the pencils skip them)
-export const PASS_SKIN_IDS = PASS_SKINS.map((skin) => skin.id);
+// The ids of the skins that are NEVER in the pencils, the skins of the day or the hack "T":
+// the ones of the pass and the ones of Halloween
+export const PASS_SKIN_IDS = [...PASS_SKINS, ...HALLOWEEN_SKINS].map((skin) => skin.id);
 
 // The secret codes of the "Hacks de sala", and which skins each one gives us.
 // They are written WITHOUT spaces, because spaces don't matter: "B Y N" and "byn" are the same code

@@ -15,6 +15,7 @@ import {
 } from './MoreSkins.js';
 import { PENCIL_SKINS } from './PencilSkins.js';
 import { PASS_SKINS } from './PassSkins.js';
+import { HALLOWEEN_SKINS } from './HalloweenSkins.js';
 import { makeSkinTexture } from './SkinParts.js';
 import { playSound } from '../audio/Sound.js';
 import { attachCosmetics, playEmote } from './Cosmetics.js';
@@ -50,9 +51,9 @@ export const SKINS = {
 };
 
 // The 80 skins of the pencils (SkinPack.js and SkinPack2.js) and the 7 skins of the
-// PASE BLANCO Y NEGRO (PassSkins.js) are added to the list here.
+// PASE BLANCO Y NEGRO (PassSkins.js) and the 5 of HALLOWEEN (HalloweenSkins.js) are added here.
 // They are all 32x48, so they all use the same hitbox.
-for (const skin of [...PENCIL_SKINS, ...PASS_SKINS]) {
+for (const skin of [...PENCIL_SKINS, ...PASS_SKINS, ...HALLOWEEN_SKINS]) {
   SKINS[skin.id] = {
     texture: `skin-${skin.id}`,
     make: { createTexture: (scene) => makeSkinTexture(scene, skin) },

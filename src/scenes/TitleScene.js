@@ -27,6 +27,9 @@ import { playMusic, isMuted, toggleSound } from '../audio/Sound.js';
 import { attachCosmetics, playEmote } from '../sprites/Cosmetics.js';
 import { equipped } from '../data/cosmetics.js';
 import { reportMission } from '../data/missions.js';
+import { isHalloween, loadPumpkins, MAX_PUMPKINS } from '../data/halloween.js';
+import { makeHalloweenTextures } from '../managers/HalloweenManager.js';
+import { drawMoonAndBats } from './HalloweenScene.js';
 
 class TitleScene extends Phaser.Scene {
   constructor() {
@@ -70,6 +73,9 @@ class TitleScene extends Phaser.Scene {
     this.cameras.main.fadeIn(600);
 
     drawGrayCity(this);
+    // HALLOWEEN 🎃: an orange moon, bats, pumpkins and the button of the event
+    this.halloween = isHalloween();
+    if (this.halloween) this.decorateForHalloween();
     // The bar at the top, like in Fortnite: INICIO · PASE · TIENDA · CASILLERO
     this.refreshBarCoins = drawTopBar(this, 'TitleScene', (scene) => this.goTo(scene));
     this.drawTitle();
@@ -114,10 +120,29 @@ class TitleScene extends Phaser.Scene {
       yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
 
-    this.add.text(400, 186, '¡Devuelve el color al mundo!', {
-      fontFamily: 'Arial', fontSize: '22px', color: '#dddddd',
+    this.add.text(400, 186, this.halloween ? '🎃 ¡Feliz Halloween! 🎃' : '¡Devuelve el color al mundo!', {
+      fontFamily: 'Arial', fontSize: '22px', color: this.halloween ? '#ff9922' : '#dddddd',
       stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5);
+  }
+
+  // ---------------------------------------------------------------
+  // HALLOWEEN 🎃 (only during the event, see src/data/halloween.js)
+  // ---------------------------------------------------------------
+  decorateForHalloween() {
+    makeHalloweenTextures(this);
+    drawMoonAndBats(this, 740, 112);
+    // Pumpkins on the street, between the buttons. They glow a little, like they have a candle inside
+    [[275, 584, 1.2], [330, 590, 0.9], [480, 586, 1.1]].forEach(([x, y, size]) => {
+      const pumpkin = this.add.image(x, y, 'calabaza').setScale(size);
+      this.tweens.add({
+        targets: pumpkin, alpha: 0.75, duration: 600 + x, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+    });
+    // The button of the event: how many pumpkins we have, and it opens the prizes
+    const pumpkins = Math.min(loadPumpkins(), MAX_PUMPKINS);
+    this.sideButton(292, 392, `🎃 HALLOWEEN ${pumpkins}/${MAX_PUMPKINS} [O]`, 0xff7a00,
+      () => this.goTo('HalloweenScene'), 196);
   }
 
   // ---------------------------------------------------------------
@@ -478,6 +503,7 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyE') this.openEditor();
       else if (event.code === 'KeyJ') this.startGame(true);
       else if (event.code === 'KeyQ') this.dance();
+      else if (event.code === 'KeyO' && this.halloween) this.goTo('HalloweenScene');
       return;
     }
 

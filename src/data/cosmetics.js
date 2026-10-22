@@ -48,6 +48,10 @@ export const COSMETICS = [
   { id: 'fantasmita', type: 'mascota', name: 'Fantasmita', rarity: 'epico' },
   { id: 'unicornio', type: 'mascota', name: 'Unicornio', rarity: 'legendario' },
   { id: 'dragoncito', type: 'mascota', name: 'Dragoncito', rarity: 'legendario', pass: true },
+  // --- HALLOWEEN 🎃: only won by picking up pumpkins (see src/data/halloween.js) ---
+  { id: 'murcielago', type: 'mascota', name: 'Murciélago', rarity: 'raro', event: true },
+  { id: 'zombiBaile', type: 'baile', name: 'Baile Zombi', rarity: 'epico', icon: '🧟', event: true },
+  { id: 'cubetaDulces', type: 'mochila', name: 'Cubeta de dulces', rarity: 'epico', event: true },
 ];
 
 export function findCosmetic(id) {
@@ -117,7 +121,7 @@ export function buyCosmetic(id) {
   return null;
 }
 
-// The 4 things of the day in the TIENDA (never the ones of the pass).
+// The 4 things of the day in the TIENDA (never the ones of the pass or of Halloween).
 // Like the skins of the day: picked with the date, so they change every day
 export function cosmeticsOfTheDay() {
   const d = new Date();
@@ -126,7 +130,7 @@ export function cosmeticsOfTheDay() {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
   };
-  const choices = COSMETICS.filter((c) => !c.pass && c.id !== 'saludo');
+  const choices = COSMETICS.filter((c) => !c.pass && !c.event && c.id !== 'saludo');
   const picked = [];
   while (picked.length < 4 && choices.length) {
     picked.push(choices.splice(Math.floor(random() * choices.length), 1)[0]);

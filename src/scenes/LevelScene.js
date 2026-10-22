@@ -20,6 +20,8 @@ import { getLevels } from '../data/countryLevels.js';
 import { levels } from '../data/levels.js';
 import { WORLD, HERO, isGodMode } from '../utils/constants.js';
 import WeatherManager, { weatherFor } from '../managers/WeatherManager.js';
+import { isHalloween, addPumpkin, MAX_PUMPKINS } from '../data/halloween.js';
+import { addPumpkins, dressUpEnemies } from '../managers/HalloweenManager.js';
 
 class LevelScene extends Phaser.Scene {
   // The race (RaceScene) makes two copies of this scene, one for each half of
@@ -72,6 +74,12 @@ class LevelScene extends Phaser.Scene {
     this.platforms = platforms;
     this.enemies = enemies;
     this.goalFlag = goalFlag;
+
+    // --- HALLOWEEN 🎃 (only during the event): 3 pumpkins to find, and villains in costumes ---
+    if (isHalloween()) {
+      addPumpkins(this, this.coins, this.levelData.platforms);
+      dressUpEnemies(this, this.enemies);
+    }
 
     // --- Secret blocks (hit them from below: coins jump out!) ---
     this.blocks = new BlockManager(this, this.levelData.blocks);
@@ -607,12 +615,47 @@ class LevelScene extends Phaser.Scene {
 
   // Pick up a coin: it is saved right away, so we keep it even if we lose
   collectCoin(hero, coin) {
+    // (the Halloween pumpkins live with the coins)
+    if (coin.isPumpkin) {
+      this.collectPumpkin(coin);
+      return;
+    }
     coin.destroy();
     const total = addCoins(1);
     reportMission('monedas');
     playSound('moneda');
     this.hud.updateCoins(total);
     this.showFloatingText(coin.x, coin.y - 10, '+1');
+  }
+
+  // A Halloween pumpkin! 🎃 It counts for the event prizes, and gives 5 coins
+  collectPumpkin(pumpkin) {
+    // (two heroes, or two touches in the same moment, must not count it twice)
+    if (!pumpkin.active) return;
+    pumpkin.destroy();
+    const { total, prize } = addPumpkin(this.registry);
+    this.hud.updateCoins(addCoins(5));
+    playSound('powerup');
+    const count = total <= MAX_PUMPKINS ? `${total}/${MAX_PUMPKINS}` : String(total);
+    this.showFloatingText(pumpkin.x, pumpkin.y - 14, `🎃 ${count}  +5`);
+    if (prize) this.showPumpkinPrize(prize);
+  }
+
+  // A big orange message: we won a prize of the Halloween event!
+  showPumpkinPrize(prize) {
+    playSound('mision');
+    const text = this.add.text(this.midX, 150, `${prize.icon} ¡Ganaste: ${prize.name}!`, {
+      fontFamily: 'Arial', fontSize: '24px', fontStyle: 'bold', color: '#ff9922',
+      stroke: '#000000', strokeThickness: 5, align: 'center',
+      wordWrap: { width: this.race && !this.race.full ? 380 : 700 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    this.tweens.add({
+      targets: text, scale: { from: 0.5, to: 1 }, duration: 300, ease: 'Back.easeOut',
+    });
+    this.tweens.add({
+      targets: text, alpha: 0, delay: 2500, duration: 500,
+      onComplete: () => text.destroy(),
+    });
   }
 
   // Hero reaches the goal flag — level complete!

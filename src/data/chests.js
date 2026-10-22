@@ -48,9 +48,9 @@ export function openChest(registry) {
   }
 
   if (kind === 'cosmetico') {
-    // One from the shop (never the ones of the pass) that we don't have yet
+    // One from the shop (never the ones of the pass or of Halloween) that we don't have yet
     const owned = loadCosmetics().owned;
-    const choices = COSMETICS.filter((c) => !c.pass && !owned.includes(c.id));
+    const choices = COSMETICS.filter((c) => !c.pass && !c.event && !owned.includes(c.id));
     if (choices.length) {
       const cosmetic = choices[Math.floor(Math.random() * choices.length)];
       giveCosmetic(cosmetic.id);

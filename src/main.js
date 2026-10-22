@@ -37,6 +37,7 @@ import SoccerScene from './scenes/SoccerScene.js';
 import TeamPickScene from './scenes/TeamPickScene.js';
 import TemporadaScene from './scenes/TemporadaScene.js';
 import MundialScene from './scenes/MundialScene.js';
+import HalloweenScene from './scenes/HalloweenScene.js';
 import { setupTouchControls } from './touch/TouchControls.js';
 
 // Game configuration — think of this as the "settings" for our game
@@ -82,7 +83,7 @@ const config = {
   // the TEMPORADA (TemporadaScene) and the MUNDIAL (MundialScene) choose their team in TeamPickScene
   // Before them, ModeChoiceScene asks ONLINE / OFFLINE / MÁQUINA (and OnlineScene connects with a friend)
   scene: [BootScene, PreloadScene, TitleScene, ProfileScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
-    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, CaptureScene, HideSeekScene, FutbolMenuScene, SoccerScene, TeamPickScene, TemporadaScene, MundialScene, RaceScene]
+    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, CaptureScene, HideSeekScene, FutbolMenuScene, SoccerScene, TeamPickScene, TemporadaScene, MundialScene, HalloweenScene, RaceScene]
 };
 
 // Create the game!

@@ -5,6 +5,7 @@
 import { SKIN_LIST, PASS_SKIN_IDS } from './skins.js';
 import { PENCIL_SKINS } from '../sprites/PencilSkins.js';
 import { PASS_SKINS } from '../sprites/PassSkins.js';
+import { HALLOWEEN_SKINS } from '../sprites/HalloweenSkins.js';
 
 // The browser remembers our coins, even after closing the page
 const COINS_KEY = 'blancoYNegro.monedas';
@@ -87,6 +88,8 @@ export const SKIN_RARITY = {
 PENCIL_SKINS.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
 // The skins of the PASE BLANCO Y NEGRO have a rarity too (the skins screen shows it)...
 PASS_SKINS.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
+// ...and so do the skins of Halloween
+HALLOWEEN_SKINS.forEach((skin) => { SKIN_RARITY[skin.id] = skin.rarity; });
 
 // Open a pencil: pick a skin at random, using the tickets of each rarity.
 // Like putting all the tickets in a hat and taking one out with closed eyes.
