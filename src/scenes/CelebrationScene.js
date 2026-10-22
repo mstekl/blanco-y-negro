@@ -4,7 +4,6 @@
 // and all the people in the city jump for joy!
 
 import Phaser from 'phaser';
-import { reportMission } from '../data/missions.js';
 
 const GROUND_Y = 520; // Where the street starts
 
@@ -14,8 +13,6 @@ class CelebrationScene extends Phaser.Scene {
   }
 
   create() {
-    // We got here by beating the final boss: that counts for the LOGROS
-    reportMission('jefe');
     this.cameras.main.fadeIn(800, 255, 255, 255);
     this.canContinue = false;
     this.leaving = false; // the scene object is reused: forget the last visit

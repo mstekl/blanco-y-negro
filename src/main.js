@@ -17,21 +17,9 @@ import WorldMapScene from './scenes/WorldMapScene.js';
 import WinScene from './scenes/WinScene.js';
 import RaceScene, { RaceLeftScene, RaceRightScene } from './scenes/RaceScene.js';
 import ModeChoiceScene from './scenes/ModeChoiceScene.js';
-import OnlineScene from './scenes/OnlineScene.js';
-import SurvivalScene from './scenes/SurvivalScene.js';
-import MissionsScene from './scenes/MissionsScene.js';
-import ShopScene from './scenes/ShopScene.js';
 import PassScene from './scenes/PassScene.js';
-import LockerScene from './scenes/LockerScene.js';
 import EditorScene from './scenes/EditorScene.js';
 import CustomLevelScene from './scenes/CustomLevelScene.js';
-import CosmeticsScene from './scenes/CosmeticsScene.js';
-import AchievementsScene from './scenes/AchievementsScene.js';
-import ShareLevelScene from './scenes/ShareLevelScene.js';
-import { SearchLeftScene, SearchRightScene } from './scenes/SearchLevelScene.js';
-import { LavaLeftScene, LavaRightScene } from './scenes/LavaLevelScene.js';
-import CaptureScene from './scenes/CaptureScene.js';
-import HideSeekScene from './scenes/HideSeekScene.js';
 import FutbolMenuScene from './scenes/FutbolMenuScene.js';
 import SoccerScene from './scenes/SoccerScene.js';
 import TeamPickScene from './scenes/TeamPickScene.js';
@@ -76,14 +64,11 @@ const config = {
   // All the scenes in our game — Boot starts first!
   // Boot → PreloadScene → TitleScene (↔ SkinsScene, PencilsScene) → LevelIntro → Level → GameOver/Celebration → WorldMap → Win
   // The race (from the sala): RaceScene on top, with RaceLeft and RaceRight (one level for each half)
-  // The search (BÚSQUEDA) uses RaceScene too, with SearchLeft and SearchRight, and LAVA QUE SUBE with LavaLeft and LavaRight
-  // CAPTURA LA BANDERA uses RaceScene with ONE CaptureScene for both players (two cameras)
-  // ESCONDIDAS (HideSeekScene) runs by itself: turns on the whole screen
   // FÚTBOL: FutbolMenuScene (4 ways to play) → SoccerScene (one match on the whole screen);
   // the TEMPORADA (TemporadaScene) and the MUNDIAL (MundialScene) choose their team in TeamPickScene
-  // Before them, ModeChoiceScene asks ONLINE / OFFLINE / MÁQUINA (and OnlineScene connects with a friend)
+  // Before the race, ModeChoiceScene asks OFFLINE or MÁQUINA; HalloweenScene shows the prizes of the event
   scene: [BootScene, PreloadScene, TitleScene, ProfileScene, SkinsScene, PencilsScene, LevelIntroScene, LevelScene, GameOverScene, CelebrationScene, WorldMapScene, WinScene,
-    ModeChoiceScene, OnlineScene, SurvivalScene, MissionsScene, ShopScene, PassScene, LockerScene, EditorScene, CustomLevelScene, CosmeticsScene, AchievementsScene, ShareLevelScene, RaceLeftScene, RaceRightScene, SearchLeftScene, SearchRightScene, LavaLeftScene, LavaRightScene, CaptureScene, HideSeekScene, FutbolMenuScene, SoccerScene, TeamPickScene, TemporadaScene, MundialScene, HalloweenScene, RaceScene]
+    ModeChoiceScene, PassScene, EditorScene, CustomLevelScene, RaceLeftScene, RaceRightScene, FutbolMenuScene, SoccerScene, TeamPickScene, TemporadaScene, MundialScene, HalloweenScene, RaceScene]
 };
 
 // Create the game!

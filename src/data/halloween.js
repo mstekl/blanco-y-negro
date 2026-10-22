@@ -4,36 +4,26 @@
 //   - 3 CALABAZAS (pumpkins) are hidden in every level. Picking them up
 //     fills the event counter, and the counter gives PRIZES (see PRIZES below)
 //   - the villains wear costumes (src/managers/HalloweenManager.js)
-//   - the TIENDA sells the 4 Halloween skins instead of the skins of the day
 //   - the sala gets an orange moon, bats and pumpkins
 // The pumpkins are saved per YEAR: next Halloween we start again from 0.
 // Testing shortcut: ?halloween in the URL turns the event on any day,
 // ?halloween=no turns it off.
 
 import { loadSkins, saveSkins } from './skins.js';
-import { giveCosmetic } from './cosmetics.js';
 import { addCoins } from './coins.js';
-import { HALLOWEEN_SKINS } from '../sprites/HalloweenSkins.js';
 
 // The days of the event: [month, day] (months start at 1 = January)
 const START = [10, 20];
 const END = [11, 2];
 
-// The 4 skins of the TIENDA during the event, and the big prize (drawn in HalloweenSkins.js).
-// They never come out of the pencils, and the hack "T" doesn't give them
-export const HALLOWEEN_SHOP_SKINS = HALLOWEEN_SKINS.filter((s) => s.shop).map((s) => s.id);
-export const HALLOWEEN_PRIZE_SKIN = 'hwReyCalabaza';
-
-// The baile, mochila and mascota of Halloween (only won with pumpkins)
-export const HALLOWEEN_COSMETIC_IDS = ['murcielago', 'zombiBaile', 'cubetaDulces'];
-
-// The prizes: how many pumpkins we need, and what we win
-//   kind: 'cosmetico' (baile/mochila/mascota), 'skin' or 'monedas'
+// The prizes: how many pumpkins we need, and the skin we win (drawn in HalloweenSkins.js).
+// These skins never come out of the pencils, and the hack "T" doesn't give them
 export const PRIZES = [
-  { pumpkins: 5, kind: 'cosmetico', id: 'murcielago', name: 'Mascota Murciélago', icon: '🦇' },
-  { pumpkins: 12, kind: 'cosmetico', id: 'zombiBaile', name: 'Baile Zombi', icon: '🧟' },
-  { pumpkins: 20, kind: 'cosmetico', id: 'cubetaDulces', name: 'Mochila Cubeta de dulces', icon: '🍬' },
-  { pumpkins: 31, kind: 'skin', id: HALLOWEEN_PRIZE_SKIN, name: 'Skin Rey Calabaza', icon: '👑' },
+  { pumpkins: 5, id: 'hwEsqueleto', name: 'Skin Esqueleto', icon: '💀' },
+  { pumpkins: 10, id: 'hwLobo', name: 'Skin Hombre Lobo', icon: '🐺' },
+  { pumpkins: 16, id: 'hwFrankie', name: 'Skin Frankenstein', icon: '🧟' },
+  { pumpkins: 23, id: 'hwCatrina', name: 'Skin Catrina', icon: '💐' },
+  { pumpkins: 31, id: 'hwReyCalabaza', name: 'Skin Rey Calabaza', icon: '👑' },
 ];
 export const MAX_PUMPKINS = PRIZES[PRIZES.length - 1].pumpkins;
 
@@ -84,16 +74,12 @@ export function addPumpkin(registry) {
   return { total, prize };
 }
 
-// Give a prize (something we already have gives 50 coins instead)
+// Give a prize (a skin we already have gives 50 coins instead)
 function givePrize(registry, prize) {
-  if (prize.kind === 'cosmetico') {
-    if (!giveCosmetic(prize.id)) addCoins(50);
-  } else if (prize.kind === 'skin') {
-    const { won, chosen } = loadSkins(registry);
-    if (won.has(prize.id)) addCoins(50);
-    else {
-      won.add(prize.id);
-      saveSkins(registry, won, chosen);
-    }
+  const { won, chosen } = loadSkins(registry);
+  if (won.has(prize.id)) addCoins(50);
+  else {
+    won.add(prize.id);
+    saveSkins(registry, won, chosen);
   }
 }

@@ -4,8 +4,7 @@
 //      The first 2 of the group go on (a tie is a tie here, like in the TEMPORADA).
 //   2) CUARTOS DE FINAL, 3) SEMIFINAL: one match, the winner goes on.
 //      A tie? PENALES!
-//   4) LA FINAL: ONLINE against a friend (each one on their own device),
-//      or against the robot if there is no friend around.
+//   4) LA FINAL: against the robot at its hardest, with a surprise country.
 // Win the final = ¡CAMPEÓN DEL MUNDO! Everything is saved in the browser.
 
 import { randomCountries } from './soccerTeams.js';
@@ -85,7 +84,7 @@ export function applyMatch(state, ours, theirs, wonOnPenalties) {
 
   // The knockout: the one who wins (or wins the penalties) goes on
   const won = ours > theirs || (ours === theirs && wonOnPenalties);
-  if (state.rival) state.beaten.push(state.rival.id); // (an online final has no rival country saved)
+  if (state.rival) state.beaten.push(state.rival.id);
   state.rival = null;
   if (!won) {
     state.result = 'eliminado';

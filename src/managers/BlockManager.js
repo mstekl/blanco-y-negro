@@ -20,7 +20,7 @@
 // draw a level full of blocks and get rich (see CustomLevelScene.js).
 
 import { addCoins, makeCoinTexture } from '../data/coins.js';
-import { reportMission } from '../data/missions.js';
+import { earnStars } from '../data/pass.js';
 import { playSound } from '../audio/Sound.js';
 
 const SIZE = 32;
@@ -142,14 +142,9 @@ class BlockManager {
       return;
     }
     const total = addCoins(1);
-    reportMission('monedas');
+    earnStars('monedas');
     scene.hud.updateCoins(total);
     scene.showFloatingText(block.x, block.y - 50, '+1');
-  }
-
-  // Take all the blocks away (the modes that have no coins, like the BÚSQUEDA)
-  clear() {
-    this.group.clear(true, true);
   }
 }
 

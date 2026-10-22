@@ -2,10 +2,8 @@
 // The first time we choose our COUNTRY (TeamPickScene). Then this screen shows where
 // we are: the table of our group, or the next knockout match. The matches are played
 // in SoccerScene, which comes back here with the result.
-// THE FINAL: 🌐 ONLINE against a friend (OnlineScene → SoccerScene online), or 🤖 the robot.
-// A friend who wants to play OUR final chooses 🔑 UNIRSE A LA FINAL DE UN AMIGO.
-// Keys: ENTER = play, O = final online, M = final against the robot, U = join a friend's final,
-//       N = new Mundial (asks twice), ESC = back to the FÚTBOL menu.
+// THE FINAL is against the robot too, the hardest one, with a strong country we didn't play yet.
+// Keys: ENTER = play, N = new Mundial (asks twice), ESC = back to the FÚTBOL menu.
 
 import Phaser from 'phaser';
 import { drawGrayCity } from './TitleScene.js';
@@ -15,7 +13,7 @@ import {
   loadMundial, saveMundial, newMundial, rivalFor, applyMatch, STAGES, STAGE_NAMES, STAGE_LEVEL, PRIZES,
 } from '../data/mundial.js';
 import { addCoins } from '../data/coins.js';
-import { reportMission } from '../data/missions.js';
+import { earnStars } from '../data/pass.js';
 import { playSound } from '../audio/Sound.js';
 
 class MundialScene extends Phaser.Scene {
@@ -45,7 +43,7 @@ class MundialScene extends Phaser.Scene {
       return;
     }
     this.state = state;
-    // A match of OUR Mundial (not a friend's final that we helped to play)
+    // We came back from a match of our Mundial
     if (this.result && this.result.tag === 'mundial' && !state.result) this.applyResult();
 
     drawGrayCity(this);
@@ -60,18 +58,12 @@ class MundialScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
     if (this.report) this.message.setText(this.report);
-    else if (this.result && this.result.tag !== 'mundial') this.message.setText('¡Gracias por jugar la final de tu amigo!');
 
-    // Help a friend: play THEIR final, online
-    this.button(140, 560, '🔑 FINAL DE UN AMIGO [U]', 0x44aaff, () => this.joinFriend(), 250, 36);
-    this.add.text(560, 560, 'N: nuevo Mundial · ESC: volver', { fontFamily: 'Arial', fontSize: '13px', color: '#999999' }).setOrigin(0.5);
+    this.add.text(400, 560, 'N: nuevo Mundial · ESC: volver', { fontFamily: 'Arial', fontSize: '13px', color: '#999999' }).setOrigin(0.5);
 
     this.input.keyboard.on('keydown', (event) => {
       if (event.key === 'Escape') this.goTo('FutbolMenuScene');
       else if (event.key === 'Enter') this.mainButton();
-      else if (event.code === 'KeyO') this.finalOnline();
-      else if (event.code === 'KeyM') this.finalMachine();
-      else if (event.code === 'KeyU') this.joinFriend();
       else if (event.code === 'KeyN') this.newMundial();
     });
     this.cameras.main.fadeIn(250);
@@ -93,7 +85,7 @@ class MundialScene extends Phaser.Scene {
     if (report.passed) coins += PRIZES.nextStage;
     if (report.champion) {
       coins += PRIZES.champion;
-      reportMission('ganar');
+      earnStars('ganar');
     }
     if (coins) addCoins(coins);
     const score = `${ours} a ${theirs}`;
@@ -152,20 +144,11 @@ class MundialScene extends Phaser.Scene {
 
   // Cuartos, semifinal or the final: one big match
   drawKnockout() {
-    if (this.state.stage === 'final') {
-      this.drawMatchCard(400, 290, 'LA FINAL', 360);
-      this.button(270, 455, '🌐 ONLINE [O]', 0x44aaff, () => this.finalOnline(), 230, 50);
-      this.button(530, 455, '🤖 MÁQUINA [M]', 0xff9933, () => this.finalMachine(), 230, 50);
-      this.add.text(400, 492, 'Online: tu amigo elige 🌍 MUNDIAL → 🔑 FINAL DE UN AMIGO y escribe tu palabra secreta', {
-        fontFamily: 'Arial', fontSize: '13px', color: '#bbbbbb',
-      }).setOrigin(0.5);
-      return;
-    }
-    this.drawMatchCard(400, 290, STAGE_NAMES[this.state.stage], 360);
+    this.drawMatchCard(400, 290, this.state.stage === 'final' ? 'LA FINAL' : STAGE_NAMES[this.state.stage], 360);
     this.button(400, 455, '▶ JUGAR [ENTER]', 0x66ee88, () => this.mainButton(), 240, 50);
   }
 
-  // A card with the two flags: us VS them (in the final, the rival is a friend or the robot)
+  // A card with the two flags: us VS them (in the final, the rival is a surprise)
   drawMatchCard(x, y, title, width) {
     this.add.rectangle(x, y, width, 230, 0x222222).setStrokeStyle(3, 0xffdd33);
     this.add.text(x, y - 95, title, { fontFamily: 'Arial', fontSize: '20px', fontStyle: 'bold', color: '#ffdd33' }).setOrigin(0.5);
@@ -176,7 +159,7 @@ class MundialScene extends Phaser.Scene {
     this.add.text(x, y - 10, 'VS', { fontFamily: 'Arial', fontSize: '30px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5);
     if (this.state.stage === 'final') {
       this.add.text(x + 100, y - 10, '❓', { fontSize: '56px' }).setOrigin(0.5);
-      this.add.text(x + 100, y + 50, '¿un amigo o el robot?', { fontFamily: 'Arial', fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
+      this.add.text(x + 100, y + 50, '¡un país sorpresa!', { fontFamily: 'Arial', fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
       return;
     }
     const rival = findTeam(rivalFor(this.state));
@@ -231,7 +214,7 @@ class MundialScene extends Phaser.Scene {
     }
   }
 
-  // The match against the robot (groups, cuartos, semi... or the final without a friend)
+  // The match against the robot (groups, cuartos, semi or the final)
   playMatch() {
     const rival = findTeam(rivalFor(this.state));
     saveMundial(this.state);
@@ -249,29 +232,15 @@ class MundialScene extends Phaser.Scene {
       this.goTo('TeamPickScene', { kinds: ['pais'], returnTo: 'MundialScene', title: 'TU PAÍS PARA EL MUNDIAL' });
       return;
     }
-    if (this.state.stage === 'final') return; // the final has its own two buttons
-    this.playMatch();
+    if (this.state.stage === 'final') this.playFinal();
+    else this.playMatch();
   }
 
-  finalMachine() {
-    if (this.state.result || this.state.stage !== 'final') return;
-    // The robot plays with a strong country
+  playFinal() {
+    // The robot plays with a country we didn't play yet
     const [rival] = randomCountries(1, [this.state.country.id, ...this.state.beaten]);
     this.state.rival = { kind: 'pais', id: rival.id };
     this.playMatch();
-  }
-
-  // The final ONLINE: we create a game and tell our friend the secret word
-  finalOnline() {
-    if (this.state.result || this.state.stage !== 'final') return;
-    this.goTo('OnlineScene', { mode: 'futbol', team: this.state.country, returnTo: 'MundialScene', tag: 'mundial', start: 'crear' });
-  }
-
-  // We play a FRIEND's final: with our country (or a random one if we have no Mundial)
-  joinFriend() {
-    const [random] = randomCountries(1);
-    const team = this.state ? this.state.country : { kind: 'pais', id: random.id };
-    this.goTo('OnlineScene', { mode: 'futbol', team, returnTo: 'MundialScene', tag: 'amistoso', start: 'unirse' });
   }
 
   newMundial() {

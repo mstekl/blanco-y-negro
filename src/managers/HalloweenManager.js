@@ -1,7 +1,7 @@
 // HalloweenManager.js — Halloween inside the levels 🎃 (only during the event, see src/data/halloween.js)
 //   - addPumpkins():   puts 3 CALABAZAS on the platforms of a level. They live in the
-//                      SAME group as the coins, so the modes with no coins (BÚSQUEDA,
-//                      LAVA, the editor's levels...) take them away by themselves too
+//                      SAME group as the coins, so the levels with no coins (the
+//                      editor's levels) take them away by themselves too
 //   - dressUpEnemies(): every villain gets a costume on the head: a witch hat,
 //                      a pumpkin or little devil horns
 //   - the drawings of the pumpkin and the costumes

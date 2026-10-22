@@ -1,31 +1,17 @@
-// ModeChoiceScene.js — Before a CARRERA, a BÚSQUEDA, LAVA QUE SUBE, CAPTURA LA BANDERA
-// or ESCONDIDAS we choose HOW to play (the bandera and the escondidas have no ONLINE yet):
-//   🌐 ONLINE  → against a friend on ANOTHER phone, iPad or computer,
-//               connected with a secret word (see OnlineScene.js)
+// ModeChoiceScene.js — Before a CARRERA we choose HOW to play:
 //   👥 OFFLINE → two players on THIS screen, each one on half (like always)
 //   🤖 MÁQUINA → against the computer. Then we choose FÁCIL, NORMAL or DIFÍCIL
-// Keys: 1 2 3 choose, ESC goes back (to the sala, or from the levels to the 3 options).
+// Keys: 1 2 3 choose, ESC goes back (to the sala, or from the levels to the 2 options).
 
 import Phaser from 'phaser';
 import { drawGrayCity } from './TitleScene.js';
-
-const TITLES = {
-  carrera: '🏁 CARRERA',
-  busqueda: '🔍 BÚSQUEDA',
-  supervivencia: '🛡 SUPERVIVENCIA',
-  lava: '🌋 LAVA QUE SUBE',
-  bandera: '🚩 CAPTURA LA BANDERA',
-  escondidas: '🙈 ESCONDIDAS',
-};
 
 class ModeChoiceScene extends Phaser.Scene {
   constructor() {
     super('ModeChoiceScene');
   }
 
-  // data.mode = 'carrera', 'busqueda', 'supervivencia', 'lava', 'bandera' or 'escondidas'
-  init(data) {
-    this.mode = TITLES[data.mode] ? data.mode : 'carrera';
+  init() {
     this.leaving = false;
   }
 
@@ -33,7 +19,7 @@ class ModeChoiceScene extends Phaser.Scene {
     drawGrayCity(this);
     this.add.rectangle(400, 300, 800, 600, 0x000000, 0.6);
 
-    this.add.text(400, 70, TITLES[this.mode], {
+    this.add.text(400, 70, '🏁 CARRERA', {
       fontFamily: 'Arial', fontSize: '48px', fontStyle: 'bold', color: '#ffffff',
       stroke: '#000000', strokeThickness: 8,
     }).setOrigin(0.5);
@@ -45,36 +31,14 @@ class ModeChoiceScene extends Phaser.Scene {
       fontFamily: 'Arial', fontSize: '14px', color: '#999999',
     }).setOrigin(0.5);
 
-    // Two "pages": the 3 ways to play, and the 3 levels of the machine
+    // Two "pages": the 2 ways to play, and the 3 levels of the machine
     this.howPage = this.add.container();
     this.levelPage = this.add.container();
 
-    if (this.mode === 'supervivencia') {
-      // SUPERVIVENCIA has only 2 ways: with friends online, or alone
-      this.makeButton(this.howPage, 230, '1', '🌐 ONLINE', 'Con amigos: gana el último que sigue vivo', 0x44aaff,
-        () => this.goTo('OnlineScene', { mode: this.mode }));
-      this.makeButton(this.howPage, 380, '2', '🙂 SOLO', '¿Cuánto aguantas tú solo?', 0x66ee88,
-        () => this.goTo('SurvivalScene'));
-    } else if (this.mode === 'escondidas') {
-      // ESCONDIDAS: two players taking turns on this screen, or against the machine
-      this.makeButton(this.howPage, 260, '1', '👥 OFFLINE', 'Dos personas por turnos: ¡el que busca cierra los ojos!', 0x66ee88,
-        () => this.goTo('HideSeekScene', { how: 'dos' }));
-      this.makeButton(this.howPage, 400, '2', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
-        () => this.showPage('levels'));
-    } else if (this.mode === 'bandera') {
-      // CAPTURA LA BANDERA has no ONLINE yet: here or against the machine
-      this.makeButton(this.howPage, 260, '1', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
-        () => this.goTo('RaceScene', { mode: this.mode, how: 'dos' }));
-      this.makeButton(this.howPage, 400, '2', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
-        () => this.showPage('levels'));
-    } else {
-      this.makeButton(this.howPage, 200, '1', '🌐 ONLINE', 'Juega con otra persona con una palabra secreta', 0x44aaff,
-        () => this.goTo('OnlineScene', { mode: this.mode }));
-      this.makeButton(this.howPage, 330, '2', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
-        () => this.goTo('RaceScene', { mode: this.mode, how: 'dos' }));
-      this.makeButton(this.howPage, 460, '3', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
-        () => this.showPage('levels'));
-    }
+    this.makeButton(this.howPage, 260, '1', '👥 OFFLINE', 'Dos personas en esta pantalla, mitad y mitad', 0x66ee88,
+      () => this.goTo('RaceScene', { how: 'dos' }));
+    this.makeButton(this.howPage, 400, '2', '🤖 MÁQUINA', 'Juega contra la máquina', 0xff9933,
+      () => this.showPage('levels'));
 
     this.makeButton(this.levelPage, 200, '1', '🙂 FÁCIL', 'La máquina va despacito', 0x66ee88,
       () => this.playMachine('facil'));
@@ -133,9 +97,7 @@ class ModeChoiceScene extends Phaser.Scene {
   }
 
   playMachine(level) {
-    // ESCONDIDAS has its own scene; the other games are played inside the race
-    if (this.mode === 'escondidas') this.goTo('HideSeekScene', { how: 'maquina', level });
-    else this.goTo('RaceScene', { mode: this.mode, how: 'maquina', level });
+    this.goTo('RaceScene', { how: 'maquina', level });
   }
 
   goTo(sceneName, data) {

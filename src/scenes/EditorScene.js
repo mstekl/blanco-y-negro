@@ -144,9 +144,6 @@ class EditorScene extends Phaser.Scene {
     this.playButton = this.makeButton(400, 350, 180, '▶ JUGAR [J]', 0x66ee88, () => this.playSlot());
     this.deleteButton = this.makeButton(600, 350, 180, '🗑 BORRAR [B]', 0xff5555, () => this.deleteSlot());
     this.makeButton(400, 430, 180, '🏠 SALA [ESC]', 0xffffff, () => this.goTo('TitleScene'));
-    // Share levels with a friend, with a secret word (see ShareLevelScene.js)
-    this.makeButton(180, 430, 200, '📥 RECIBIR [R]', 0x44aaff, () => this.goTo('ShareLevelScene', { mode: 'recibir' }));
-    this.shareButton = this.makeButton(620, 430, 200, '📤 COMPARTIR [C]', 0xff77bb, () => this.shareSlot());
 
     this.pickerMessage = this.add.text(400, 300, '', {
       fontFamily: 'Arial', fontSize: '16px', color: '#ffaaaa',
@@ -159,8 +156,6 @@ class EditorScene extends Phaser.Scene {
       else if (event.key === 'Enter' || event.code === 'KeyE') this.editSlot();
       else if (event.code === 'KeyJ') this.playSlot();
       else if (event.code === 'KeyB' || event.key === 'Delete') this.deleteSlot();
-      else if (event.code === 'KeyC') this.shareSlot();
-      else if (event.code === 'KeyR') this.goTo('ShareLevelScene', { mode: 'recibir' });
       else if (event.key === 'Escape') this.goTo('TitleScene');
     });
 
@@ -178,8 +173,8 @@ class EditorScene extends Phaser.Scene {
     });
     const hasLevel = this.slots[i] !== null;
     this.editButton.label.setText(hasLevel ? '✏ EDITAR [E]' : '✨ CREAR [E]');
-    // An empty slot can't be played, deleted or shared
-    [this.playButton, this.deleteButton, this.shareButton].forEach((button) => {
+    // An empty slot can't be played or deleted
+    [this.playButton, this.deleteButton].forEach((button) => {
       button.setVisible(hasLevel);
       button.label.setVisible(hasLevel);
     });
@@ -198,12 +193,6 @@ class EditorScene extends Phaser.Scene {
       return;
     }
     this.goTo('CustomLevelScene', { slot: this.picked });
-  }
-
-  // 📤 COMPARTIR: send this level to a friend
-  shareSlot() {
-    if (!this.slots[this.picked]) return;
-    this.goTo('ShareLevelScene', { mode: 'enviar', slot: this.picked });
   }
 
   deleteSlot() {

@@ -4,11 +4,11 @@
 // "◀", the game thinks you pressed the left arrow. That way the whole game
 // (the hero, the hacks, the "press ENTER" screens...) works without changing it.
 //
-//   - Game pad: ◀ ▶ to walk, ▲ to jump, 🎨 to shoot, CORRER to run, 💃 to dance
+//   - Game pad: ◀ ▶ to walk, ▲ to jump, 🎨 to shoot, CORRER to run
 //   - OK (= ENTER), ESC, and ⌨ to open the small keyboard
 //   - The small keyboard (letters, numbers, space, delete) to type the hack codes.
 //     It opens by itself when a "Hacks" box opens.
-//   - In the CARRERA, the BÚSQUEDA and JUNTOS (two players) the game pad
+//   - In the CARRERA, the FÚTBOL and JUNTOS (two players) the game pad
 //     changes: each half of the screen gets its OWN buttons.
 //     Player 1 (left) buttons pretend to be A D W (and S or Z), player 2 (right)
 //     buttons pretend to be the arrows. So two people can play on one iPad!
@@ -150,7 +150,6 @@ export function setupTouchControls() {
   left.appendChild(makeButton('▶', 'tc-big', KEYS.ArrowRight, true));
   const right = document.createElement('div');
   right.className = 'tc-group';
-  right.appendChild(makeButton('💃', 'tc-small', charKey('q'), false)); // dance (Q)
   right.appendChild(makeButton('CORRER', 'tc-small', KEYS.Shift, true));
   right.appendChild(makeButton('🎨', 'tc-big', charKey('z'), true));
   right.appendChild(makeButton('▲', 'tc-big', KEYS.ArrowUp, true));
@@ -200,11 +199,9 @@ export function setupTouchControls() {
   const jump1 = makeHalf('tc-p1', { left: charKey('a'), right: charKey('d'), jump: charKey('w') });
   const jump2 = makeHalf('tc-p2', { left: KEYS.ArrowLeft, right: KEYS.ArrowRight, jump: KEYS.ArrowUp });
 
-  // The action keys of each mode (see RaceScene.js): player 1 shoots with S in the
-  // race and grabs with Z in the search; player 2 always uses ↓
+  // The action keys of each mode: player 1 shoots (or kicks) with S, player 2 with ↓
   const ACTIONS = {
     carrera: { label: '🎨', p1: charKey('s'), p2: KEYS.ArrowDown },
-    busqueda: { label: '✋', p1: charKey('z'), p2: KEYS.ArrowDown },
     futbol: { label: '⚽', p1: charKey('s'), p2: KEYS.ArrowDown },
   };
   Object.entries(ACTIONS).forEach(([mode, action]) => {
@@ -234,14 +231,11 @@ export function setupTouchControls() {
   window.addEventListener('hacks-abiertos', () => showKeyboard(true));
   window.addEventListener('hacks-cerrados', () => showKeyboard(false));
 
-  // The race and the search tell us when they start and end, so we switch pads
+  // The race, the fútbol and JUNTOS tell us when they start and end, so we switch pads
   window.addEventListener('dos-jugadores', (e) => {
-    // (in LAVA QUE SUBE and CAPTURA LA BANDERA there is nothing to shoot: only ◀ ▶ and ▲)
-    if (!['lava', 'bandera'].includes(e.detail.mode)) {
-      const [button1, button2] = actionButtons[e.detail.mode] || actionButtons.carrera;
-      jump1.insertBefore(button1, jump1.firstChild);
-      jump2.insertBefore(button2, jump2.firstChild);
-    }
+    const [button1, button2] = actionButtons[e.detail.mode] || actionButtons.carrera;
+    jump1.insertBefore(button1, jump1.firstChild);
+    jump2.insertBefore(button2, jump2.firstChild);
     showKeyboard(false);
     pad.classList.add('tc-hidden');
     two.classList.add('tc-open');

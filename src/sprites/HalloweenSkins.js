@@ -1,7 +1,6 @@
 // HalloweenSkins.js — The 5 skins of the HALLOWEEN EVENT 🎃 (see src/data/halloween.js).
-// They NEVER come out of the pencils:
-//   shop: true = sold in the TIENDA, only during the event
-//   the Rey Calabaza is the big prize for picking up 31 pumpkins
+// They NEVER come out of the pencils: they are the prizes for picking up pumpkins
+// (5, 10, 16, 23 and 31 pumpkins: the Rey Calabaza is the big one)
 // Like the pencil skins, each one is 32 x 48 pixels and draws itself with draw(gfx).
 
 import { person, cape } from './SkinParts.js';
@@ -14,7 +13,7 @@ const GREEN = 0x3a9a2a;
 
 export const HALLOWEEN_SKINS = [
   {
-    id: 'hwEsqueleto', name: 'Esqueleto', rarity: 'raro', shop: true,
+    id: 'hwEsqueleto', name: 'Esqueleto', rarity: 'raro',
     draw(gfx) {
       // A black suit, and the white bones painted on top
       person(gfx, { skin: WHITE, shirt: BLACK, pants: BLACK, shoes: BLACK, hands: WHITE, face: false });
@@ -41,7 +40,7 @@ export const HALLOWEEN_SKINS = [
     },
   },
   {
-    id: 'hwLobo', name: 'Hombre Lobo', rarity: 'raro', shop: true,
+    id: 'hwLobo', name: 'Hombre Lobo', rarity: 'raro',
     draw(gfx) {
       const fur = 0x6b5a4a;
       const light = 0x9c8a74;
@@ -73,7 +72,7 @@ export const HALLOWEEN_SKINS = [
     },
   },
   {
-    id: 'hwFrankie', name: 'Frankenstein', rarity: 'epico', shop: true,
+    id: 'hwFrankie', name: 'Frankenstein', rarity: 'epico',
     draw(gfx) {
       const skin = 0x8cc46a;
       // Arms forward, like he walks in the movies
@@ -100,7 +99,7 @@ export const HALLOWEEN_SKINS = [
     },
   },
   {
-    id: 'hwCatrina', name: 'Catrina', rarity: 'epico', shop: true,
+    id: 'hwCatrina', name: 'Catrina', rarity: 'epico',
     draw(gfx) {
       // A long purple dress with a yellow line, like the Catrinas of the Día de Muertos
       person(gfx, { skin: WHITE, shirt: 0x7a2aa8, pants: 0x7a2aa8, shoes: BLACK, face: false });

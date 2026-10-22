@@ -95,7 +95,7 @@ class HUDManager {
     this.helpText.setX(200).setText(controlsHelp);
   }
 
-  // A race (or search) ONLINE or against the MÁQUINA: the whole screen is ours,
+  // A race against the MÁQUINA: the whole screen is ours,
   // but like in the split screen there are no points, and no hearts in the race
   useFullRace(controlsHelp, shootKey) {
     this.shootKey = shootKey;
@@ -105,14 +105,9 @@ class HUDManager {
     this.helpText.setText(controlsHelp);
   }
 
-  // The search mode (BÚSQUEDA) is also on half the screen, but there the lives DO matter
-  showHearts() {
-    this.heartsInHalf = true;
-  }
-
   // Show/hide hearts based on current lives
   updateLives(currentLives) {
-    if (this.halfScreen && !this.heartsInHalf) return; // no hearts in the race
+    if (this.halfScreen) return; // no hearts in the race
     for (let i = 0; i < this.hearts.length; i++) {
       // Show heart if we have that many lives, hide if not
       this.hearts[i].setVisible(i < currentLives);

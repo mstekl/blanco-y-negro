@@ -1,7 +1,7 @@
 // pass.js — The PASE BLANCO Y NEGRO (our "battle pass", like in Fortnite)!
 //
 //   - Playing gives ⭐ STARS: defeating villains, completing levels, winning
-//     races, finishing missions... (see STAR_VALUES below)
+//     races and matches... (see STAR_VALUES below). The game calls earnStars('villanos')
 //   - Every 100 stars we go up one LEVEL of the pass. There are 100 levels.
 //   - Every level gives us 1 🏅 MEDALLA. Like the battle stars of Fortnite,
 //     we SPEND the medals to unlock the prizes WE choose.
@@ -14,10 +14,8 @@
 // Everything is saved in the browser (localStorage).
 
 import { addCoins, loadCoins } from './coins.js';
-import { addToBackpack, SHOP_ITEMS } from './shop.js';
 import { showToast } from '../ui/toast.js';
 import { playSound } from '../audio/Sound.js';
-import { findCosmetic, giveCosmetic } from './cosmetics.js';
 
 const SAVE_KEY = 'blancoYNegro.pase';
 // The same key the skins screen uses to remember the skins we won (src/data/skins.js)
@@ -26,26 +24,24 @@ const SKINS_WON_KEY = 'blancoYNegro.skinsGanadas';
 export const PASS_LEVELS = 100;
 export const STARS_PER_LEVEL = 100;
 export const PREMIUM_PRICE = 950; // like the 950 V-Bucks of Fortnite
-export const MISSION_STARS = 50;
 export const PAGE_COUNT = 10;
 export const PRIZES_TO_OPEN_PAGE = 4; // unlock 4 prizes of a page to open the next one
 
-// How many stars each thing gives (the same names the missions use, see missions.js)
+// How many stars each thing gives
 const STAR_VALUES = {
   villanos: 5,     // each villain defeated
   monedas: 1,      // each coin picked up
   niveles: 30,     // each level completed
-  lapices: 5,      // each good pencil found in the BÚSQUEDA
-  ganar: 40,       // each race, search or survival won (machine or online)
-  online: 20,      // ...and a bit more when it was online
+  ganar: 40,       // each race or match won
   paises: 60,      // each country colored on the map
-  oleada: 10,      // each wave reached in SUPERVIVENCIA
 };
 
-export function starsFor(event, amount = 1) {
-  // "oleada" says WHICH wave we reached, not how many: it is always one more wave
-  if (event === 'oleada') return STAR_VALUES.oleada;
-  return (STAR_VALUES[event] || 0) * amount;
+// Something happened in the game! For example:
+//   earnStars('villanos')   → we defeated 1 villain: 5 stars
+//   earnStars('monedas', 3) → we picked up 3 coins: 3 stars
+// (things that are not in STAR_VALUES give no stars)
+export function earnStars(event, amount = 1) {
+  addStars((STAR_VALUES[event] || 0) * amount);
 }
 
 // ---------------------------------------------------------------
@@ -65,11 +61,9 @@ export function daysLeftInSeason() {
 
 // ---------------------------------------------------------------
 // The 10 pages of prizes. Every page has the same shape:
-//   GRATIS:  coins, a power-up, coins (or a skin on pages 5 and 10, or a
-//            baile / mochila / mascota on pages 2, 4 and 7), a power-up
-//   PREMIUM: coins, a power-up, more coins (or a baile / mochila / mascota
-//            on pages 3, 6 and 9), and THE BIG SKIN of the page
-// Coins and power-ups cost 1 medal. The big skin costs more on later pages
+//   GRATIS:  coins, coins, coins (or a skin on pages 5 and 10), coins
+//   PREMIUM: coins, coins, more coins, and THE BIG SKIN of the page
+// Coins cost 1 medal. The big skin costs more on later pages
 // (2, then 3, then 4), so all the 80 prizes cost exactly 100 medals.
 // The skins are drawn in src/sprites/PassSkins.js
 // ---------------------------------------------------------------
@@ -78,44 +72,32 @@ const PAGE_SKINS = [
   'paseMago', 'paseSamurai', 'paseFantasma', 'paseDragon', 'paseRey',
 ];
 const FREE_SKINS = { 5: 'paseExplorador', 10: 'paseCebra' };
-// The BAILES, MOCHILAS and MASCOTAS that only the pass gives (see cosmetics.js).
-// They take the place of some coins, so the prices don't change
-const FREE_COSMETICS = { 2: 'tablero', 4: 'pandita', 7: 'robot' };
-const PREMIUM_COSMETICS = { 3: 'disco', 6: 'alasTinta', 9: 'dragoncito' };
-const ITEM_IDS = SHOP_ITEMS.map((item) => item.id); // escudo, vida, lapiz
 
 // The 8 prizes of a page (page = 1 to 10). Each prize is like
 //   { id: '3-8', row: 'premium', type: 'skin', id: ..., cost: 2 }
-// with type 'coins' (+ amount), 'item' (+ item) or 'skin' (+ skin)
+// with type 'coins' (+ amount) or 'skin' (+ skin)
 export function pagePrizes(page) {
-  const season = currentSeason();
-  const item = (n) => ITEM_IDS[(page + season + n) % ITEM_IDS.length];
   const skinCost = page <= 3 ? 2 : page <= 7 ? 3 : 4;
-  let freeThird = { row: 'gratis', type: 'coins', amount: 30 + page * 5, cost: 1 };
-  if (FREE_SKINS[page]) freeThird = { row: 'gratis', type: 'skin', skin: FREE_SKINS[page], cost: 1 };
-  if (FREE_COSMETICS[page]) freeThird = { row: 'gratis', type: 'cosmetic', cosmetic: FREE_COSMETICS[page], cost: 1 };
-  const premiumThird = PREMIUM_COSMETICS[page]
-    ? { row: 'premium', type: 'cosmetic', cosmetic: PREMIUM_COSMETICS[page], cost: 1 }
-    : { row: 'premium', type: 'coins', amount: 80 + page * 10, cost: 1 };
+  const freeThird = FREE_SKINS[page]
+    ? { row: 'gratis', type: 'skin', skin: FREE_SKINS[page], cost: 1 }
+    : { row: 'gratis', type: 'coins', amount: 30 + page * 5, cost: 1 };
   const prizes = [
     { row: 'gratis', type: 'coins', amount: 20 + page * 5, cost: 1 },
-    { row: 'gratis', type: 'item', item: item(0), cost: 1 },
+    { row: 'gratis', type: 'coins', amount: 15 + page * 2, cost: 1 },
     freeThird,
-    { row: 'gratis', type: 'item', item: item(1), cost: 1 },
+    { row: 'gratis', type: 'coins', amount: 25 + page * 3, cost: 1 },
     { row: 'premium', type: 'coins', amount: 50 + page * 10, cost: 1 },
-    { row: 'premium', type: 'item', item: item(2), cost: 1 },
-    premiumThird,
+    { row: 'premium', type: 'coins', amount: 40 + page * 5, cost: 1 },
+    { row: 'premium', type: 'coins', amount: 80 + page * 10, cost: 1 },
     { row: 'premium', type: 'skin', skin: PAGE_SKINS[page - 1], cost: skinCost },
   ];
   // Each prize gets a name like "3-8" (page 3, prize 8), to remember which ones we took
   return prizes.map((prize, i) => ({ ...prize, id: `${page}-${i + 1}` }));
 }
 
-// The words for a prize, like "25 monedas" or "Escudo"
+// The words for a prize, like "25 monedas"
 export function prizeText(prize, skinName = null) {
   if (prize.type === 'coins') return `${prize.amount} monedas`;
-  if (prize.type === 'item') return SHOP_ITEMS.find((item) => item.id === prize.item).name;
-  if (prize.type === 'cosmetic') return findCosmetic(prize.cosmetic).name;
   return `Skin: ${skinName || prize.skin}`;
 }
 
@@ -230,12 +212,6 @@ export function buyPremium() {
 function givePrize(prize) {
   if (prize.type === 'coins') {
     addCoins(prize.amount);
-  } else if (prize.type === 'item') {
-    // A full backpack? Then coins instead
-    if (!addToBackpack(prize.item)) addCoins(15);
-  } else if (prize.type === 'cosmetic') {
-    // A baile, mochila or mascota (if we already had it: coins instead)
-    if (!giveCosmetic(prize.cosmetic)) addCoins(50);
   } else if (!winSkin(prize.skin)) {
     // We already had that skin (from an older season): coins instead
     addCoins(100);

@@ -3,7 +3,7 @@
 //   [1] 🤖 MÁQUINA   → one match against the robot (FÁCIL, NORMAL or DIFÍCIL)
 //   [2] 👥 OFFLINE   → two players on this keyboard
 //   [3] 🏆 TEMPORADA → like the FC: climb from División 5 to División 1 (TemporadaScene.js)
-//   [4] 🌍 MUNDIAL   → choose a country and win the World Cup; the FINAL is online
+//   [4] 🌍 MUNDIAL   → choose a country and win the World Cup
 //                      against a friend (MundialScene.js)
 // Keys: 1 2 3 4 choose, ESC goes back.
 
@@ -41,7 +41,7 @@ class FutbolMenuScene extends Phaser.Scene {
       () => this.goTo('SoccerScene', { how: 'dos' }));
     this.makeButton(this.howPage, 375, '3', '🏆 TEMPORADA', 'De la División 5 a la División 1', 0xffdd33,
       () => this.goTo('TemporadaScene'));
-    this.makeButton(this.howPage, 475, '4', '🌍 MUNDIAL', 'Elige un país... ¡y la final es online!', 0x44aaff,
+    this.makeButton(this.howPage, 475, '4', '🌍 MUNDIAL', 'Elige un país y gana la Copa del Mundo', 0x44aaff,
       () => this.goTo('MundialScene'));
 
     this.makeButton(this.levelPage, 200, '1', '🙂 FÁCIL', 'El robot es lento', 0x66ee88, () => this.playMachine('facil'));

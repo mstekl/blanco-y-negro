@@ -18,8 +18,6 @@ import { PASS_SKINS } from './PassSkins.js';
 import { HALLOWEEN_SKINS } from './HalloweenSkins.js';
 import { makeSkinTexture } from './SkinParts.js';
 import { playSound } from '../audio/Sound.js';
-import { attachCosmetics, playEmote } from './Cosmetics.js';
-import { equipped } from '../data/cosmetics.js';
 
 // The secret skins! They are won with the "Hacks de sala" on the title screen
 // ("B Y N" = MR.1 and MR.2, "lebron" = crazy dog, "goma" = MR.3 on his eraser tank)
@@ -69,9 +67,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
   //   'wasd'   = only W A D (+ S to shoot): player 1 in the race
   //   'arrows' = only the arrows (+ ↓ to shoot): player 2 in the race
   //   'arrows' is also player 2 in JUNTOS (two players in the same story).
-  // "options" can change two things:
+  // "options" can change one thing:
   //   options.skin:      the skin to wear (null = the normal hero) instead of the one chosen in the sala
-  //   options.cosmetics: false = no mochila and no mascota (player 2 doesn't wear OURS)
   constructor(scene, x, y, controls = 'normal', options = {}) {
     // Which picture do we wear? The normal hero, or a secret skin chosen in the sala
     // (the registry is the memory shared by all scenes)
@@ -112,17 +109,15 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     // Set up keyboard controls: a list of keys for each action
     const K = Phaser.Input.Keyboard.KeyCodes;
     const key = (code) => scene.input.keyboard.addKey(code);
-    // (Q = dance for player 1, L = dance for player 2)
     if (controls === 'wasd') {
       // Race, player 1 (left half). No run key: both players walk at the same speed
       this.keys = {
-        left: [key(K.A)], right: [key(K.D)], jump: [key(K.W)], shoot: [key(K.S)], run: [], dance: [key(K.Q)],
+        left: [key(K.A)], right: [key(K.D)], jump: [key(K.W)], shoot: [key(K.S)], run: [],
       };
     } else if (controls === 'arrows') {
       // Race, player 2 (right half)
       this.keys = {
         left: [key(K.LEFT)], right: [key(K.RIGHT)], jump: [key(K.UP)], shoot: [key(K.DOWN)], run: [],
-        dance: [key(K.L)],
       };
     } else {
       // One player: arrows or WASD to move, Shift to run,
@@ -133,13 +128,8 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
         jump: [key(K.UP), key(K.W), key(K.SPACE)],
         shoot: [key(K.Z), key(K.X)],
         run: [key(K.SHIFT)],
-        dance: [key(K.Q)],
       };
     }
-
-    // Our mochila and mascota follow us (see Cosmetics.js)
-    this.dancing = false;
-    if (options.cosmetics !== false) attachCosmetics(scene, this);
 
     // A colored pencil ('rojo', 'azul', 'verde') or null = the normal rainbow shot
     this.gunColor = null;
@@ -198,22 +188,6 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
     this.vehicleImage.setFlipX(!this.facingRight).setVisible(this.visible);
   }
 
-  // Dance! (only standing on the ground). The scene hears "baile" (for the LOGROS)
-  dance() {
-    const onGround = this.body.touching.down || this.body.blocked.down;
-    if (this.dancing || !onGround) return;
-    this.dancing = true;
-    this.setVelocity(0, 0);
-    // While dancing, the dance moves the hero, not the physics
-    this.body.moves = false;
-    playEmote(this.scene, this, equipped('baile') || 'saludo', () => {
-      if (!this.active) return;
-      this.body.moves = true;
-      this.dancing = false;
-    });
-    this.emit('baile');
-  }
-
   // Is any key of this list held down?
   anyDown(keys) {
     return keys.some((k) => k.isDown);
@@ -227,16 +201,6 @@ class Hero extends Phaser.Physics.Arcade.Sprite {
   // update() runs every frame (60 times per second!)
   // This is where we read the keyboard and move the hero
   update() {
-    // While dancing we can't move (the dance ends by itself)
-    if (this.dancing) {
-      this.updateShield();
-      return;
-    }
-    if (this.anyJustDown(this.keys.dance)) {
-      this.dance();
-      return;
-    }
-
     const onGround = this.body.touching.down || this.body.blocked.down;
 
     // --- Horizontal movement ---

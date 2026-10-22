@@ -12,9 +12,8 @@ import LevelManager from '../managers/LevelManager.js';
 import PowerupManager from '../managers/PowerupManager.js';
 import BlockManager from '../managers/BlockManager.js';
 import { addCoins, loadCoins } from '../data/coins.js';
-import { reportMission } from '../data/missions.js';
+import { earnStars } from '../data/pass.js';
 import { playSound, playMusic } from '../audio/Sound.js';
-import { useShopItems } from '../data/shop.js';
 import StormCloud from '../sprites/StormCloud.js';
 import { getLevels } from '../data/countryLevels.js';
 import { levels } from '../data/levels.js';
@@ -124,20 +123,16 @@ class LevelScene extends Phaser.Scene {
       this,
       this.levelData.heroStart.x,
       this.levelData.heroStart.y,
-      controls,
-      // Player 2 of the race doesn't wear OUR mochila and mascota
-      { cosmetics: controls !== 'arrows' }
+      controls
     );
     this.heroes = [this.hero];
     if (this.coop) this.createPlayerTwo();
-    // Every dance counts for the LOGROS
-    this.heroes.forEach((hero) => hero.on('baile', () => reportMission('baile')));
     // Restore lives and score from registry
     // (in the race we always have all our lives: losing one just starts the level again)
     this.hero.lives = this.race ? HERO.INITIAL_LIVES : this.registry.get('lives');
     this.hero.score = this.race ? 0 : this.registry.get('score');
     // No running in a race (alone on the screen we have the normal keys, Shift too):
-    // so everybody goes at the same speed, also online
+    // so everybody goes at the same speed
     if (this.race) this.hero.keys.run = [];
 
     // --- Collisions ---
@@ -178,7 +173,7 @@ class LevelScene extends Phaser.Scene {
     this.heroes.forEach((player) => this.physics.add.collider(
       player, this.enemies, null, (hero, enemy) => this.isFrozen(enemy), this
     ));
-    // Every dance counts for the LOGROS... and a skateboard trick gives points!
+    // A skateboard trick gives points!
     this.heroes.forEach((player) => player.on('truco', () => {
       this.hero.addScore(50);
       this.saveState();
@@ -224,7 +219,7 @@ class LevelScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.levelData.worldWidth, WORLD.HEIGHT);
     this.cameras.main.setDeadzone(100, 50);
     // In the race our camera only draws on OUR half of the screen
-    // (ONLINE and against the MÁQUINA we play alone on this screen: the whole screen is ours)
+    // (against the MÁQUINA we play alone on this screen: the whole screen is ours)
     if (this.race && !this.race.full) this.cameras.main.setViewport(this.race.side * 400, 0, 400, 600);
 
     // --- HUD ---
@@ -261,14 +256,12 @@ class LevelScene extends Phaser.Scene {
 
     // The game song (it keeps playing if it was already on)
     playMusic('juego');
-    // Things we bought in the TIENDA (only when a new game starts, see shop.js)
-    if (!this.race) useShopItems(this);
 
     // Fade in
     this.cameras.main.fadeIn(500);
   }
 
-  // Which level do we play? (SUPERVIVENCIA changes this: it has its own arena)
+  // Which level do we play? (the editor's levels change this: CustomLevelScene)
   chooseLevelData() {
     return (this.race ? levels : getLevels(this.registry))[this.levelIndex];
   }
@@ -280,7 +273,7 @@ class LevelScene extends Phaser.Scene {
     const start = this.levelData.heroStart;
     // Player 2 is the normal hero. If player 1 is the normal hero too, player 2
     // is light blue, so we can tell them apart
-    this.hero2 = new Hero(this, start.x - 40, start.y, 'arrows', { skin: null, cosmetics: false });
+    this.hero2 = new Hero(this, start.x - 40, start.y, 'arrows', { skin: null });
     if (!this.registry.get('skin')) {
       this.hero2.baseTint = 0x99ddff;
       this.hero2.setTint(this.hero2.baseTint);
@@ -375,7 +368,6 @@ class LevelScene extends Phaser.Scene {
   }
 
   // The race (the scene on top) says when we can move, and has the machine.
-  // (ESCONDIDAS has its own clock and its own machine, so it changes these two)
   raceStarted() {
     return this.scene.get('RaceScene').started;
   }
@@ -445,7 +437,7 @@ class LevelScene extends Phaser.Scene {
     // If the enemy was defeated, add score
     if (enemy.isDefeated) {
       this.hero.addScore(enemy.scoreValue);
-      reportMission('villanos'); // for the MISIONES DEL DÍA
+      earnStars('villanos'); // stars for the PASE
       playSound('pisar');
       this.saveState();
       this.hud.updateScore(this.hero.score);
@@ -506,7 +498,7 @@ class LevelScene extends Phaser.Scene {
       enemy.takeDamage(3);
       playSound('pisar');
       if (enemy.isDefeated) {
-        reportMission('villanos');
+        earnStars('villanos');
         this.hero.addScore(enemy.scoreValue);
         this.saveState();
         this.hud.updateScore(this.hero.score);
@@ -526,7 +518,7 @@ class LevelScene extends Phaser.Scene {
       hero.setVelocityY(HERO.JUMP_VELOCITY * 0.6);
       // (the points always go to the first hero: with JUNTOS, the points are shared too)
       this.hero.addScore(enemy.scoreValue);
-      if (enemy.isDefeated) reportMission('villanos');
+      if (enemy.isDefeated) earnStars('villanos');
       playSound('pisar');
       this.saveState();
       this.hud.updateScore(this.hero.score);
@@ -606,13 +598,6 @@ class LevelScene extends Phaser.Scene {
     });
   }
 
-  // The modes with no coins (BÚSQUEDA, LAVA, ESCONDIDAS...) take the coins
-  // AND the secret blocks away (the blocks have coins inside)
-  removeCoins() {
-    this.coins.clear(true, true);
-    this.blocks.clear();
-  }
-
   // Pick up a coin: it is saved right away, so we keep it even if we lose
   collectCoin(hero, coin) {
     // (the Halloween pumpkins live with the coins)
@@ -622,7 +607,7 @@ class LevelScene extends Phaser.Scene {
     }
     coin.destroy();
     const total = addCoins(1);
-    reportMission('monedas');
+    earnStars('monedas');
     playSound('moneda');
     this.hud.updateCoins(total);
     this.showFloatingText(coin.x, coin.y - 10, '+1');
@@ -679,11 +664,10 @@ class LevelScene extends Phaser.Scene {
         other.setVisible(false);
       });
       this.playerTags.forEach((tag) => tag.setVisible(false));
-      reportMission('juntos'); // for the LOGROS
     }
 
-    // A level done counts for the MISIONES (only real levels, not the race)
-    if (!this.race) reportMission('niveles');
+    // A level done gives stars for the PASE (only real levels, not the race)
+    if (!this.race) earnStars('niveles');
     playSound('ganar');
 
     // Bonus points for completing the level

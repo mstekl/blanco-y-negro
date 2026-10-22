@@ -1,15 +1,13 @@
 // TopBar.js — The bar at the top of the sala, like in Fortnite!
-//   INICIO · PASE BLANCO Y NEGRO · TIENDA · CASILLERO          🪙 coins
+//   INICIO · PASE BLANCO Y NEGRO                                🪙 coins
 // Each tab is a different screen (scene). The bar is drawn the same way in
-// all four, so it feels like ONE place with tabs.
+// both, so it feels like ONE place with tabs.
 
 import { loadCoins, makeCoinTexture } from '../data/coins.js';
 
 export const TABS = [
   { scene: 'TitleScene', label: 'INICIO' },
   { scene: 'PassScene', label: 'PASE BLANCO Y NEGRO' },
-  { scene: 'ShopScene', label: 'TIENDA' },
-  { scene: 'LockerScene', label: 'CASILLERO' },
 ];
 
 export const BAR_HEIGHT = 46;

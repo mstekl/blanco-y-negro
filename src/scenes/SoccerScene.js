@@ -11,21 +11,17 @@
 //     somebody misses!
 // OFFLINE: two players on this keyboard (W A D + S, and the arrows + ↓).
 // MÁQUINA: we play with the normal keys (Z kicks) against the robot (see SoccerBot in Bot.js).
-// ONLINE (the FINAL of the MUNDIAL): each player on their own device. The one who CREATED
-// the game is the "referee": only their computer moves the ball and the players, and
-// 20 times per second it sends a "photo" of the field to the friend. The friend only sends
-// which keys they press (see "Online" at the bottom).
 //
 // Unlike the race, this scene runs by itself: it is not a copy of LevelScene,
 // because it has no level, only a field, two players and a ball.
 
 import Phaser from 'phaser';
 import Hero from '../sprites/Hero.js';
-import { SoccerBot } from '../online/Bot.js';
+import { SoccerBot } from '../maquina/Bot.js';
 import { addCoins, makeCoinTexture } from '../data/coins.js';
-import { reportMission } from '../data/missions.js';
+import { earnStars } from '../data/pass.js';
 import { playSound, playMusic } from '../audio/Sound.js';
-import { teamBadge, findTeam } from '../data/soccerTeams.js';
+import { teamBadge } from '../data/soccerTeams.js';
 
 const GROUND_Y = 540;      // the top of the grass
 const GOAL_W = 70;         // how deep each goal is
@@ -66,18 +62,11 @@ class SoccerScene extends Phaser.Scene {
   // data.context = a match of the TEMPORADA or the MUNDIAL:
   //   { returnTo: the scene to go back to, draws: true = a tie is a tie (no penalties) }
   //   At the end we go back there with the result, and THAT scene gives the prizes.
-  // data.net, data.players = ONLINE: the connection and the 2 players ({ id, name, skin, team })
   init(data = {}) {
-    this.how = ['maquina', 'online'].includes(data.how) ? data.how : 'dos';
+    this.how = data.how === 'maquina' ? 'maquina' : 'dos';
     this.level = data.level || 'normal';
     this.teams = data.teams || null;
     this.context = data.context || null;
-    this.net = data.net || null;
-    this.netPlayers = data.players || null;
-    // Online, the creator is player 1 (blue, on the left) and the friend is player 2
-    this.isGuest = Boolean(this.net) && !this.net.isHost;
-    this.me = this.isGuest ? 1 : 0;
-    if (this.net) this.teams = this.netPlayers.map((np) => findTeam(np.team));
     this.startData = data; // for the REVANCHA
     this.leaving = false;
   }
@@ -108,7 +97,7 @@ class SoccerScene extends Phaser.Scene {
     // 'penales' and 'fin'
     this.phase = 'cuenta';
     this.kickOff();
-    const side = this.isGuest ? '¡Mete goles en el arco de la IZQUIERDA!' : '¡Mete goles en el arco de la derecha!';
+    const side = '¡Mete goles en el arco de la derecha!';
     const intro = this.teams
       ? [`${this.teams[0].name}  vs  ${this.teams[1].name}`, side]
       : [side, 'Gana el que hace más goles en 1:30'];
@@ -121,8 +110,6 @@ class SoccerScene extends Phaser.Scene {
       window.dispatchEvent(new CustomEvent('dos-jugadores', { detail: { mode: 'futbol' } }));
       this.events.once('shutdown', () => window.dispatchEvent(new Event('un-jugador')));
     }
-
-    if (this.net) this.setupOnline();
 
     this.input.keyboard.on('keydown', (event) => {
       if (event.key === 'Escape') this.leave();
@@ -240,19 +227,12 @@ class SoccerScene extends Phaser.Scene {
     const K = Phaser.Input.Keyboard.KeyCodes;
     const keys = (...codes) => codes.map((c) => this.input.keyboard.addKey(c));
     const two = this.how === 'dos';
-    const online = this.how === 'online';
 
     // Player 1: our skin. Alone (against the machine) we use the normal keys.
     // Player 2: the normal hero (a bit orange if player 1 is the normal hero too),
     // or the robot of the machine.
-    // ONLINE: each hero wears the skin of its player, and only OUR hero listens to our keys
-    const skinOf = (i) => this.netPlayers[i].skin || null;
-    const hero1 = online
-      ? new Hero(this, 220, 480, this.me === 0 ? 'normal' : 'arrows', { skin: skinOf(0), cosmetics: this.me === 0 })
-      : new Hero(this, 220, 480, two ? 'wasd' : 'normal');
-    const hero2 = online
-      ? new Hero(this, 580, 480, this.me === 1 ? 'normal' : 'arrows', { skin: skinOf(1), cosmetics: this.me === 1 })
-      : new Hero(this, 580, 480, 'arrows', { skin: two ? null : 'robot', cosmetics: false });
+    const hero1 = new Hero(this, 220, 480, two ? 'wasd' : 'normal');
+    const hero2 = new Hero(this, 580, 480, 'arrows', { skin: two ? null : 'robot' });
     if (two && !this.registry.get('skin')) {
       hero2.baseTint = 0xffcc99;
       hero2.setTint(hero2.baseTint);
@@ -262,12 +242,6 @@ class SoccerScene extends Phaser.Scene {
       { team: 0, hero: hero1, kickKeys: two ? keys(K.S) : keys(K.Z, K.X), name: 'JUGADOR 1' },
       { team: 1, hero: hero2, kickKeys: two ? keys(K.DOWN) : [], name: two ? 'JUGADOR 2' : 'LA MÁQUINA' },
     ];
-    if (online) {
-      this.players[1].kickKeys = keys(K.Z, K.X);
-      // The friend's player has no keys here: the creator moves it with the keys the friend sends
-      this.players[1 - this.me].kickKeys = [];
-      this.players[1 - this.me].remote = true;
-    }
     // With teams, everybody is called like their team
     if (this.teams) this.players.forEach((p, i) => { p.name = this.teams[i].name; });
     this.players.forEach((p) => {
@@ -284,30 +258,19 @@ class SoccerScene extends Phaser.Scene {
     // The two players bump into each other
     this.physics.add.collider(hero1, hero2);
 
-    // The machine (and online, the friend's player) presses PRETEND keys
-    // (see SoccerBot in Bot.js, and "Online" below)
-    const pretendKeys = (p) => {
-      const fake = () => ({ isDown: false, _justDown: false });
-      p.fakeKeys = { left: fake(), right: fake(), jump: fake() };
-      Object.assign(p.hero.keys, {
-        left: [p.fakeKeys.left], right: [p.fakeKeys.right], jump: [p.fakeKeys.jump], dance: [],
-      });
-    };
+    // The machine presses PRETEND keys (see SoccerBot in Bot.js)
     if (this.how === 'maquina') {
-      this.players[1].bot = new SoccerBot(this.level);
-      pretendKeys(this.players[1]);
-    }
-    if (online) {
-      const friend = this.players[1 - this.me];
-      pretendKeys(friend);
-      friend.pad = { l: false, r: false, j: 0, k: 0 }; // the keys the friend presses
-      friend.seenJumps = 0;
-      friend.seenKicks = 0;
+      const robot = this.players[1];
+      robot.bot = new SoccerBot(this.level);
+      const fake = () => ({ isDown: false, _justDown: false });
+      robot.fakeKeys = { left: fake(), right: fake(), jump: fake() };
+      Object.assign(robot.hero.keys, {
+        left: [robot.fakeKeys.left], right: [robot.fakeKeys.right], jump: [robot.fakeKeys.jump],
+      });
     }
 
-    // A "1" and a "2" (or 🤖, or TÚ and our friend's name) over their heads
-    let labels = two ? ['1', '2'] : ['TÚ', '🤖'];
-    if (online) labels = this.netPlayers.map((np, i) => (i === this.me ? 'TÚ' : np.name));
+    // A "1" and a "2" (or TÚ and 🤖) over their heads
+    const labels = two ? ['1', '2'] : ['TÚ', '🤖'];
     this.tags = this.players.map((p, i) => this.add.text(0, 0, labels[i], {
       fontFamily: 'Arial', fontSize: '14px', fontStyle: 'bold', color: TEAM_COLORS[i],
       stroke: '#000000', strokeThickness: 4,
@@ -387,12 +350,6 @@ class SoccerScene extends Phaser.Scene {
     const dt = delta / 1000;
     this.ball.angle += this.ball.body.velocity.x * dt * 2; // the ball rolls
     this.tags.forEach((tag, i) => tag.setPosition(this.players[i].hero.x, this.players[i].hero.y - 58));
-    // Online, the friend's device does not move anything: it shows the creator's "photos"
-    if (this.isGuest) {
-      this.guestUpdate(delta);
-      return;
-    }
-    if (this.net) this.sendPhoto(delta);
     if (this.phase === 'fin' || this.phase === 'cuenta') {
       this.players.forEach((p) => p.hero.setVelocityX(0));
       return;
@@ -439,15 +396,6 @@ class SoccerScene extends Phaser.Scene {
       hero.update();
       hero.setVelocityX(hero.body.velocity.x * p.bot.speed); // a slower robot in FÁCIL
       if (press.kick) this.tryKick(p, this.isKicker(p) ? p.bot.penaltyShot() : null);
-    } else if (p.remote) {
-      // ONLINE: the friend's player, with the keys the friend sent us
-      p.fakeKeys.left.isDown = p.pad.l;
-      p.fakeKeys.right.isDown = p.pad.r;
-      if (p.pad.j > p.seenJumps) p.fakeKeys.jump._justDown = true;
-      p.seenJumps = p.pad.j;
-      hero.update();
-      if (p.pad.k > p.seenKicks) this.tryKick(p);
-      p.seenKicks = p.pad.k;
     } else {
       hero.update();
       if (p.kickKeys.some((k) => Phaser.Input.Keyboard.JustDown(k))) this.tryKick(p);
@@ -726,7 +674,6 @@ class SoccerScene extends Phaser.Scene {
 
   // A big word in the middle of the screen, that grows and disappears
   bigText(words, color, duration = 1500) {
-    if (this.net && !this.isGuest) this.net.send({ t: 'texto', w: words, c: color, d: duration });
     const text = this.add.text(400, 200, words, {
       fontFamily: 'Arial', fontSize: '56px', fontStyle: 'bold', color, align: 'center',
       stroke: '#000000', strokeThickness: 8,
@@ -761,7 +708,6 @@ class SoccerScene extends Phaser.Scene {
   }
 
   confetti(centerX) {
-    if (this.net && !this.isGuest) this.net.send({ t: 'confeti', x: centerX });
     const colors = [0xff4444, 0xff9933, 0xffee33, 0x44dd66, 0x3399ff, 0xaa55ff];
     for (let i = 0; i < 40; i++) {
       const piece = this.add.rectangle(centerX - 60 + Math.random() * 120, 300 + Math.random() * 100, 8, 12, colors[i % colors.length]).setDepth(80);
@@ -778,27 +724,23 @@ class SoccerScene extends Phaser.Scene {
   finish(winner, reason) {
     if (this.phase === 'fin') return;
     this.phase = 'fin';
-    // Online, the creator tells the friend how it ended
-    if (this.net && !this.isGuest) this.net.send({ t: 'fin', w: winner, r: reason, s: this.score });
     this.ball.setVelocity(0, 0);
     this.ball.body.setAllowGravity(false);
     const vsMachine = this.how === 'maquina';
     let title = `¡GANÓ EL JUGADOR ${winner + 1}!`;
     if (vsMachine) title = winner === 0 ? '¡GANASTE!' : '¡GANÓ LA MÁQUINA!';
-    if (this.net) playSound(winner === this.me ? 'ganar' : 'perder');
     if (this.teams && winner !== null) title = `¡GANÓ ${this.teams[winner].name.toUpperCase()}!`;
     if (winner === null) title = '¡EMPATE!';
 
-    // A prize for beating the machine, and it counts for the MISIONES
+    // A prize for beating the machine, and stars for the PASE
     // (in the TEMPORADA and the MUNDIAL, those scenes give their own prizes)
     let coins = 0;
     if (vsMachine && winner === 0 && !this.context) {
       coins = COIN_PRIZES[this.level] || COIN_PRIZES.normal;
       addCoins(coins);
-      reportMission('ganar');
-      reportMission(`maquina-${this.level}`);
+      earnStars('ganar');
     }
-    if (!this.net) playSound(vsMachine && winner !== 0 ? 'perder' : 'ganar');
+    playSound(vsMachine && winner !== 0 ? 'perder' : 'ganar');
     if (winner !== null) this.confetti(400);
 
     this.add.rectangle(400, 300, 560, 250, 0x000000, 0.85).setStrokeStyle(4, 0xffffff).setDepth(150);
@@ -819,8 +761,8 @@ class SoccerScene extends Phaser.Scene {
     }
     if (this.context) {
       // TEMPORADA or MUNDIAL: back to it, with the result
-      // (me = which team we were: online the friend is team 1)
-      this.result = { score: [...this.score], winner, shots: this.shots, me: this.me, tag: this.context.tag };
+      // (me = which team we were: we are always team 0, the blue one)
+      this.result = { score: [...this.score], winner, shots: this.shots, me: 0, tag: this.context.tag };
       this.resultButton(400, '▶ CONTINUAR [ENTER]', 0x66ee88, () => this.leave());
       return;
     }
@@ -848,146 +790,14 @@ class SoccerScene extends Phaser.Scene {
     this.cameras.main.fadeOut(250);
     // (a match of the TEMPORADA or the MUNDIAL goes back there; ESC in the middle = no result,
     // the match can be played again)
-    if (this.net) this.net.close(); // online: we hang up
     const back = this.context ? this.context.returnTo : 'TitleScene';
     const data = this.context ? { result: this.phase === 'fin' ? this.result || null : null } : undefined;
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(back, data));
   }
 
-  // A sound (online, the creator's sounds are heard on the friend's device too)
+  // A sound
   sfx(name) {
     playSound(name);
-    if (this.net && !this.isGuest) this.net.send({ t: 'sonido', n: name });
-  }
-
-  // ---------------------------------------------------------------
-  // Online: the creator is the "referee" and sends PHOTOS of the field;
-  // the friend sends the keys they press
-  // ---------------------------------------------------------------
-  setupOnline() {
-    this.photoTimer = 0;
-    this.padTimer = 0;
-    this.myPad = { l: false, r: false, j: 0, k: 0 };
-    this.sentPad = '';
-    this.snap = null;
-    this.lastHeard = Date.now();
-    if (this.isGuest) {
-      // Nothing moves by itself here: the photos say where everything is
-      this.physics.world.pause();
-      // The ice walls and the power box, only to SEE them
-      this.guestIce = [0, 1].map((team) => this.add.rectangle(team === 0 ? GOAL_W + 8 : 800 - GOAL_W - 8,
-        (CROSSBAR_Y + GROUND_Y) / 2, 16, GROUND_Y - CROSSBAR_Y, 0x99ddff, 0.75)
-        .setStrokeStyle(2, 0xffffff).setDepth(6).setVisible(false));
-      this.guestPower = this.add.text(0, 0, '', { fontSize: '34px' }).setOrigin(0.5).setDepth(7).setVisible(false);
-    }
-    this.net.onMessage = (msg) => this.onNetMessage(msg);
-    this.net.onPlayerLeft = () => this.friendGone();
-    this.net.onClose = () => this.friendGone();
-  }
-
-  onNetMessage(msg) {
-    this.lastHeard = Date.now();
-    if (!this.isGuest) {
-      // (creator) the keys of our friend
-      if (msg.t === 'pad' && msg.p) this.players[1].pad = msg.p;
-      return;
-    }
-    // (friend) what the creator sends
-    if (msg.t === 'foto') this.snap = msg;
-    else if (msg.t === 'texto') this.bigText(msg.w, msg.c, msg.d);
-    else if (msg.t === 'sonido') playSound(msg.n);
-    else if (msg.t === 'confeti') this.confetti(msg.x);
-    else if (msg.t === 'fin') {
-      this.score = msg.s;
-      this.updateScoreboard();
-      this.finish(msg.w, msg.r);
-    }
-  }
-
-  // (creator) 20 times per second: where everything is
-  sendPhoto(delta) {
-    this.checkSilence();
-    this.photoTimer -= delta;
-    if (this.photoTimer > 0) return;
-    this.photoTimer = 50;
-    const r = Math.round;
-    this.net.send({
-      t: 'foto',
-      b: [r(this.ball.x), r(this.ball.y), r(this.ball.angle)],
-      h: this.players.map(({ hero }) => [r(hero.x), r(hero.y), hero.flipX ? 1 : 0, Math.round(hero.scale * 100) / 100, r(hero.angle)]),
-      s: this.score,
-      tl: Math.round(this.timeLeft * 10) / 10,
-      ph: this.phase,
-      sh: this.shots,
-      pu: this.powerup ? [this.powerup.power.icon, r(this.powerup.x), r(this.powerup.y)] : 0,
-      ice: this.ice.map((wall) => (wall ? 1 : 0)),
-      f: this.fireTime > 0 ? 1 : 0,
-    });
-  }
-
-  // (friend) every frame: send our keys, and move everything to where the last photo says
-  guestUpdate(delta) {
-    this.checkSilence();
-    if (this.phase === 'fin') return;
-    const me = this.players[this.me];
-    const pad = this.myPad;
-    pad.l = me.hero.anyDown(me.hero.keys.left);
-    pad.r = me.hero.anyDown(me.hero.keys.right);
-    // Jumps and kicks are COUNTED, so the creator never misses one
-    if (me.hero.anyJustDown(me.hero.keys.jump)) pad.j += 1;
-    if (me.kickKeys.some((k) => Phaser.Input.Keyboard.JustDown(k))) pad.k += 1;
-    const now = JSON.stringify(pad);
-    this.padTimer -= delta;
-    if (now !== this.sentPad || this.padTimer <= 0) {
-      this.net.send({ t: 'pad', p: { ...pad } });
-      this.sentPad = now;
-      this.padTimer = 100; // (and every 0.1 s anyway, so the creator knows we are here)
-    }
-
-    const snap = this.snap;
-    if (!snap) return;
-    // Half way to the photo every frame: it looks smooth, not jumpy
-    const ease = (obj, x, y) => obj.setPosition(obj.x + (x - obj.x) * 0.5, obj.y + (y - obj.y) * 0.5);
-    ease(this.ball, snap.b[0], snap.b[1]);
-    this.ball.setAngle(snap.b[2]);
-    snap.h.forEach(([x, y, flip, scale, angle], i) => {
-      const hero = this.players[i].hero;
-      ease(hero, x, y);
-      hero.setFlipX(Boolean(flip)).setScale(scale).setAngle(angle);
-    });
-    this.score = snap.s;
-    this.timeLeft = snap.tl;
-    this.shots = snap.sh;
-    if (snap.ph !== 'fin') this.phase = snap.ph; // (the end comes in its own message, with the winner)
-    this.guestIce.forEach((wall, i) => wall.setVisible(Boolean(snap.ice[i])));
-    if (snap.pu) this.guestPower.setText(snap.pu[0]).setPosition(snap.pu[1], snap.pu[2]).setVisible(true);
-    else this.guestPower.setVisible(false);
-    if (snap.f) {
-      this.ball.setTint(0xff7722);
-      this.fireTime = 0.05;
-      this.updateFire(0);
-    } else this.ball.clearTint();
-    this.updateScoreboard();
-  }
-
-  // 8 seconds without news from our friend = they are gone
-  checkSilence() {
-    if (Date.now() - this.lastHeard > 8000) this.friendGone();
-  }
-
-  // Our friend closed the game or lost the internet
-  friendGone() {
-    if (this.phase === 'fin' || this.leaving) return;
-    this.phase = 'fin';
-    this.result = null; // a match that didn't end doesn't count
-    this.physics.world.pause();
-    this.add.rectangle(400, 300, 560, 220, 0x000000, 0.85).setStrokeStyle(4, 0xffffff).setDepth(150);
-    this.add.text(400, 240, 'SE DESCONECTÓ', {
-      fontFamily: 'Arial', fontSize: '40px', fontStyle: 'bold', color: '#bbbbbb', stroke: '#000000', strokeThickness: 6,
-    }).setOrigin(0.5).setDepth(151);
-    this.add.text(400, 290, 'Tu amigo salió del partido', { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff' })
-      .setOrigin(0.5).setDepth(151);
-    this.resultButton(400, '▶ CONTINUAR [ENTER]', 0x66ee88, () => this.leave());
   }
 }
 

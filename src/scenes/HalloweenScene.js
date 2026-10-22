@@ -1,5 +1,5 @@
 // HalloweenScene.js — The screen of the HALLOWEEN EVENT 🎃 (from the sala: button or O).
-// It shows how many pumpkins we found, a bar up to 31, and the 4 prizes:
+// It shows how many pumpkins we found, a bar up to 31, and the 5 prizes:
 // the ones we already won have a ✅, the others say how many pumpkins are missing.
 // The rules of the event are in src/data/halloween.js.
 // ESC or ENTER goes back to the sala.
@@ -8,7 +8,6 @@ import Phaser from 'phaser';
 import { drawGrayCity } from './TitleScene.js';
 import { PRIZES, MAX_PUMPKINS, loadPumpkins, daysLeft } from '../data/halloween.js';
 import { makeHalloweenTextures } from '../managers/HalloweenManager.js';
-import { cosmeticTexture } from '../sprites/Cosmetics.js';
 import { skinTexture, fitImage } from '../data/skins.js';
 
 const ORANGE = 0xff7a00;
@@ -36,10 +35,10 @@ class HalloweenScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.drawCounter(loadPumpkins());
-    PRIZES.forEach((prize, i) => this.drawPrize(prize, 130 + i * 180, loadPumpkins()));
+    PRIZES.forEach((prize, i) => this.drawPrize(prize, 96 + i * 152, loadPumpkins()));
 
     this.add.text(400, 500, 'Hay 3 calabazas en cada nivel. Cada una da 5 monedas 🪙\n'
-      + 'Los villanos también se disfrazaron... ¡y en la TIENDA hay skins de Halloween!', {
+      + 'Los villanos también se disfrazaron... ¡búscalos!', {
       fontFamily: 'Arial', fontSize: '15px', color: '#bbbbbb', align: 'center', lineSpacing: 4,
     }).setOrigin(0.5);
 
@@ -81,21 +80,20 @@ class HalloweenScene extends Phaser.Scene {
   // One prize: its picture, its name, and if we already won it
   drawPrize(prize, x, pumpkins) {
     const won = pumpkins >= prize.pumpkins;
-    this.add.rectangle(x, 345, 160, 200, won ? 0x2a1a10 : 0x1c1c1c)
+    this.add.rectangle(x, 345, 140, 200, won ? 0x2a1a10 : 0x1c1c1c)
       .setStrokeStyle(3, won ? ORANGE : 0x555555);
     this.add.text(x, 262, `🎃 ${prize.pumpkins}`, {
       fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: '#ff9922',
     }).setOrigin(0.5);
 
-    const texture = prize.kind === 'skin' ? skinTexture(this, prize.id) : cosmeticTexture(this, prize.id);
-    const picture = this.add.image(x, 322, texture);
+    const picture = this.add.image(x, 322, skinTexture(this, prize.id));
     fitImage(picture, 70);
     // A prize we don't have yet is a dark shadow: a surprise!
     if (!won) picture.setTint(0x333333);
 
     this.add.text(x, 384, prize.name, {
       fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
-      align: 'center', wordWrap: { width: 150 },
+      align: 'center', wordWrap: { width: 130 },
     }).setOrigin(0.5);
     const missing = prize.pumpkins - pumpkins;
     this.add.text(x, 424, won ? '✅ ¡GANADO!' : `🔒 Faltan ${missing}`, {

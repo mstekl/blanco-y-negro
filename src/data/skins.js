@@ -34,7 +34,7 @@ export const SKIN_LIST = [
   // They never come out of the pencils: only the pass gives them.
   ...PASS_SKINS.map(({ id, name }) => ({ id, name })),
   // ...and the 5 skins of the HALLOWEEN EVENT 🎃 (src/sprites/HalloweenSkins.js):
-  // only in the TIENDA during the event, or with the pumpkins
+  // only won with the pumpkins of the event
   ...HALLOWEEN_SKINS.map(({ id, name }) => ({ id, name })),
 ];
 

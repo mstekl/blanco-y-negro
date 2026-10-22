@@ -12,7 +12,6 @@
     "compartir": "vite build && node tools/compartir.mjs"
   },
   "dependencies": {
-    "peerjs": "^1.5.4",
     "phaser": "^3.87.0"
   },
   "devDependencies": {

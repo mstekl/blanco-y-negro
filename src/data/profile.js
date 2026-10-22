@@ -1,6 +1,6 @@
 // profile.js — Our player: a NAME and an AVATAR (the picture other players see).
 // It is saved in the browser (localStorage), so we only write it once.
-// The online race and search (on iPads and phones) will show it to the other player.
+// It shows in the sala, and in the race against the machine (next to our bar).
 //   - The name must have MORE than 3 letters and LESS than 14 (so 4 to 13)
 //   - The avatar can be ANY skin of the list (even one we haven't won)
 

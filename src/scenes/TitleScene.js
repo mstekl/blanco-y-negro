@@ -6,10 +6,8 @@
 //   - press the SKINS button (or S) to go to the skins screen and choose one
 //     (only here: skins can't be changed in the middle of a level)
 //   - press the LÁPICES button (or L) to buy a pencil with coins and open it
-//   - press the CARRERA button (or C) for a race: two players, split screen
-//   - press the BÚSQUEDA button (or B) to look for 5 colored pencils: two players, split screen
-//   - press SUPERVIVENCIA (or V): alone, against waves of villains. How long can you last?
-//   - press MISIONES (or M) to see the 3 missions of the day
+//   - press the CARRERA button (or C) for a race: two players on a split screen, or against the machine
+//   - press JUNTOS (or J) to play the story with two players, FÚTBOL (or G) and the EDITOR (or E)
 //   - press our player (name + avatar, top left, or N) to change them.
 //     The very first time, we go to make our player before anything else
 
@@ -21,12 +19,8 @@ import { loadRecord, formatPoints } from '../data/record.js';
 import { loadCoins, saveCoins, addCoins, makeCoinTexture } from '../data/coins.js';
 import { loadProfile } from '../data/profile.js';
 import { drawTopBar } from '../ui/TopBar.js';
-import { takeShopItems } from '../data/shop.js';
 import { addStars, medalsLeft, STARS_PER_LEVEL, PASS_LEVELS } from '../data/pass.js';
 import { playMusic, isMuted, toggleSound } from '../audio/Sound.js';
-import { attachCosmetics, playEmote } from '../sprites/Cosmetics.js';
-import { equipped } from '../data/cosmetics.js';
-import { reportMission } from '../data/missions.js';
 import { isHalloween, loadPumpkins, MAX_PUMPKINS } from '../data/halloween.js';
 import { makeHalloweenTextures } from '../managers/HalloweenManager.js';
 import { drawMoonAndBats } from './HalloweenScene.js';
@@ -76,7 +70,7 @@ class TitleScene extends Phaser.Scene {
     // HALLOWEEN 🎃: an orange moon, bats, pumpkins and the button of the event
     this.halloween = isHalloween();
     if (this.halloween) this.decorateForHalloween();
-    // The bar at the top, like in Fortnite: INICIO · PASE · TIENDA · CASILLERO
+    // The bar at the top, like in Fortnite: INICIO · PASE
     this.refreshBarCoins = drawTopBar(this, 'TitleScene', (scene) => this.goTo(scene));
     this.drawTitle();
     this.createProfileButton();
@@ -141,7 +135,7 @@ class TitleScene extends Phaser.Scene {
     });
     // The button of the event: how many pumpkins we have, and it opens the prizes
     const pumpkins = Math.min(loadPumpkins(), MAX_PUMPKINS);
-    this.sideButton(292, 392, `🎃 HALLOWEEN ${pumpkins}/${MAX_PUMPKINS} [O]`, 0xff7a00,
+    this.sideButton(292, 330, `🎃 HALLOWEEN ${pumpkins}/${MAX_PUMPKINS} [O]`, 0xff7a00,
       () => this.goTo('HalloweenScene'), 196);
   }
 
@@ -169,34 +163,10 @@ class TitleScene extends Phaser.Scene {
     // A gray circle of light behind the hero, so the black skins can be seen
     this.add.circle(500, 325, 105, 0x8a8a8a, 0.45);
     this.heroPreview = this.add.image(500, 330, 'hero');
-    this.bobbing = this.tweens.add({
+    this.tweens.add({
       targets: this.heroPreview, y: 318, duration: 1500,
       yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
-    // Our mochila and mascota, on the big hero too
-    attachCosmetics(this, this.heroPreview);
-
-    // 💃 BAILAR (or Q): the big hero does our dance
-    const danceButton = this.add.rectangle(440, 452, 130, 36, 0x222222)
-      .setStrokeStyle(3, 0xff77bb).setInteractive({ useHandCursor: true });
-    this.add.text(440, 452, '💃 BAILAR [Q]', {
-      fontFamily: 'Arial', fontSize: '15px', fontStyle: 'bold', color: '#ffffff',
-    }).setOrigin(0.5);
-    danceButton.on('pointerover', () => danceButton.setFillStyle(0x444444));
-    danceButton.on('pointerout', () => danceButton.setFillStyle(0x222222));
-    danceButton.on('pointerdown', () => { if (!this.hackOpen) this.dance(); });
-  }
-
-  dance() {
-    if (this.dancing) return;
-    this.dancing = true;
-    // The up-and-down floating stops while we dance (they would fight)
-    this.bobbing.pause();
-    playEmote(this, this.heroPreview, equipped('baile') || 'saludo', () => {
-      this.dancing = false;
-      this.bobbing.resume();
-    });
-    reportMission('baile');
   }
 
   // ---------------------------------------------------------------
@@ -247,28 +217,6 @@ class TitleScene extends Phaser.Scene {
     pencilButton.on('pointerover', () => pencilButton.setFillStyle(0x444444));
     pencilButton.on('pointerout', () => pencilButton.setFillStyle(0x222222));
     pencilButton.on('pointerdown', () => { if (!this.hackOpen) this.openPencils(); });
-
-    // CARRERA button, under LÁPICES: two players race, each on half of the screen
-    const raceButton = this.add.rectangle(150, 500, 180, 44, 0x222222)
-      .setStrokeStyle(3, 0x66ee88)
-      .setInteractive({ useHandCursor: true });
-    this.add.text(150, 500, '🏁 CARRERA [C]', {
-      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
-    }).setOrigin(0.5);
-    raceButton.on('pointerover', () => raceButton.setFillStyle(0x444444));
-    raceButton.on('pointerout', () => raceButton.setFillStyle(0x222222));
-    raceButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace(); });
-
-    // ESCONDIDAS button, under CARRERA: hide and seek, taking turns
-    const hideButton = this.add.rectangle(150, 552, 180, 40, 0x222222)
-      .setStrokeStyle(3, 0x88dd44)
-      .setInteractive({ useHandCursor: true });
-    this.add.text(150, 552, '🙈 ESCONDIDAS [H]', {
-      fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
-    }).setOrigin(0.5);
-    hideButton.on('pointerover', () => hideButton.setFillStyle(0x444444));
-    hideButton.on('pointerout', () => hideButton.setFillStyle(0x222222));
-    hideButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace('escondidas'); });
   }
 
   // Show the chosen skin in the big preview and in the SKINS button
@@ -285,12 +233,11 @@ class TitleScene extends Phaser.Scene {
     this.goTo('SkinsScene');
   }
 
-  // Go to the race (mode 'carrera'), the search (mode 'busqueda') or the lava (mode 'lava'),
-  // first to the screen that asks ONLINE, OFFLINE or MÁQUINA:
+  // Go to the race, first to the screen that asks OFFLINE or MÁQUINA:
   // both heroes wear the skin chosen here
-  startRace(mode = 'carrera') {
+  startRace() {
     this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
-    this.goTo('ModeChoiceScene', { mode });
+    this.goTo('ModeChoiceScene');
   }
 
   // FÚTBOL: our hero plays with the skin chosen here, like in the race
@@ -329,35 +276,21 @@ class TitleScene extends Phaser.Scene {
     button.on('pointerout', () => { button.setFillStyle(0xffffff); label.setScale(1); });
     button.on('pointerdown', () => { if (!this.hackOpen) this.startGame(); });
 
-    // BÚSQUEDA button, just above JUGAR: two players look for 5 colored pencils
-    const searchButton = this.add.rectangle(645, 452, 220, 40, 0x222222)
-      .setStrokeStyle(3, 0xff77cc)
-      .setInteractive({ useHandCursor: true });
-    this.add.text(645, 452, '🔍 BÚSQUEDA [B]', {
-      fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: '#ffffff',
-    }).setOrigin(0.5);
-    searchButton.on('pointerover', () => searchButton.setFillStyle(0x444444));
-    searchButton.on('pointerout', () => searchButton.setFillStyle(0x222222));
-    searchButton.on('pointerdown', () => { if (!this.hackOpen) this.startRace('busqueda'); });
-
     this.add.text(645, 582, 'o presiona ENTER', {
       fontFamily: 'Arial', fontSize: '13px', color: '#aaaaaa',
     }).setOrigin(0.5);
   }
 
   // ---------------------------------------------------------------
-  // Right side, next to the big hero: LAVA, JUNTOS, EDITOR and SUPERVIVENCIA
+  // Right side, next to the big hero: JUNTOS, CARRERA, FÚTBOL and EDITOR
   // (and the 🔊 button at the top left, next to our player)
   // ---------------------------------------------------------------
   createRightButtons() {
-    // (MISIONES is in the CASILLERO tab, and the TIENDA has its own tab in the top bar)
-    this.sideButton(700, 179, '🚩 BANDERA [F]', 0x44dd88, () => this.startRace('bandera'));
-    // FÚTBOL, between the SKINS button and the big hero (it has its own menu: FutbolMenuScene.js)
-    this.sideButton(292, 330, '⚽ FÚTBOL [G]', 0xffffff, () => this.openFutbol(), 170);
-    this.sideButton(700, 233, '🌋 LAVA [U]', 0xff7a00, () => this.startRace('lava'));
-    this.sideButton(700, 287, '👫 JUNTOS [J]', 0x44aaff, () => this.startGame(true));
-    this.sideButton(700, 341, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
-    this.sideButton(700, 395, '🛡 SUPERVIVENCIA [V]', 0xff5555, () => this.startSurvival());
+    this.sideButton(700, 250, '👫 JUNTOS [J]', 0x44aaff, () => this.startGame(true));
+    this.sideButton(700, 304, '🏁 CARRERA [C]', 0x66ee88, () => this.startRace());
+    // FÚTBOL has its own menu: FutbolMenuScene.js
+    this.sideButton(700, 358, '⚽ FÚTBOL [G]', 0xffffff, () => this.openFutbol());
+    this.sideButton(700, 412, '✏️ EDITOR [E]', 0xaa77ff, () => this.openEditor());
 
     // Sound on / off
     const soundButton = this.add.rectangle(190, 74, 44, 44, 0x222222)
@@ -376,13 +309,6 @@ class TitleScene extends Phaser.Scene {
     button.on('pointerover', () => button.setFillStyle(0x444444));
     button.on('pointerout', () => button.setFillStyle(0x222222));
     button.on('pointerdown', () => { if (!this.hackOpen) onClick(); });
-  }
-
-  // SUPERVIVENCIA: first we choose ONLINE or SOLO.
-  // The hero wears the skin chosen here, like in the levels
-  startSurvival() {
-    this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
-    this.goTo('ModeChoiceScene', { mode: 'supervivencia' });
   }
 
   // The EDITOR DE NIVELES: draw our own levels
@@ -404,8 +330,6 @@ class TitleScene extends Phaser.Scene {
     this.registry.set('country', null); // we start in the normal levels, not inside a country
     // The hero is born with the skin chosen in the skins screen (null = the normal hero)
     this.registry.set('skin', this.chosenSkin === 'heroe' ? null : this.chosenSkin);
-    // We take one of each thing we bought in the TIENDA (the hero gets them in the first level)
-    takeShopItems(this.registry);
 
     this.cameras.main.fadeOut(500);
     this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -489,20 +413,11 @@ class TitleScene extends Phaser.Scene {
       else if (event.code === 'KeyS') this.openSkins();
       else if (event.code === 'KeyL') this.openPencils();
       else if (event.code === 'KeyC') this.startRace();
-      else if (event.code === 'KeyB') this.startRace('busqueda');
-      else if (event.code === 'KeyU') this.startRace('lava');
-      else if (event.code === 'KeyF') this.startRace('bandera');
-      else if (event.code === 'KeyH') this.startRace('escondidas');
       else if (event.code === 'KeyG') this.openFutbol();
       else if (event.code === 'KeyN') this.goTo('ProfileScene');
-      else if (event.code === 'KeyM') this.goTo('MissionsScene');
-      else if (event.code === 'KeyV') this.startSurvival();
-      else if (event.code === 'KeyT') this.goTo('ShopScene');
       else if (event.code === 'KeyP') this.goTo('PassScene');
-      else if (event.code === 'KeyK') this.goTo('LockerScene');
       else if (event.code === 'KeyE') this.openEditor();
       else if (event.code === 'KeyJ') this.startGame(true);
-      else if (event.code === 'KeyQ') this.dance();
       else if (event.code === 'KeyO' && this.halloween) this.goTo('HalloweenScene');
       return;
     }

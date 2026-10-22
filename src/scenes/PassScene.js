@@ -18,13 +18,9 @@ import {
   currentSeason, daysLeftInSeason, PASS_LEVELS, STARS_PER_LEVEL, PREMIUM_PRICE, PAGE_COUNT,
   PRIZES_TO_OPEN_PAGE,
 } from '../data/pass.js';
-import { SHOP_ITEMS } from '../data/shop.js';
 import { SKIN_LIST, skinTexture, fitImage } from '../data/skins.js';
 import { makeCoinTexture, RARITIES, SKIN_RARITY } from '../data/coins.js';
-import Projectile from '../sprites/Projectile.js';
 import { playSound } from '../audio/Sound.js';
-import { findCosmetic, COSMETIC_TYPES } from '../data/cosmetics.js';
-import { cosmeticTexture } from '../sprites/Cosmetics.js';
 
 // Where the 8 prize cards go: 4 columns and 2 rows (GRATIS on top, PREMIUM below)
 const CARD_W = 96;
@@ -45,7 +41,6 @@ class PassScene extends Phaser.Scene {
     drawGrayCity(this);
     this.add.rectangle(400, 300, 800, 600, 0x000000, 0.75);
     makeCoinTexture(this);
-    Projectile.createPowerupTextures(this);
     this.refreshCoins = drawTopBar(this, 'PassScene', (scene) => this.goTo(scene));
 
     this.add.text(400, 72, `PASE BLANCO Y NEGRO · TEMPORADA ${currentSeason()}`, {
@@ -214,24 +209,16 @@ class PassScene extends Phaser.Scene {
   // --- What a prize looks like ---
   prizeName(prize) {
     if (prize.type === 'coins') return `${prize.amount} monedas`;
-    if (prize.type === 'item') return SHOP_ITEMS.find((it) => it.id === prize.item).name;
-    if (prize.type === 'cosmetic') {
-      const cosmetic = findCosmetic(prize.cosmetic);
-      return `${COSMETIC_TYPES[cosmetic.type].icon} ${cosmetic.name}`;
-    }
     return SKIN_LIST.find((s) => s.id === prize.skin)?.name || prize.skin;
   }
 
   prizeTexture(prize) {
     if (prize.type === 'coins') return 'coin';
-    if (prize.type === 'item') return SHOP_ITEMS.find((it) => it.id === prize.item).texture;
-    if (prize.type === 'cosmetic') return cosmeticTexture(this, prize.cosmetic);
     return skinTexture(this, prize.skin);
   }
 
-  // Coins and power-ups are COMÚN; skins, bailes, mochilas and mascotas have their own rarity
+  // Coins are COMÚN; skins have their own rarity
   prizeRarity(prize) {
-    if (prize.type === 'cosmetic') return RARITIES[findCosmetic(prize.cosmetic).rarity];
     return RARITIES[prize.type === 'skin' ? SKIN_RARITY[prize.skin] || 'raro' : 'comun'];
   }
 

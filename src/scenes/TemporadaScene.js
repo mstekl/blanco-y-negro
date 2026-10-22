@@ -12,7 +12,7 @@ import {
   standings, endSeason, nextSeason, ROUNDS, DIVISION_LEVEL, PRIZES,
 } from '../data/temporada.js';
 import { addCoins } from '../data/coins.js';
-import { reportMission } from '../data/missions.js';
+import { earnStars } from '../data/pass.js';
 import { playSound } from '../audio/Sound.js';
 
 class TemporadaScene extends Phaser.Scene {
@@ -80,7 +80,7 @@ class TemporadaScene extends Phaser.Scene {
     saveTemporada(this.state);
     if (ours > theirs) {
       addCoins(PRIZES.win);
-      reportMission('ganar');
+      earnStars('ganar');
       this.resultMessage = `¡Le ganaste ${ours} a ${theirs} a ${rivalName}! +3 puntos · +${PRIZES.win} monedas`;
     } else if (ours === theirs) {
       addCoins(PRIZES.draw);
